@@ -41,10 +41,10 @@ struct union_type<fixval<eA,lowA,highA>,fixval<eB,lowB,highB> >
 	static const int sA=eMax-eB;
 	static const int sB=eMax-eA;
 	
-	static const int64_t nLowA=lowA;	//<<sA;
-	static const int64_t nHighA=highA;	//<<sA;
-	static const int64_t nLowB=lowB;	//<<sB;
-	static const int64_t nHighB=highB;	//<<sB;
+	HLS_SC(int64_t, nLowA, lowA<<sA);
+	HLS_SC(int64_t, nHighA, highA<<sA);
+	HLS_SC(int64_t, nLowB, lowB<<sB);
+	HLS_SC(int64_t, nHighB, highB<<sB);
 
 	typedef fixval<
 		eMin,

@@ -10,6 +10,13 @@
 #define HLS_ASSERT_CONCAT(a, b) HLS_ASSERT_CONCAT_(a, b)
 #define HLS_STATIC_ASSERT(e,msg) enum { HLS_ASSERT_CONCAT(static_assert_, __COUNTER__) = 1/(!!(e)) }
 
+// Vivado HLS has problems with static const members, and thinks they
+// aren't constant
+#define HLS_STATIC_CONST(type, name, value) \
+	enum{ name = (type)(value) }; \
+	HLS_STATIC_ASSERT(sizeof(name)==sizeof((type)), "Static const integral does not have the right size."); \
+	HLS_STATIC_ASSERT( name == (value), "Static const integral does not have the right size.")
+
 template<int64_t a,int64_t b>
 struct ctMax
 { static const int64_t val =  a>b ? a : b; };
