@@ -3,6 +3,9 @@
 
 #include "thls/core.hpp"
 
+#include "thls/types/fixval.hpp"
+
+/*
 template<int64_t Tlow, int64_t Thigh>
 struct intval
 {
@@ -26,12 +29,21 @@ struct intval
 
 	int64_t val;
 };
+*/
+
+template <int64_t TLow,int64_t THigh>
+using intval = fixval<0,TLow,THigh>;
 
 template<int64_t v>
-intval<v,v> constant_intval()
-{ return v; }
+fixval<0,v,v> constant_intval()
+{ return fixval<0,v,v>(v); }
+
+template<int64_t TLow, int64_t THigh>
+fixval<0,TLow,THigh> make_intval(int64_t v)
+{ return fixval<0,TLow,THigh>(v); }
 
 
+/*
 template<int64_t lowA, int64_t highA, int64_t lowB, int64_t highB>
 struct union_type<intval<lowA,highA>,intval<lowB,highB> >
 {
@@ -74,5 +86,7 @@ intval<(lowA>>places),(highA>>places)> shift_right(const intval<lowA,highA> &a)
 {
 	return a.val>>places;
 }
+
+*/
 
 #endif
