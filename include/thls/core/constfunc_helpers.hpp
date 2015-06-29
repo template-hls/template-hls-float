@@ -8,29 +8,29 @@
 
 // Vivado HLS doesn't support static_assert
 // http://stackoverflow.com/a/1980141
-#define HLS_ASSERT_CONCAT_(a, b) a##b
-#define HLS_ASSERT_CONCAT(a, b) HLS_ASSERT_CONCAT_(a, b)
-#define HLS_STATIC_ASSERT(e,msg) enum { HLS_ASSERT_CONCAT(static_assert_, __COUNTER__) = 1/(!!(e)) }
+#define THLS_ASSERT_CONCAT_(a, b) a##b
+#define THLS_ASSERT_CONCAT(a, b) HLS_ASSERT_CONCAT_(a, b)
+#define THLS_STATIC_ASSERT(e,msg) enum { HLS_ASSERT_CONCAT(static_assert_, __COUNTER__) = 1/(!!(e)) }
 
 // Vivado HLS has problems with static const members, and thinks they
 // aren't constant
-#define HLS_STATIC_CONST(type, name, value) \
+#define THLS_STATIC_CONST(type, name, value) \
 	enum _##name : type{ name = (type)(value) }; \
-	HLS_STATIC_ASSERT(sizeof(name)==sizeof(type), "Static const integral does not have the right size."); \
-	HLS_STATIC_ASSERT( name == (value), "Static const integral does not have the right size.")
+	THLS_STATIC_ASSERT(sizeof(name)==sizeof(type), "Static const integral does not have the right size."); \
+	THLS_STATIC_ASSERT( name == (value), "Static const integral does not have the right size.")
 
-#define HLS_SC(type, name, value) \
-	HLS_STATIC_CONST(type, name, value)
-	
 #else
 
-#define HLS_SC(type, name, value) \
+#define THLS_STATIC_CONST(type, name, value) \
 	static const type name = value
 	
-#define HLS_STATIC_ASSERT(e,msg)	\
+#define THLS_STATIC_ASSERT(e,msg)	\
 	static_assert(e,msg)
 
 #endif
+
+namespace thls
+{
 
 template<int64_t a,int64_t b>
 struct ctMax
@@ -51,9 +51,9 @@ struct ctMin4
 template<int64_t v, int places>
 struct ctCheckedShiftLeft
 {
-	HLS_STATIC_ASSERT(places>=0, "Negative shifts not allowed.");
-	HLS_STATIC_ASSERT(places<64, "Shifts must be less than width of value.");
-	HLS_STATIC_ASSERT( ((v<<places)>>places)==v, "Value is too large, MSBs have been lost.");
+	THLS_STATIC_ASSERT(places>=0, "Negative shifts not allowed.");
+	THLS_STATIC_ASSERT(places<64, "Shifts must be less than width of value.");
+	THLS_STATIC_ASSERT( ((v<<places)>>places)==v, "Value is too large, MSBs have been lost.");
 	
 	static const int64_t val = v<<places;
 };
@@ -90,39 +90,6 @@ template<int eA, int64_t vA, int eB, int64_t vB>
 struct ctFixGreaterThan
 { static const bool val = ctFixCompare<eA,vA,eB,vB>::val > 0; };
 
-/*
-
-template<class A, class B>
-struct add_type;
-
-template<>
-struct add_type<int64_t,int64_t>
-{ typedef int64_t type; };
-
-
-template<class A, class B>
-struct mul_type;
-
-template<>
-struct mul_type<int64_t,int64_t>
-{ typedef int64_t type; };
-
-
-template<class A,class B>
-struct union_type;
-
-template<>
-struct union_type<int64_t,int64_t>
-{ typedef int64_t type; };
-
-
-template<typename A, typename B>
-typename union_type<A,B>::type select(bool sel, const A &a, const B &b)
-{
-	typedef typename union_type<A,B>::type res_t;
-	return sel ? res_t(a) : res_t(b);
-}
-
-*/
+}; // thls
 
 #endif
