@@ -1,86 +1,126 @@
 #ifndef ct_bigint_hpp
 #define ct_bigint_hpp
 
-#include "ct_bigint_itf.hpp"
-#include "ct_bigint_core.hpp"
-//#include "ct_bigint_compare.hpp"
-//#include "ct_bigint_add.hpp"
-//#include "ct_bigint_mul.hpp"
+#include <cstdio>
+#include <cstdint>
 
-#include <boost/mpl/if.hpp>
-#include <boost/mpl/same_as.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
-//#include "ct_bigint_gcd.hpp"
 
+#include "base_ops.hpp"
 
-typedef boost::multiprecision::cpp_int rt_wideint_t;
-
-typedef uint32_t limb_t;
-enum{ limb_bits = 16 };
-enum{ limb_mask = (1<<limb_bits)-1 };
-
-
-template<limb_t TLimb, class TTail>
-struct ct_limb;
-
-struct ct_zero;
-
-template<class TTail>
-struct ct_neg;
-
-/*
-    POS_NUMBER = ZERO
-            || (limb,POS_NUMBER)
+namespace thls
+{
     
-    NEG_NUMBER = (neg,POS_NUMBER)
+typedef boost::multiprecision::cpp_int rt_int_t;
     
-    NUMBER = POS_NUMBER | NEG_NUMBER
-
-
-    Canonical numbers have a leading non-zero limb, but
-    zero limbs may be built up as intermediate calculations.
-    
-    Canonical zero is not negative, but it may arise in
-    intermediate calculations, and should compare equal to zero.
+#if 0
+/*! This is the concept for a compile-time integer.
+    There will be multiple classes providing this interface,
+    but all have these properties
 */
+class ct_int_t
+{
+    HLS_SC(bool, is_pos, 0);
+    HLS_SC(bool, is_neg, 0);
+    HLS_SC(bool, is_zero, 0);
+    
+    //! Writes the integer to the destination
+    static void print(FILE *dst);
+    
+    //! Produces a run-time value
+    static rt_int_t as_rt_int();
+};
+#endif
 
+/* All the compile-time operators produce their
+    result as a type called `result`
+*/
 
 template<class TA,class TB>
 class ct_less_than;
 
 template<class TA,class TB>
-class ct_equals;
+class ct_greater_than;
 
 template<class TA,class TB>
-struct ct_greater_than;
+class ct_equals;
 
 template<class TA,class TB>
 class ct_add;
 
 template<class TA,class TB>
+class ct_sub;
+
+template<class TA,class TB>
 class ct_mul;
 
 template<class TA,unsigned places>
-class ct_shift_left;
+struct ct_shift_left;
 
 template<class TA,unsigned places>
-class ct_shift_right;
+struct ct_shift_right;
+
+namespace detail
+{
+    typedef uint32_t limb_t;
+    enum{ limb_bits = 16 };
+    enum{ limb_mask = (1<<limb_bits)-1 };
+
+    template<limb_t TLimb, class TTail>
+    class ct_limb;
+
+    class ct_zero;
+
+    template<class TTail>
+    class ct_neg;
+
+    /*
+        POS_NUMBER = ZERO
+                || (limb,POS_NUMBER)
+        
+        NEG_NUMBER = (neg,POS_NUMBER)
+        
+        NUMBER = POS_NUMBER | NEG_NUMBER
 
 
-template<class TA>
-struct ct_canonicalise;
+        Canonical numbers have a leading non-zero limb, but
+        zero limbs may be built up as intermediate calculations.
+        
+        Canonical zero is not negative, but it may arise in
+        intermediate calculations, and should compare equal to zero.
+    */
+    
+    template<class TA>
+    struct ct_canonicalise;
 
-template<class TA,int digits>
-struct ct_ensure_digits;
+    template<class TA,int digits>
+    struct ct_ensure_digits;
 
-template<class TA,unsigned nlimbs> struct ct_shift_limbs_left;
-template<class TA,limb_t L> struct ct_mul_single;
+    template<class TA,limb_t L> struct ct_mul_single;
+};
+
+
+
+
+
 
 
 template<limb_t TLimb, class TTail>
-struct ct_limb
+class ct_limb
 {
-    HLS_STATIC_ASSERT(TLimb < limb_mask, "Limb is out of range.");
+    friend class ct_zero;
+    template<class TT> friend class ct_neg;
+    template<limb_t L,class TT> friend class ct_limb;
+    
+    template<class TA,class TB> friend struct ct_less_than;
+    template<class TA,class TB> friend struct ct_equals;
+    template<class TA,class TB> friend struct ct_add;
+    template<class TA> friend struct ct_canonicalise;
+    template<class TA,int digits> friend struct ct_ensure_digits;
+    template<class TA> friend struct ct_shift_left;
+    template<class TA,limb_t L> friend struct ct_mul_single;
+    template<class TA,class TB> friend struct ct_mul;
+    
     
     HLS_SC(limb_t,limb,TLimb);
     
@@ -112,14 +152,26 @@ public:
     }
 };
 
-struct ct_zero
+class ct_zero
 {   
+    template<limb_t L,class TT> friend class ct_limb;
+    template<class TT> friend class ct_neg;
+    
+    template<class TA,class TB> friend struct ct_less_than;
+    template<class TA,class TB> friend struct ct_equals;
+    template<class TA,class TB> friend struct ct_add;
+    template<class TA> friend struct ct_canonicalise;
+    template<class TA,int digits> friend struct ct_ensure_digits;
+    template<class TA> friend struct ct_shift_left;
+    template<class TA,limb_t L> friend struct ct_mul_single;
+    template<class TA,class TB> friend struct ct_mul;
     
     HLS_SC(int,digit_pos,-1);   // Make the first limb have digit zero
     
     static void print_interior(FILE *)
     {}
-
+    
+public:    
     HLS_SC(bool,is_neg,false);
     HLS_SC(bool,is_pos,false);
     HLS_SC(bool,is_zero,true);
@@ -136,8 +188,19 @@ struct ct_zero
 };
 
 template<class TTail>
-struct ct_neg
+class ct_neg
 {
+    template<limb_t L,class TT> friend class ct_limb;
+    friend class ct_zero;
+    
+    template<class TA,class TB> friend struct ct_less_than;
+    template<class TA,class TB> friend struct ct_equals;
+    template<class TA,class TB> friend struct ct_add;
+    template<class TA> friend struct ct_canonicalise;
+    template<class TA,int digits> friend struct ct_ensure_digits;
+    template<class TA> friend struct ct_shift_left;
+    template<class TA,limb_t L> friend struct ct_mul_single;
+    template<class TA,class TB> friend struct ct_mul;
     
     typedef TTail tail;
 public:
@@ -246,50 +309,6 @@ struct ct_greater_than
 
 
 
-template<class TA,class TB>
-struct ct_add;
-
-template<>
-struct ct_add<ct_zero,ct_zero>
-{
-    HLS_SC(limb_t,carry,0);
-    typedef ct_zero value;  
-};
-
-template<limb_t L,class T>
-struct ct_add<ct_zero,ct_limb<L,T> >
-{
-    HLS_SC(limb_t,carry,0);
-    typedef ct_limb<L,T> value;  
-};
-
-template<limb_t L,class T>
-struct ct_add<ct_limb<L,T>,ct_zero >
-{
-    HLS_SC(limb_t,carry,0);
-    typedef ct_limb<L,T> value;  
-};
-
-
-template<int n>
-struct ct_zero_limbs
-{
-    HLS_STATIC_ASSERT(n>=0, "n must be positive.");
-    
-    typedef typename boost::mpl::if_<
-        boost::mpl::bool_<(n<=0)>,
-        ct_zero,
-        ct_limb<0,typename ct_zero_limbs<n-1>::value>
-    >::type value;
-};
-
-template<>
-struct ct_zero_limbs<0>
-{
-    typedef ct_zero value;
-};
-
-
 /*! Extend TTarget till it has at least that many digits */
 template<class T, int digits>
 struct ct_ensure_digits
@@ -316,95 +335,16 @@ template<class TT, int digits>
 struct ct_ensure_digits<ct_neg<TT>,digits>; // no instantiation for now
 
 
-template<class T,unsigned nlimbs>
-struct ct_shift_limbs_left
+template<class T>
+struct ct_insert_zero_lsl
 {
-    typedef ct_limb<T::limb,typename ct_shift_limbs_left<typename T::tail,nlimbs>::value> value;
+    typedef ct_limb<T::limb,typename ct_insert_zero_lsl<typename T::tail>::value> value;
 };
 
-template<unsigned nlimbs>
-struct ct_shift_limbs_left<ct_zero,nlimbs>
+template<>
+struct ct_insert_zero_lsl<ct_zero>
 {
-    typedef typename ct_zero_limbs<nlimbs>::value value;
-};
-
-
-template<class T,unsigned nlimbs>
-struct ct_shift_limbs_right
-{
-    typedef typename boost::mpl::if_<
-       boost::mpl::bool_<(T::digit_pos>=nlimbs)>,
-        ct_limb<T::limb, typename ct_shift_limbs_right<typename T::tail,nlimbs>::value>,
-        ct_zero
-    >::type value;
-};
-
-template<unsigned nlimbs>
-struct ct_shift_limbs_right<ct_zero,nlimbs>
-{
-    typedef ct_zero value;
-};
-
-
-template<class T,unsigned places,limb_t carryIn>
-struct ct_shift_right_detail
-{
-    HLS_STATIC_ASSERT(places<limb_bits, "Should get rid of whole digits before here.");
-    
-    typedef typename ct_shift_right_detail<typename T::tail, places, ((T::limb<<(limb_bits-places))&limb_mask)>::value lower;
-    
-    typedef ct_limb<(carryIn |  (T::limb>>places)),lower> value;
-};
-
-template<unsigned places,limb_t carryIn>
-struct ct_shift_right_detail<ct_zero,places,carryIn>
-{
-    HLS_STATIC_ASSERT(places<limb_bits, "Should get rid of whole digits before here.");
-    
-    typedef ct_zero value;
-};
-
-template<class T,unsigned places>
-struct ct_shift_right
-{
-    typedef typename ct_shift_limbs_right<T,(places/limb_bits)>::value coarse;
-    typedef typename ct_shift_right_detail<coarse,(places%limb_bits),0>::value fine;
-    
-    typedef typename ct_canonicalise<fine>::value value;
-};
-
-
-
-template<class T,unsigned places>
-struct ct_shift_left_detail
-{
-    HLS_STATIC_ASSERT(places<limb_bits, "Should get rid of whole digits before here.");
-    
-    HLS_SC(limb_t,carry, T::limb>>(limb_bits-places));
-    
-    typedef ct_shift_left_detail<typename T::tail, places> lower;
-    
-    typedef ct_limb<(lower::carry | (T::limb<<places))&limb_mask,typename lower::value> value;
-};
-
-template<unsigned places>
-struct ct_shift_left_detail<ct_zero,places>
-{
-    HLS_STATIC_ASSERT(places<limb_bits, "Should get rid of whole digits before here.");
-    
-    HLS_SC(limb_t,carry,0);
-    
-    typedef ct_zero value;
-};
-
-template<class T,unsigned places>
-struct ct_shift_left
-{
-    typedef typename ct_shift_limbs_left<T,(places/limb_bits)>::value coarse;
-    typedef ct_shift_left_detail<coarse,(places%limb_bits)> lower;
-    typedef typename lower::value fine;
-    
-    typedef typename ct_canonicalise<ct_limb<lower::carry,typename lower::value> >::value value;
+    typedef ct_limb<0,ct_zero> value;
 };
 
 
@@ -426,42 +366,6 @@ struct ct_canonicalise<ct_neg<TTail> >
     typedef ct_neg<typename ct_canonicalise<TTail>::value> value;
 };
 
-
-template<class TA,class TB>
-struct ct_add
-{
-private:
-    // Add an extra digit for any carry
-    enum{ digits = 1+ TA::digit_pos > TB::digit_pos ? TA::digit_pos : TB::digit_pos };
-    
-    typedef typename ct_ensure_digits<TA,digits>::value FA;
-    typedef typename ct_ensure_digits<TB,digits>::value FB;
-    
-    template<int x,class A, class B>
-    struct worker
-    {
-        typedef worker<0,typename A::tail,typename B::tail> lower;
-        
-        HLS_SC(limb_t,full_sum,(lower::carry)+(A::limb)+(B::limb));
-        HLS_SC(limb_t,carry,full_sum>>limb_bits);
-        HLS_SC(limb_t,sum,full_sum&limb_mask);
-        
-        typedef ct_limb<sum,typename lower::value> value;
-    };
-    
-    template<int x>
-    struct worker<x,ct_zero,ct_zero>
-    {
-        HLS_SC(limb_t,carry,0);
-        typedef ct_zero value;
-    };
-    
-    typedef typename worker<0,FA,FB>::value raw;
-    
-public:
-    typedef typename ct_canonicalise<raw>::value value;
-};
-
 template<class TA, limb_t LB>
 struct ct_mul_single
 {
@@ -472,7 +376,7 @@ struct ct_mul_single
         
         HLS_SC(limb_t,full,(A::limb)*B+(lower::carry));
         HLS_SC(limb_t,carry,full>>limb_bits);
-        HLS_SC(limb_t,prod,full&limb_mask);
+        HLS_SC(limb_t,prod,full&limb_bits);
         
         typedef ct_limb<prod,typename lower::value> value;
     };
@@ -494,7 +398,7 @@ template<class TA,class TB>
 struct ct_mul
 {
 public:
-    
+    BOOST_STATIC_ASSERT(false, "This should never get invoked, missing a specialisation, or invalid input types.");
 };
 
 template<class TA,limb_t LB,class TB>
@@ -504,21 +408,20 @@ private:
     typedef typename ct_mul_single<TA,LB>::value partial;
     typedef typename ct_mul<TA,TB>::value lower;
 
-    typedef typename boost::mpl::if_<
-        boost::mpl::same_as<TB,ct_zero>,
-        ct_zero,
-        typename ct_shift_limbs_left<partial,TB::digit_pos>::value
-    > aligned;
+    typedef typename ct_shift_left<partial>::value aligned;
 public:
     typedef typename ct_add<lower,aligned>::value value;
 };
 
+
 template<class TA>
 struct ct_mul<TA,ct_zero>
 {
- public:
+public:
     typedef ct_zero value;
 };
+
+}; // thls
 
 
 #endif
