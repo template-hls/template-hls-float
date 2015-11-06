@@ -1,6 +1,115 @@
 #include "thls/tops/fp_flopoco_mul_v1.hpp"
 
+#ifndef __SYNTHESIS__
 #include <random>
+#endif
+
+#include <stdint.h>
+
+ap_uint<34> hls_mul(ap_uint<34> a, ap_uint<34> b)
+{
+#pragma HLS INTERFACE ap_ctrl_none register port=return
+#pragma HLS PIPELINE
+
+	fp_flopoco<8,23> fr=mul<8,23>(fp_flopoco<8,23>(fw_uint<34>(a)), fp_flopoco<8,23>(fw_uint<34>(b)));
+	return fr.bits.bits;
+	//return a+b;
+}
+
+ap_uint<66> hls_mul_dbl(ap_uint<66> a, ap_uint<66> b)
+{
+#pragma HLS INTERFACE ap_ctrl_none register port=return
+#pragma HLS PIPELINE
+
+	fp_flopoco<11,52> fr=mul<11,52>(fp_flopoco<11,52>(fw_uint<66>(a)), fp_flopoco<11,52>(fw_uint<66>(b)));
+	return fr.bits.bits;
+	//return a+b;
+}
+
+ap_uint<34> hls_mul_positive(ap_uint<31> a, ap_uint<31> b)
+{
+#pragma HLS INTERFACE ap_ctrl_none register port=return
+#pragma HLS PIPELINE
+
+	fw_uint<34> fa( ap_uint<34>( (ap_uint<3>(0b010),a) ) ), fb( ap_uint<34>( (ap_uint<3>(0b010),b) ) );
+
+	fp_flopoco<8,23> fr=mul<8,23>(fp_flopoco<8,23>(fa), fp_flopoco<8,23>(fb));
+	return fr.bits.bits;
+	//return a+b;
+}
+
+ap_uint<34> hls_mul_v3(ap_uint<34> a, ap_uint<34> b)
+{
+#pragma HLS INTERFACE ap_ctrl_none register port=return
+#pragma HLS PIPELINE
+
+	fp_flopoco<8,23> fr=mul_v3<8,23>(fp_flopoco<8,23>(fw_uint<34>(a)), fp_flopoco<8,23>(fw_uint<34>(b)));
+	return fr.bits.bits;
+	//return a+b;
+}
+
+ap_uint<34> hls_mul4(ap_uint<34> a, ap_uint<34> b, ap_uint<34> c, ap_uint<34> d)
+{
+#pragma HLS INTERFACE ap_ctrl_none register port=return
+#pragma HLS PIPELINE
+
+	fp_flopoco<8,23> ab=mul<8,23>(fp_flopoco<8,23>(fw_uint<34>(a)), fp_flopoco<8,23>(fw_uint<34>(b)));
+	fp_flopoco<8,23> cd=mul<8,23>(fp_flopoco<8,23>(fw_uint<34>(c)), fp_flopoco<8,23>(fw_uint<34>(d)));
+	fp_flopoco<8,23> abcd=mul<8,23>(ab,cd);
+	return abcd.bits.bits;
+	//return a+b;
+}
+
+float ip_mul(float a, float b)
+{
+#pragma HLS INTERFACE ap_ctrl_none register port=return
+#pragma HLS PIPELINE
+
+	return a*b;
+}
+
+double ip_mul_dbl(double a, double b)
+{
+#pragma HLS INTERFACE ap_ctrl_none register port=return
+#pragma HLS PIPELINE
+
+	return a*b;
+}
+
+float ip_mul4(float a, float b, float c, float d)
+{
+#pragma HLS INTERFACE ap_ctrl_none register port=return
+#pragma HLS PIPELINE
+
+	return a*b*c*d;
+}
+
+#ifndef __SYNTHESIS__
+void test_bits()
+{
+    fw_uint<1> t(1), f(0);
+
+    assert(t!=f);
+    assert(t==1);
+    assert(f==0);
+
+    assert( get_bit<0>(t)==1);
+    assert(get_bit<1>(t)==0);
+
+    assert(get_bit<0>(f)==0);
+    assert(get_bit<1>(f)==0);
+
+    fw_uint<8> alt(0b10101010);
+
+    assert(get_bit<0>(alt)==0);
+    assert(get_bit<1>(alt)==1);
+    assert(get_bit<6>(alt)==0);
+    assert(get_bit<7>(alt)==1);
+
+    assert( (get_bits<7,0>(alt)==alt) );
+    assert( (get_bits<6,3>(alt)==0b0101) );
+    assert( (get_bits<7,4>(alt)==0b1010) );
+}
 
 std::mt19937 rng;
 std::uniform_real_distribution<float> urng;
@@ -106,4 +215,4 @@ int main()
 
     return 0;
 }
-	
+#endif
