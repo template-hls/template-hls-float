@@ -13,45 +13,70 @@
 template<int W>
 struct fw_uint
 {
+    // Note that negative widths _are_ allowed, but they
+    // must never be executed.
+    
     static_assert(W<=64, "Width too wide.");
     
     static const int width=W;
     
-    static const uint64_t MASK=(0xFFFFFFFFFFFFFFFFULL>>(64-W));
+    static const uint64_t MASK= (W <= 0) ? 0ull : (0xFFFFFFFFFFFFFFFFULL>>(64-W));
     
     uint64_t bits;
 
     fw_uint()
     	: bits(0)
-    {}
+    {
+        assert(W>=0);
+    }
 
     fw_uint(const fw_uint &x)
     	: bits(x.bits)
-    {}
+    {
+        assert(W>=0);
+    }
+    
+    void operator=(const fw_uint &o)
+    {
+        bits=o.bits;
+    }
 
     template<int WW=W>
-    fw_uint(bool b)
+    explicit fw_uint(bool b)
         : bits(b?1:0)
     {
         THLS_STATIC_ASSERT(WW==1, "Can only construct from bool with W=1.");
+    }
+    
+    template<int WW=W>
+    void operator=(bool b)
+    {
+        THLS_STATIC_ASSERT(WW==1, "Can only construct from bool with W=1.");
+        bits=b?1:0;
     }
 
     explicit fw_uint(int v)
         : bits(v)
     {
+        assert(W>=0);
+        
         assert(v>=0); // must be non-negative
-        assert(v < (1ll<<W)); // Must be in range
+        assert(uint64_t(v) <= MASK); // Must be in range
     }
 
     explicit fw_uint(uint64_t v)
         : bits(v & MASK)
     {
+        assert(W>=0);
+        
         assert(v>=0); // must be non-negative
-        assert(v < (1ll<<W)); // Must be in range
+        assert(v <= MASK); // Must be in range
     }
 
     explicit fw_uint(const char *value)
     {
+        assert(W>=0);
+        
         const char *ep=0;
         bits=strtoull(value, &ep, 0);
         assert(*ep==0);
@@ -68,11 +93,13 @@ struct fw_uint
 #ifndef HLS_SYNTHESIS
     explicit fw_uint(mpz_class x)
     {
+        assert(W>=0);
+        
         if(mpz_sizeinbase(x.get_mpz_t(),2)>W){
             throw std::runtime_error("mpz is too large.");
         }
         std::string dec=x.get_str(); // LAZY
-        const char *ep=0;
+        char *ep=0;
         bits=strtoull(dec.c_str(), &ep, 0);
         assert(*ep==0);
         assert(bits<=MASK);
@@ -212,6 +239,13 @@ struct fw_uint
         return fw_uint(bits>>dist);
     }
 
+    
+    fw_uint operator<<(int dist) const
+    {
+        assert(0<=dist && dist<W);
+        return fw_uint(bits<<dist);
+    }
+
     std::string to_string() const
     {
         std::string acc="";
@@ -242,8 +276,10 @@ struct fw_uint
     #ifndef HLS_SYNTHESIS
     mpz_class to_mpz_class() const
     {
-        std::string dec( to_string() );   // LAZY
-        return mpz_class(dec);
+        static_assert(sizeof(unsigned long)>=4, "Must have 32-bit or bigger longs");
+        unsigned long hi=bits>>32;
+        unsigned long lo=bits&0xFFFFFFFFull;
+        return (mpz_class(hi)<<32) | mpz_class(lo);
     }
     #endif
 
@@ -286,7 +322,12 @@ fw_uint<WA> concat(const fw_uint<WA> &a)
 template<int WA,int WB>
 fw_uint<WA+WB> concat(const fw_uint<WA> &a, const fw_uint<WB> &b)
 {
-    return fw_uint<WA+WB>( (a.bits<<WB)+b.bits );
+    // This is to protect against warnings in paths that will never
+    // be executed, but will still be compiled (i.e. things that
+    // would be fixed with static_if.
+    static const int S=(WB < 0) ? 0 : WB;
+    
+    return fw_uint<WA+WB>( (a.bits<<S)+b.bits );
 }
 
 template<int WA,int WB,int WC>
@@ -297,5 +338,16 @@ template<int WA,int WB,int WC,int WD>
 fw_uint<WA+WB+WC+WD> concat(const fw_uint<WA> &a, const fw_uint<WB> &b, const fw_uint<WC> &c, const fw_uint<WD> &d)
 { return concat(concat(a,b),concat(c,d)); }
 
+
+template<int WD,int WS>
+fw_uint<WD> checked_cast(const fw_uint<WS> &s)
+{
+    if(WD==WS){
+        return fw_uint<WD>(s.bits);
+    }else{
+        assert(0);
+        return ~fw_uint<WD>(); // Poison with ones
+    }
+}
 
 #endif

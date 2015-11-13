@@ -9,6 +9,12 @@
 
    Construction and conversion are extremely strict, and explicit
    casting is needed in almost all places.
+   
+   Because we don't have static_if, it is very likely that there
+   will be code-paths which are compiled, but don't get executed
+   in any run-time path. So it is legal for negative widths to
+   be compiled, but it is illegal (undefined) if any such number
+   is instantiated at run-time.
 
    Implicit constructors are:
 
@@ -115,8 +121,19 @@ namespace detail
     { static const int value = 1; };
 };
 
-//#include "fw_uint_on_cpp_int.hpp"
-#include "fw_uint_on_masked_uint.hpp"
+#include "fw_uint_on_cpp_int.hpp"
+//#include "fw_uint_on_masked_uint.hpp"
+
+
+/*! Does a cast from on width to another. The two widths
+  may be different at compile time, but if the path is
+  executed it must be the case that WD==WS. If that is
+  not true, the function will assert and poison the result
+  if possible.
+*/
+template<int WD,int WS>
+fw_uint<WD> checked_cast(const fw_uint<WS> &s);
+
 
 template<int HI,int LO,int W>
 fw_uint<HI-LO+1> get_bits(const fw_uint<W> &x);
@@ -176,6 +193,38 @@ fw_uint<P+W> opad_lo(const fw_uint<W> &x)
 {
   return concat(x,og<P>());
 }
+
+template<int W>
+fw_uint<W> select(bool b, const fw_uint<W> &a, const fw_uint<W> &c)
+{
+  if(b){
+    return a;
+  }else{
+    return c;
+  }
+}
+
+template<int WD,int WA>
+struct lut
+{
+private:
+  fw_uint<WD> entries[1<<WA];
+public:
+  template<class TInit>
+  lut(const TInit &init)
+  {
+    for(int i=0; i< (1<<WA); i++){
+      entries[i]=fw_uint<WD>(init(i));
+    }
+  }
+
+  const fw_uint<WD> &operator()(const fw_uint<WA> &addr) const
+  {
+    return entries[addr.to_int()];
+  }
+  
+};
+
 
 
 #endif

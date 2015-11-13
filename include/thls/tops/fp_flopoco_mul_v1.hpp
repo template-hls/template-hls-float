@@ -83,8 +83,6 @@ THLS_INLINE fp_flopoco<wER,wFR> mul(const fp_flopoco<wEX,wFX> &x, const fp_flopo
 	//  exponent update is in parallel to the mantissa shift, so get back there
     fw_uint<3+wER+wFR> R;
 
-    //check is rounding is needed
-#if 0
     // TODO : For now the negative shifts in this path cause problems.
     if (1+wFR >= wFX+wFY+2) {
         /* => no rounding needed - possible padding;
@@ -103,7 +101,6 @@ THLS_INLINE fp_flopoco<wER,wFR> mul(const fp_flopoco<wEX,wFX> &x, const fp_flopo
         R = concat(finalExc,sign, get_bits<wER-1,0>(expPostNorm), resSig);
     }
     else{
-#endif
         // significand normalization shift
         fw_uint<sigProdSize> sigProdExt = norm==1 ? concat(get_bits<sigProdSize-2,0>(sigProd) , zg<1>())
                                                   : concat(get_bits<sigProdSize-3,0>(sigProd) , zg<2>());
@@ -133,9 +130,7 @@ THLS_INLINE fp_flopoco<wER,wFR> mul(const fp_flopoco<wEX,wFX> &x, const fp_flopo
         fw_uint<2> finalExc=(exc==0b11||exc==0b10||exc==0b00).to_bool() ? exc : excPostNorm;
 
         R = concat(finalExc,sign, get_bits<wER+wFR-1,0>(expSigPostRound));
-#if 0
     }
-#endif
 
     return fp_flopoco<wER,wFR>(R);
 }

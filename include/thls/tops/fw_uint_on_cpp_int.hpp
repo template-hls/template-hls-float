@@ -30,7 +30,7 @@ struct fw_uint
     {}
 
     template<int WW=W>
-    fw_uint(bool b)
+    explicit fw_uint(bool b)
         : bits(b)
     {
         THLS_STATIC_ASSERT(WW==1, "Can only construct from bool with W=1.");
@@ -39,15 +39,17 @@ struct fw_uint
     explicit fw_uint(int v)
         : bits(v)
     {
+        assert(W>=0);
         assert(v>=0); // must be non-negative
-        assert(v < (1ll<<W)); // Must be in range
+        assert(v < (1ll<< (W<0 ? 0 : W))); // Must be in range
     }
 
     explicit fw_uint(uint64_t v)
         : bits(v)
     {
+        assert(W>=0);
         assert(v>=0); // must be non-negative
-        assert(v < (1ll<<W)); // Must be in range
+        assert(v < (1ll<< (W<0 ? 0 : W))); // Must be in range
     }
 
     explicit fw_uint(const char *value)
@@ -216,6 +218,12 @@ struct fw_uint
         assert(0<=dist && dist<W);
         return fw_uint(bits>>dist);
     }
+    
+    fw_uint operator<<(int dist) const
+    {
+        assert(0<=dist && dist<W);
+        return fw_uint(bits<<dist);
+    }
 
     std::string to_string() const
     {
@@ -246,8 +254,17 @@ struct fw_uint
     #ifndef HLS_SYNTHESIS
     mpz_class to_mpz_class() const
     {
-        std::string dec( bits.to_string() );   // LAZY
-        return mpz_class(dec);
+        mpz_class res;
+        backend_t tmp=bits;
+        
+        int shift=0;
+        while(tmp!=0){
+            res=res+(mpz_class((uint64_t)tmp)<<shift);
+            shift+=64;
+            tmp=tmp>>64;
+        }
+        
+        return res;
     }
     #endif
 
@@ -303,5 +320,15 @@ template<int WA,int WB,int WC,int WD>
 fw_uint<WA+WB+WC+WD> concat(const fw_uint<WA> &a, const fw_uint<WB> &b, const fw_uint<WC> &c, const fw_uint<WD> &d)
 { return concat(concat(a,b),concat(c,d)); }
 
+template<int WD,int WS>
+fw_uint<WD> checked_cast(const fw_uint<WS> &s)
+{
+    if(WD==WS){
+        return fw_uint<WD>(s.bits);
+    }else{
+        assert(0);
+        return ~fw_uint<WD>(); // Poison with ones
+    }
+}
 
 #endif

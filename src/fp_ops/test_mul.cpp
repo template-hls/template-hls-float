@@ -6,6 +6,8 @@ std::mt19937 rng;
 std::uniform_real_distribution<float> urng;
 std::normal_distribution<float> grng;
 
+using namespace thls;
+
 template<class TImpl>
 void test_impl(TImpl &impl)
 {
@@ -87,20 +89,19 @@ void test_impl(TImpl &impl)
 
 int main()
 {
-    test_bits();
 
-    for(float a=0;a<10;a++){
+    /*for(float a=0;a<10;a++){
         fp_flopoco<8,23> fa(a);
 
         #ifndef __SYNTHESIS__
         std::cerr<<"a="<<a<<", fa="<<fa.str()<<" \n    = "<<fa.to_float()<<"\n";
         #endif
-    }
+    }*/
 
 
     test_impl(mul<8,23,8,23,8,23>);
-    test_impl(mul_v2<8,23,8,23,8,23>);
-    test_impl(mul_v3<8,23,8,23,8,23>);
+    //test_impl(mul_v2<8,23,8,23,8,23>);
+    //test_impl(mul_v3<8,23,8,23,8,23>);
 
 
 

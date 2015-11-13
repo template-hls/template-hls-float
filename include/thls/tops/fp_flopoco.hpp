@@ -5,6 +5,8 @@
 
 #ifndef HLS_SYNTHESIS
 #include <mpfr.h>
+#include <iostream>
+#include <sstream>
 #endif
 
 namespace thls
@@ -20,6 +22,8 @@ struct fp_flopoco
     THLS_CONSTEXPR fp_flopoco(const fw_uint<3+ExpBits+FracBits> &_bits)
         : bits(_bits)
     {}
+        
+    THLS_CONSTEXPR fp_flopoco(float f);
 
 #ifndef THLS_SYNTHESIS
     // If allowUnderOrOverflow is on, then exponents out of range
@@ -86,6 +90,12 @@ struct fp_flopoco
 
     bool is_neg_inf() const
     { return is_negative() && is_inf(); }
+    
+    float to_float() const;
+    
+    #ifndef THLS_SYNTHESIS
+    std::string str() const;
+    #endif
 };
 
 }; // thls
@@ -317,10 +327,18 @@ fp_flopoco<ExpBits,FracBits>::fp_flopoco(mpfr_t x, bool allowUnderOrOverflow)
     }else if(mpfr_inf_p(x)){
         bits = (mpfr_sgn(x) > 0 ? traits::infinity() : traits::neg_infinity()).bits;
     }else if(mpfr_zero_p(x)){
+        // TODO : Negative zero?
         bits=fw_uint<3+ExpBits+FracBits>();
-    }else{
+    }else{        
         mpz_class fracBits; // Fraction as integer. So in range [2^FracBits..2^(FracBits+1)) rather than [1..1-2^FracBits)
         int e=mpfr_get_z_2exp(fracBits.get_mpz_t(), x);
+        
+        bool negative=false;
+        if(fracBits < 0){
+            negative=true;
+            fracBits=-fracBits;
+        }
+        
 
         // Check for explicit bit
         assert(mpz_tstbit(fracBits.get_mpz_t(), FracBits));
@@ -332,7 +350,7 @@ fp_flopoco<ExpBits,FracBits>::fp_flopoco(mpfr_t x, bool allowUnderOrOverflow)
         //std::cerr<<" 2^"<<e<<" * (2^"<<FracBits<<" + "<<fracBits<<") / 2^("<<FracBits<<")\n";
 
         fw_uint<2> flags(0b01);
-        fw_uint<1> sign(mpfr_sgn(x)<0);
+        fw_uint<1> sign(negative);
         fw_uint<ExpBits> expnt;
         fw_uint<FracBits> frac( fracBits );
 
@@ -370,12 +388,13 @@ void fp_flopoco<ExpBits,FracBits>::get(mpfr_t dst, mpfr_rnd_t mode) const
     typedef std::numeric_limits<fp_flopoco> traits;
 
     fw_uint<2> flags=get_bits<ExpBits+FracBits+2,ExpBits+FracBits+1>(bits);
+    bool negative=get_bit<ExpBits+FracBits>(bits);
 
     if(flags==fw_uint<2>(0b00)){
-        std::cerr<<"Zero in\n";
-        mpfr_set_zero(dst, get_bit<ExpBits+FracBits>(bits) ? -1 : +1);
+        //std::cerr<<"Zero in\n";
+        mpfr_set_zero(dst, negative ? -1 : +1);
     }else if(flags==fw_uint<2>(0b10)){
-        mpfr_set_inf(dst, get_bit<ExpBits+FracBits>(bits) ? -1 : +1);
+        mpfr_set_inf(dst, negative ? -1 : +1);
     }else if(flags==fw_uint<2>(0b11)){
         mpfr_set_nan(dst);
     }else{
@@ -385,8 +404,13 @@ void fp_flopoco<ExpBits,FracBits>::get(mpfr_t dst, mpfr_rnd_t mode) const
         int e=get_bits<FracBits+ExpBits-1,FracBits>(bits).to_int();
         e=e-FracBits-traits::bias; // Move from fraction to integer
 
-        mpfr_set_z_2exp(dst, fracBits.get_mpz_t(), e, mode);
+        mpfr_set_z_2exp(dst, fracBits.get_mpz_t(), e, mode);        
+            
+        if(negative){
+            mpfr_mul_si(dst, dst, -1, MPFR_RNDN);
+        }
     }
+    
 }
 
 
@@ -412,88 +436,107 @@ fp_flopoco<ER,FR> ref_mul(const fp_flopoco<EA,FA> &a, const fp_flopoco<EB,FB> &b
     return res;
 }
 
+template<int ER,int FR,int EA,int FA,int EB,int FB>
+fp_flopoco<ER,FR> ref_add(const fp_flopoco<EA,FA> &a, const fp_flopoco<EB,FB> &b)
+{
+    mpfr_t ma, mb, mr;
+    mpfr_init2(ma,FA+1);
+    mpfr_init2(mb,FB+1);
+    mpfr_init2(mr,FR+1);
+
+    a.get(ma);
+    b.get(mb);
+
+    mpfr_add(mr,ma,mb,MPFR_RNDN);
+
+    fp_flopoco<ER,FR> res(mr,true);
+
+    mpfr_clear(ma);
+    mpfr_clear(mb);
+    mpfr_clear(mr);
+
+    return res;
+}
+
 #endif
 
 
-/*
+template<int ExpBits,int FracBits>
+float fp_flopoco<ExpBits,FracBits>::to_float() const
+{
+    assert(FracBits==23);
+    assert(ExpBits==8);
+    if(get_bits<FracBits+ExpBits+2,FracBits+ExpBits+1>(bits)==0b00){
+        return 0;
+    }else if(get_bits<FracBits+ExpBits+2,FracBits+ExpBits+1>(bits)==0b10){
+        return get_bit<FracBits+ExpBits>(bits) ? -INFINITY : +INFINITY;
+    }else if(get_bits<FracBits+ExpBits+2,FracBits+ExpBits+1>(bits)==0b11){
+        return NAN;
+    }else{
+        fw_uint<23> frac=get_bits<FracBits-1,0>(bits);
+        fw_uint<8> expnt=get_bits<ExpBits+FracBits-1,FracBits>(bits);
+
+        float f=ldexp(frac.to_int(),-24)+0.5f;
+        f=ldexp(f, expnt.to_int()-126);
+        return get_bit<ExpBits+FracBits>(bits) ? -f : +f;
+    }
+}
 
 #ifndef __SYNTHESIS__
-    float to_float() const
-    {
-        assert(FracBits==23);
-        assert(ExpBits==8);
-        if(get_bits<FracBits+ExpBits+2,FracBits+ExpBits+1>(bits)==0b00){
-            return 0;
-        }else if(get_bits<FracBits+ExpBits+2,FracBits+ExpBits+1>(bits)==0b10){
-            return get_bit<FracBits+ExpBits>(bits) ? -INFINITY : +INFINITY;
-        }else if(get_bits<FracBits+ExpBits+2,FracBits+ExpBits+1>(bits)==0b11){
-            return NAN;
-        }else{
-            fw_uint<23> frac=get_bits<FracBits-1,0>(bits);
-            fw_uint<8> expnt=get_bits<ExpBits+FracBits-1,FracBits>(bits);
+template<int ExpBits,int FracBits>
+std::string fp_flopoco<ExpBits,FracBits>::str() const
+{
+    std::stringstream acc;
+    acc<<bits.to_string();
+    fw_uint<2> flags=get_bits<ExpBits+FracBits+2,ExpBits+FracBits+1>(bits);
+    fw_uint<1> negative=get_bit<ExpBits+FracBits>(bits);
+    if(flags==0b00){
+        acc<<(negative==1 ? "-zero" : "+zero");
+    }else if(flags==0b01){
+        acc<<" normal";
 
-            float f=ldexp(frac.to_int(),-24)+0.5f;
-            f=ldexp(f, expnt.to_int()-126);
-            return get_bit<ExpBits+FracBits>(bits) ? -f : +f;
-        }
+        fw_uint<ExpBits> expnt=get_bits<ExpBits+FracBits-1,FracBits>(bits);
+        fw_uint<FracBits> frac=get_bits<FracBits-1,0>(bits);
+        acc<<" expnt="<<expnt<<"="<<(expnt.to_int()-126);
+        acc<<" frac="<<frac<<"="<<(ldexp(frac.to_int()+(1<<FracBits),-FracBits-1));
+    }else if(flags==0b10){
+        acc<<(negative==1 ? "-inf" : "+inf");
+    }else{
+        acc<<" nan";
     }
-	#endif
-
-    #ifndef __SYNTHESIS__
-    std::string str() const
-    {
-        std::stringstream acc;
-        acc<<bits.to_string();
-        fw_uint<2> flags=get_bits<ExpBits+FracBits+2,ExpBits+FracBits+1>(bits);
-        if(flags==0b00){
-            acc<<" zero";
-        }else if(flags==0b01){
-            acc<<" normal";
-
-            fw_uint<ExpBits> expnt=get_bits<ExpBits+FracBits-1,FracBits>(bits);
-            fw_uint<FracBits> frac=get_bits<FracBits-1,0>(bits);
-            acc<<" expnt="<<expnt<<"="<<(expnt.to_int()-126);
-            acc<<" frac="<<frac<<"="<<(ldexp(frac.to_int()+(1<<FracBits),-FracBits-1));
-        }else if(flags==0b10){
-            acc<<" infinity";
-        }else{
-            acc<<" nan";
-        }
-        return acc.str();
-    }
-    #endif
-
-#ifndef __SYNTHESIS__
-    fp_flopoco(float x)
-    {
-        assert(FracBits==23);
-        assert(ExpBits==8);
-
-        if(x==0){
-            bits=zpad_lo<31>(fw_uint<3>(0b000));
-        }else if(std::isinf(x)){
-            if(x<0){
-                bits=zpad_lo<31>(fw_uint<3>(0b101));
-            }else{
-                bits=zpad_lo<31>(fw_uint<3>(0b100));
-            }
-        }else if(std::isnan(x)){
-            bits=zpad_lo<31>(fw_uint<3>(0b110));
-        }else{
-            fw_uint<1> s(x < 0);
-            x=std::abs  (x);
-
-            int e;
-            float f=frexp(x, &e);
-            f=ldexp(f-0.5,24);
-            fw_uint<23> frac((int)f);
-            fw_uint<8> expnt(e+126);
-
-            bits=concat(fw_uint<2>(0b01),s,expnt,frac);
-        }
-    }
+    return acc.str();
+}
 #endif
-*/
+
+template<int ExpBits,int FracBits>
+fp_flopoco<ExpBits,FracBits>::fp_flopoco(float x)
+{
+    assert(FracBits==23);
+    assert(ExpBits==8);
+
+    if(x==0){
+        bits=zpad_lo<31>(fw_uint<3>(0b000));
+    }else if(std::isinf(x)){
+        if(x<0){
+            bits=zpad_lo<31>(fw_uint<3>(0b101));
+        }else{
+            bits=zpad_lo<31>(fw_uint<3>(0b100));
+        }
+    }else if(std::isnan(x)){
+        bits=zpad_lo<31>(fw_uint<3>(0b110));
+    }else{
+        fw_uint<1> s(x < 0);
+        x=std::abs  (x);
+
+        int e;
+        float f=frexp(x, &e);
+        f=ldexp(f-0.5,24);
+        fw_uint<23> frac((int)f);
+        fw_uint<8> expnt(e+126);
+
+        bits=concat(fw_uint<2>(0b01),s,expnt,frac);
+    }
+}
 
 }; // thls
 

@@ -32,7 +32,7 @@ struct fw_uint
     {}
     #else
     template<int WW=W>
-    fw_uint(bool b)
+    explicit fw_uint(bool b)
         : bits(b)
     {
         assert(WW==1);
@@ -214,6 +214,12 @@ struct fw_uint
     {
         assert(0<=dist && dist<W);
         return fw_uint(bits>>dist);
+    }
+    
+    fw_uint operator<<(int dist) const
+    {
+        assert(0<=dist && dist<W);
+        return fw_uint(bits<<dist);
     }
 
     std::string to_string() const

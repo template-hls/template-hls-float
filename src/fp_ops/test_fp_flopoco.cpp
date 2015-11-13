@@ -18,6 +18,8 @@ void test1()
 
     mpfr_set_inf(in, -1);
     traits::neg_infinity().get(out);
+    std::cerr<<traits::neg_infinity().str()<<"\n";
+    mpfr_fprintf(stderr, "%Rg\n", out);
     assert(mpfr_equal_p(in,out));
 
     traits::quiet_NaN().get(out);
