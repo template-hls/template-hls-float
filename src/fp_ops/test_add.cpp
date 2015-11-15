@@ -11,122 +11,129 @@ std::exponential_distribution<float> erng;
 
 using namespace thls;
 
-template<class TImpl>
-void test_add(const TImpl &impl, float a, float b)
+template<class TType,class TImpl>
+void test_add(const TImpl &impl, const TType &fa, const TType &fb)
 {
-	fp_flopoco<8,23> fa(a), fb(b);
-
-	fp_flopoco<8,23> fr=impl(fa,fb);
-
-	#ifndef __SYNTHESIS__
-	//std::cerr<<a<<" ("<<fa.str()<<" = "<<fa.to_float()<<")\n+\n"<<b<<" ("<<fb.str()<<" = "<<fb.to_float()<<")\n=\n"<<fr.to_float()<<" ("<<fr.str()<<"\n\n";
-	#endif
-
-	//assert( (a+b)==fr.to_float());
-	float ref=a+b;
-	float up=nextafterf(a+b, DBL_MAX);
-	float down=nextafterf(a+b, -DBL_MAX);
-	float got=fr.to_float();
+	TType fgot=impl(fa,fb, 0); // Version without debug output
+	TType fref;
+	ref_add(fref, fa, fb);
 	
-	fp_flopoco<8,23> fref=ref_add<8,23>(fa, fb);
-	float gfref=fref.to_float();
 	
-	if(gfref!=ref){
-		fprintf(stderr, "%.12g + %.12g = %.12g, %.12g\n", a, b, gfref, ref);
+	if(!fref.equals(fgot)){
+		impl(fa,fb, 1); // Do version with debug output
+		
+		std::cerr<<"  a : "<<fa.str()<<"  "<<fa.to_double_approx()<<"\n";
+		std::cerr<<" + \n";
+		std::cerr<<"  b : "<<fa.str()<<"  "<<fa.to_double_approx()<<"\n";		
+		std::cerr<<" = \n";
+		std::cerr<<"ref : "<<fref.str()<<"  "<<fref.to_double_approx()<<"\n";		
+		std::cerr<<" vs \n";
+		std::cerr<<"ref : "<<fgot.str()<<"  "<<fgot.to_double_approx()<<"\n";		
+		
+		std::stringstream tmp;
+		tmp<<fa.bits<<" "<<fb.bits<<" \n";
+		tmp<<"1 "<<fref.bits<<" \n";
+		
+		std::cerr<<tmp.str()<<"\n";
+		
+		exit(1);
 	}
-	
-	if(std::isinf(ref)){
-		if(!std::isinf(got)){
-					std::cerr<<a<<" ("<<fa.str()<<" = "<<fa.to_float()<<")\n+\n"<<b<<" ("<<fb.str()<<" = "<<fb.to_float()<<")\n=\n"<<fr.to_float()<<" ("<<fr.str()<<"\n\n";
-		}
-		assert(std::isinf(got));
-	}else if(std::isnan(ref)){
-		if(!std::isnan(got)){
-					std::cerr<<a<<" ("<<fa.str()<<" = "<<fa.to_float()<<")\n+\n"<<b<<" ("<<fb.str()<<" = "<<fb.to_float()<<")\n=\n"<<fr.to_float()<<" ("<<fr.str()<<"\n\n";
-		}
-		assert(std::isnan(got));
-	}else if( (got<down) || (up <got) ){
-		std::cerr<<a<<" ("<<fa.str()<<" = "<<fa.to_float()<<")\n+\n"<<b<<" ("<<fb.str()<<" = "<<fb.to_float()<<")\n=\n"<<fr.to_float()<<" ("<<fr.str()<<"\n\n";
-		assert( down<=got && got<=up);
-	}
-	
 }
 
-template<class TImpl>
+template<class TType ,class TImpl>
 void test_impl(TImpl &impl)
 {	
-	test_add<TImpl>(impl, 1.0f,1.0f);
-	test_add<TImpl>(impl, 2.0f,2.0f);
-	test_add<TImpl>(impl, 1.5f,1.5f);
-	test_add<TImpl>(impl, 1.1f,1.1f);
-	test_add<TImpl>(impl, 1.0f,1.8f);
-	test_add<TImpl>(impl, 1.0f,1.5f);
-	test_add<TImpl>(impl, 1.5f,1.5f);
+	typedef std::numeric_limits<TType> limits_t;
 	
-	std::vector<float> args;
+	std::vector<TType> args;
 	
-	for(float a=0; a<=+5; a++){
-	    args.push_back(a);
+	mpfr_t tmp;
+	mpfr_init2(tmp, TType::frac_bits+1);
+	
+	for(float a=-5; a<=+5; a++){
+		mpfr_set_d(tmp, a, MPFR_RNDN);
+	    args.push_back(TType(tmp));
 	}
 	
-	args.push_back(+INFINITY);
-	args.push_back(-INFINITY);
+	args.push_back(limits_t::infinity());
+	args.push_back(limits_t::neg_infinity());
 	
-	float oU=1.0f, oD=1.0f;
+	
+	mpfr_set_d(tmp, 1, MPFR_RNDN);
 	for(int i=0;i<20;i++){
-		oU=nextafterf(oU,2);
-		oD=nextafterf(oD,0);
-		args.push_back(oU);
-		args.push_back(oU/2);
-		args.push_back(oU/4);
-		args.push_back(-oU);
-		args.push_back(oD);
-		args.push_back(oD/2);
-		args.push_back(oD/4);
-		args.push_back(-oD);
-	}
-
-	for(int i=0; i<1000; i++){
-		float b=urng(rng);
-		args.push_back(b);
-	}
-
-	for(int i=0; i<1000; i++){
-	    float a=grng(rng);
-	        
-	    args.push_back(a);
+		mpfr_nextabove(tmp);
+		args.push_back(TType(tmp));
 	}
 	
-	for(int i=0; i<1000; i++){
-	    float a=erng(rng);
-	        
-	    args.push_back(a);
+	mpfr_set_d(tmp, 1, MPFR_RNDN);
+	for(int i=0;i<20;i++){
+		mpfr_nextbelow(tmp);
+		args.push_back(TType(tmp));
 	}
-
+	
+	gmp_randstate_t state;
+	gmp_randinit_default(state);
+	
+	for(int i=0; i<10; i++){
+		mpfr_urandomb(tmp, state);
+		args.push_back(TType(tmp));
+	}
+	
+	mpfr_t tmp2;
+	mpfr_init2(tmp2, TType::frac_bits+1);
+	
 	for(int i=0; i<1000; i++){
-		float a=grng(rng)/grng(rng);
+		mpfr_urandomb(tmp, state);
+		args.push_back(TType(tmp));
 		
-		args.push_back(a);
+		mpfr_grandom(tmp, tmp2, state, MPFR_RNDN);
+		args.push_back(TType(tmp));
+		args.push_back(TType(tmp2));
+		
+		mpfr_div(tmp, tmp, tmp2, MPFR_RNDN);
+		args.push_back(TType(tmp));
 	}
 	
-	for(int i=0; i<args.size(); i++){
+	mpfr_clear(tmp2);
+	gmp_randclear(state);
+
+	
+	for(unsigned i=0; i<args.size(); i++){
 		std::cerr<<"i = "<<i<<"\n";
-		for(int j=0; j<args.size(); j++){
-			test_add(impl, args[i], args[j]);
+		for(unsigned j=0; j<args.size(); j++){
+			test_add<TType >(impl, args[i], args[j]);
 		}	
 	}
+	
+	mpfr_clear(tmp);
 }
 
 
 int main()
 {
 	
-	fprintf(stderr, "WARNING : This only appears to be faithfully rounded.\n");
+	test_impl<fp_flopoco<8,26>>(add<8,26,8,26,8,26>);
+	test_impl<fp_flopoco<8,25>>(add<8,25,8,25,8,25>);
+	test_impl<fp_flopoco<8,24>>(add<8,24,8,24,8,24>);
+	test_impl<fp_flopoco<8,23>>(add<8,23,8,23,8,23>);
+	test_impl<fp_flopoco<8,22>>(add<8,22,8,22,8,22>);
+	test_impl<fp_flopoco<8,21>>(add<8,21,8,21,8,21>);
+	test_impl<fp_flopoco<8,20>>(add<8,20,8,20,8,20>);
+	test_impl<fp_flopoco<8,19>>(add<8,19,8,19,8,19>);
+	test_impl<fp_flopoco<8,18>>(add<8,18,8,18,8,18>);
+	test_impl<fp_flopoco<8,17>>(add<8,17,8,17,8,17>);
+	test_impl<fp_flopoco<8,16>>(add<8,16,8,16,8,16>);
+	test_impl<fp_flopoco<8,15>>(add<8,15,8,15,8,15>);
+	test_impl<fp_flopoco<8,14>>(add<8,14,8,14,8,14>);
+	test_impl<fp_flopoco<8,13>>(add<8,13,8,13,8,13>);
+	
+	// FAIL:
+	//test_impl<fp_flopoco<8,12>>(add<8,12,8,12,8,12>);
+	//test_impl<fp_flopoco<8,11>>(add<8,11,8,11,8,11>);
 
-    test_impl(add<8,23,8,23,8,23>);
   
 	fprintf(stderr, "Done\n");
-	fprintf(stderr, "WARNING : This only appears to be faithfully rounded.\n");
+
 
     return 0;
 }

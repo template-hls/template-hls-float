@@ -7,9 +7,8 @@ namespace thls
 {
 
 template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
-THLS_INLINE fp_flopoco<wER,wFR> mul(const fp_flopoco<wEX,wFX> &x, const fp_flopoco<wEY,wFY> &y)
+THLS_INLINE fp_flopoco<wER,wFR> mul(const fp_flopoco<wEX,wFX> &x, const fp_flopoco<wEY,wFY> &y, int DEBUG=0)
 {
-	static const int DEBUG=0;
 
     fw_uint<wEX+wFY+3> X=x.bits;
     fw_uint<wEX+wFY+3> Y=y.bits;
@@ -83,7 +82,7 @@ THLS_INLINE fp_flopoco<wER,wFR> mul(const fp_flopoco<wEX,wFX> &x, const fp_flopo
 	//  exponent update is in parallel to the mantissa shift, so get back there
     fw_uint<3+wER+wFR> R;
 
-    // TODO : For now the negative shifts in this path cause problems.
+    
     if (1+wFR >= wFX+wFY+2) {
         /* => no rounding needed - possible padding;
            in this case correctlyRounded_ is irrelevant: result is exact  */
