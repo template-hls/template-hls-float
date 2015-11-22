@@ -3,7 +3,7 @@
 
 #include <thls/tops/fw_uint.hpp>
 
-#ifndef HLS_SYNTHESIS
+#ifndef THLS_SYNTHESIS
 #include <mpfr.h>
 #include <iostream>
 #include <sstream>
@@ -11,7 +11,7 @@
 
 namespace thls
 {
-
+  
 template<int ExpBits,int FracBits>
 struct fp_flopoco
 {
@@ -492,8 +492,6 @@ void ref_add(fp_flopoco<ER,FR> &dst, const fp_flopoco<EA,FA> &a, const fp_flopoc
     dst=ref_add<ER,FR>(a,b);
 }
 
-#endif
-
 
 template<int ExpBits,int FracBits>
 double fp_flopoco<ExpBits,FracBits>::to_double_approx() const
@@ -506,7 +504,6 @@ double fp_flopoco<ExpBits,FracBits>::to_double_approx() const
     return r;
 }
 
-#ifndef __SYNTHESIS__
 template<int ExpBits,int FracBits>
 std::string fp_flopoco<ExpBits,FracBits>::str() const
 {

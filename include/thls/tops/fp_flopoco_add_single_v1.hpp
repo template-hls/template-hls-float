@@ -18,6 +18,7 @@ struct intlog2<0>
     enum{ value = 0 };
 };
 
+
 template<int maxPlaces, int WD, int WC>
 void LZOCShifter(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint<WD> &x)
 {
@@ -40,6 +41,56 @@ void LZOCShifter(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint<WD> &x)
     count=nZerosNew;
     out=shifted;
 }
+
+
+/*
+template<int WD, int WC>
+class LZOCShifterImpl
+{
+public:
+    static void go(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint<WD> &x)
+    {
+        fw_uint<1> hiCount;
+        auto mid=
+        
+        
+        fw_uint<WC-1> loCount;
+        LZOCShifterImpl<WD,WC-1>::go(out, loCount, mid);
+        
+        out=concat(hiCount,loCount);
+    }
+};
+
+
+template<int WD>
+class LZOCShifterImpl<WD,2>
+{
+public:
+    static void go(fw_uint<WD> &out, fw_uint<1> &count, const fw_uint<WD> &x)
+    {
+        fw_uint<1> hiCount=get_bits<WD-1,WD-2>(x)==0;
+    }
+};
+
+template<int WD>
+class LZOCShifterImpl<WD,1>
+{
+public:
+    static void go(fw_uint<WD> &out, fw_uint<1> &count, const fw_uint<WD> &x)
+    {
+        auto doIt=get_bit<WD-1>(x);
+        out=select(doIt, out<<1, out);
+        count=doIt;
+    }
+};
+
+
+
+template<int maxPlaces, int WD, int WC>
+void LZOCShifter(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint<WD> &x)
+{
+    return LZOCShifterImpl<maxPlaces,WD,WC>::go(out,count,x);
+}*/
 
 template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
 THLS_INLINE fp_flopoco<wER,wFR> add(const fp_flopoco<wEX,wFX> &x, const fp_flopoco<wEY,wFY> &y, int DEBUG=0)

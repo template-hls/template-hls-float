@@ -152,6 +152,57 @@ fw_uint<1> get_bit(const fw_uint<W> &x)
     return get_bits<B,B,W>(x);
 }
 
+
+template<int W>
+fw_uint<1> take_lsb(const fw_uint<W> &x)
+{
+  return get_bit<0>(x);
+}
+
+template<int W>
+fw_uint<W-1> drop_lsb(const fw_uint<W> &x)
+{
+  return get_bits<W-1,1>(x);
+}
+
+template<int W>
+fw_uint<1> take_msb(const fw_uint<W> &x)
+{
+  return get_bit<W-1>(x);
+}
+
+template<int W>
+fw_uint<W-1> drop_msb(const fw_uint<W> &x)
+{
+  return get_bits<W-2,0>(x);
+}
+
+
+template<int B,int W>
+fw_uint<B> take_lsbs(const fw_uint<W> &x)
+{
+  return get_bits<B-1,0>(x);
+}
+
+template<int B,int W>
+fw_uint<W-B> drop_lsbs(const fw_uint<W> &x)
+{
+  return get_bits<W-1,B>(x);
+}
+
+template<int B,int W>
+fw_uint<B> take_msbs(const fw_uint<W> &x)
+{
+  return get_bits<W-1,W-B>(x);
+}
+
+template<int B,int W>
+fw_uint<W-B> drop_msbs(const fw_uint<W> &x)
+{
+  return get_bits<W-1-B,0>(x);
+}
+
+
 template<int A,int B>
 fw_uint<A+B> full_mul(const fw_uint<A> &a, const fw_uint<B> &b)
 {
@@ -192,6 +243,14 @@ template<int P,int W>
 fw_uint<P+W> opad_lo(const fw_uint<W> &x)
 {
   return concat(x,og<P>());
+}
+
+
+template<int B,int W>
+fw_uint<B> extu(const fw_uint<W> &x)
+{
+  static_assert(B>=W, "Cannot extend to smaller width.");
+  return zpad_hi<B-W>(x);
 }
 
 template<int W>

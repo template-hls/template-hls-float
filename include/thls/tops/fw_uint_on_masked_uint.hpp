@@ -268,6 +268,16 @@ struct fw_uint
         unsigned long lo=bits&0xFFFFFFFFull;
         return (mpz_class(hi)<<32) | mpz_class(lo);
     }
+    
+    void to_mpz(mpz_t dst) const
+    {
+        static_assert(sizeof(unsigned long)>=4, "Must have 32-bit or bigger longs");
+        unsigned long hi=bits>>32;
+        unsigned long lo=bits&0xFFFFFFFFull;
+        mpz_set_ui(dst, hi);
+        mpz_mul_2exp(dst, dst, 32);
+        mpz_add_ui(dst, dst, lo);
+    }
     #endif
 
     //explicit operator bool() const
@@ -298,7 +308,7 @@ template<int HI,int LO,int W>
 fw_uint<HI-LO+1> get_bits(const fw_uint<W> &x)
 {
     static const int WRES=HI-LO+1;
-    static const uint64_t MRES=0xFFFFFFFFFFFFFFFFUL>>(64-WRES);
+    static const uint64_t MRES=0xFFFFFFFFFFFFFFFFUL>> (WRES<=0 ? 0 : (64-WRES));
     return fw_uint<HI-LO+1>( (x.bits>>LO) & MRES );
 }
 
