@@ -7,3 +7,9 @@ CPPFLAGS += -DNDEBUG=1 -O3
 CPPFLAGS += -Wno-unknown-pragmas
 
 LDLIBS += -lmpfr -lgmpxx -lgmp
+
+%.ll : %.cpp
+	clang -I ../../include -std=c++11 -O3 -DNDEBUG=1 -S -emit-llvm $< -o $@
+
+%.s : %.cpp
+	clang -I ../../include -std=c++11 -O3 -DNDEBUG=1 -S $< -o $@

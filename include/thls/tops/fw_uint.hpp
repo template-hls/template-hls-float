@@ -9,7 +9,7 @@
 
    Construction and conversion are extremely strict, and explicit
    casting is needed in almost all places.
-   
+
    Because we don't have static_if, it is very likely that there
    will be code-paths which are compiled, but don't get executed
    in any run-time path. So it is legal for negative widths to
@@ -26,7 +26,7 @@
      // This is explicit to avoid calculations being done
      // in ap_uint world when constructing.
      explicit fw_uint<W>(const backend_uint<W> &x);
-     
+
      fw_uint<1>(bool x);      // Only available if W==1
      explicit fw_uint<W>(int x);       // x must be non-negative and < 2**W
      explicit fw_uint<W>(uint64_t x);  // x must be <= 2**W
@@ -72,8 +72,8 @@
 
 */
 
-//#define THLS_INLINE inline __attribute__((always_inline))
-#define THLS_INLINE
+#define THLS_INLINE inline __attribute__((always_inline))
+//#define THLS_INLINE
 
 #include <stdint.h>
 #include <cassert>
@@ -282,7 +282,7 @@ public:
   {
     return entries[addr.to_int()];
   }
-  
+
 };
 
 
