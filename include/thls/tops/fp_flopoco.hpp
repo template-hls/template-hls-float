@@ -3,7 +3,7 @@
 
 #include <thls/tops/fw_uint.hpp>
 
-#ifndef HLS_SYNTHESIS
+#ifndef THLS_SYNTHESIS
 #include <mpfr.h>
 #include <iostream>
 #include <sstream>
@@ -11,10 +11,13 @@
 
 namespace thls
 {
-
+  
 template<int ExpBits,int FracBits>
 struct fp_flopoco
 {
+    enum{ exp_bits = ExpBits };
+    enum{ frac_bits = FracBits };
+    
     THLS_CONSTEXPR fp_flopoco()
         : bits()
     {}
@@ -22,8 +25,6 @@ struct fp_flopoco
     THLS_CONSTEXPR fp_flopoco(const fw_uint<3+ExpBits+FracBits> &_bits)
         : bits(_bits)
     {}
-        
-    THLS_CONSTEXPR fp_flopoco(float f);
 
 #ifndef THLS_SYNTHESIS
     // If allowUnderOrOverflow is on, then exponents out of range
@@ -91,11 +92,25 @@ struct fp_flopoco
     bool is_neg_inf() const
     { return is_negative() && is_inf(); }
     
-    float to_float() const;
     
     #ifndef THLS_SYNTHESIS
+    double to_double_approx() const;
     std::string str() const;
     #endif
+    
+    //! Does a floating-point specific comparison
+    bool equals(const fp_flopoco &o) const
+    {
+        if(get_flags()!=o.get_flags())
+            return false;
+        if(is_nan())
+            return true;
+        if(get_sign()!=o.get_sign())
+            return false;
+        if(!is_normal())
+            return true;
+        return get_exp_bits()==o.get_exp_bits() && get_frac_bits()==o.get_frac_bits();
+    }
 };
 
 }; // thls
@@ -327,8 +342,11 @@ fp_flopoco<ExpBits,FracBits>::fp_flopoco(mpfr_t x, bool allowUnderOrOverflow)
     }else if(mpfr_inf_p(x)){
         bits = (mpfr_sgn(x) > 0 ? traits::infinity() : traits::neg_infinity()).bits;
     }else if(mpfr_zero_p(x)){
-        // TODO : Negative zero?
-        bits=fw_uint<3+ExpBits+FracBits>();
+        // TODO : I cannot work out how we are supposed to get the sign out of
+        // a zero. mpfr_sgn returns 0 if the number is +-zero
+        fw_uint<1> sign(x->_mpfr_sign==-1);
+        
+        bits=concat(zg<2>(),sign,zg<ExpBits+FracBits>());
     }else{        
         mpz_t fracBits; // Fraction as integer. So in range [2^FracBits..2^(FracBits+1)) rather than [1..1-2^FracBits)
 		mpz_init(fracBits);
@@ -429,14 +447,24 @@ fp_flopoco<ER,FR> ref_mul(const fp_flopoco<EA,FA> &a, const fp_flopoco<EB,FB> &b
     b.get(mb);
 
     mpfr_mul(mr,ma,mb,MPFR_RNDN);
+    
+    //mpfr_fprintf(stderr, "mpfr : %Rg * %Rg = %Rg\n", ma, mb, mr);
 
     fp_flopoco<ER,FR> res(mr,true);
+    
+    //std::cerr<<"   = "<<res.str()<<"\n";
 
     mpfr_clear(ma);
     mpfr_clear(mb);
     mpfr_clear(mr);
 
     return res;
+}
+
+template<int ER,int FR,int EA,int FA,int EB,int FB>
+void ref_mul(fp_flopoco<ER,FR> &dst, const fp_flopoco<EA,FA> &a, const fp_flopoco<EB,FB> &b)
+{
+    dst=ref_mul<ER,FR>(a,b);
 }
 
 template<int ER,int FR,int EA,int FA,int EB,int FB>
@@ -461,31 +489,24 @@ fp_flopoco<ER,FR> ref_add(const fp_flopoco<EA,FA> &a, const fp_flopoco<EB,FB> &b
     return res;
 }
 
-#endif
+template<int ER,int FR,int EA,int FA,int EB,int FB>
+void ref_add(fp_flopoco<ER,FR> &dst, const fp_flopoco<EA,FA> &a, const fp_flopoco<EB,FB> &b)
+{
+    dst=ref_add<ER,FR>(a,b);
+}
 
 
 template<int ExpBits,int FracBits>
-float fp_flopoco<ExpBits,FracBits>::to_float() const
+double fp_flopoco<ExpBits,FracBits>::to_double_approx() const
 {
-    assert(FracBits==23);
-    assert(ExpBits==8);
-    if(get_bits<FracBits+ExpBits+2,FracBits+ExpBits+1>(bits)==0b00){
-        return 0;
-    }else if(get_bits<FracBits+ExpBits+2,FracBits+ExpBits+1>(bits)==0b10){
-        return get_bit<FracBits+ExpBits>(bits) ? -INFINITY : +INFINITY;
-    }else if(get_bits<FracBits+ExpBits+2,FracBits+ExpBits+1>(bits)==0b11){
-        return NAN;
-    }else{
-        fw_uint<23> frac=get_bits<FracBits-1,0>(bits);
-        fw_uint<8> expnt=get_bits<ExpBits+FracBits-1,FracBits>(bits);
-
-        float f=ldexp(frac.to_int(),-24)+0.5f;
-        f=ldexp(f, expnt.to_int()-126);
-        return get_bit<ExpBits+FracBits>(bits) ? -f : +f;
-    }
+    mpfr_t tmp;
+    mpfr_init2(tmp, FracBits+1);
+    get(tmp);
+    double r=mpfr_get_d(tmp, MPFR_RNDN);
+    mpfr_clear(tmp);
+    return r;
 }
 
-#ifndef __SYNTHESIS__
 template<int ExpBits,int FracBits>
 std::string fp_flopoco<ExpBits,FracBits>::str() const
 {
@@ -511,35 +532,6 @@ std::string fp_flopoco<ExpBits,FracBits>::str() const
 }
 #endif
 
-template<int ExpBits,int FracBits>
-fp_flopoco<ExpBits,FracBits>::fp_flopoco(float x)
-{
-    assert(FracBits==23);
-    assert(ExpBits==8);
-
-    if(x==0){
-        bits=zpad_lo<31>(fw_uint<3>(0b000));
-    }else if(std::isinf(x)){
-        if(x<0){
-            bits=zpad_lo<31>(fw_uint<3>(0b101));
-        }else{
-            bits=zpad_lo<31>(fw_uint<3>(0b100));
-        }
-    }else if(std::isnan(x)){
-        bits=zpad_lo<31>(fw_uint<3>(0b110));
-    }else{
-        fw_uint<1> s(x < 0);
-        x=std::abs  (x);
-
-        int e;
-        float f=frexp(x, &e);
-        f=ldexp(f-0.5,24);
-        fw_uint<23> frac((int)f);
-        fw_uint<8> expnt(e+126);
-
-        bits=concat(fw_uint<2>(0b01),s,expnt,frac);
-    }
-}
 
 }; // thls
 

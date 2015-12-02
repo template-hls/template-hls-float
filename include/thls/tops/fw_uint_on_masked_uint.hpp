@@ -11,13 +11,14 @@
 
 #include <gmp.h>
 
+
 template<int W>
 struct fw_uint
 {
     // Note that negative widths _are_ allowed, but they
     // must never be executed.
     
-    static_assert(W<=64, "Width too wide.");
+    THLS_STATIC_ASSERT(W<=64, "W must be <=64.");
     
     static const int width=W;
     
@@ -40,20 +41,6 @@ struct fw_uint
     void operator=(const fw_uint &o)
     {
         bits=o.bits;
-    }
-
-    template<int WW=W>
-    explicit fw_uint(bool b)
-        : bits(b?1:0)
-    {
-        THLS_STATIC_ASSERT(WW==1, "Can only construct from bool with W=1.");
-    }
-    
-    template<int WW=W>
-    void operator=(bool b)
-    {
-        THLS_STATIC_ASSERT(WW==1, "Can only construct from bool with W=1.");
-        bits=b?1:0;
     }
 
     explicit fw_uint(int v)
@@ -169,7 +156,7 @@ struct fw_uint
     fw_uint<1> operator>=(int o) const
     {
         assert(o>=0);
-        return fw_uint<1>(bits >= o);
+        return fw_uint<1>(bits >= (uint64_t)o);
     }
 
     fw_uint<1> operator>(const fw_uint &o) const
@@ -187,7 +174,7 @@ struct fw_uint
     fw_uint<1> operator!=(int o) const
     {
         assert(o>=0);
-        return fw_uint<1>(bits != o);
+        return fw_uint<1>(bits != (uint64_t)o);
     }
 
     //////////////////////////////////////////////
@@ -284,6 +271,16 @@ struct fw_uint
 		mpz_mul_2exp(res, res, 32);
 		mpz_add_ui(res, res, lo);
     }
+    
+    void to_mpz(mpz_t dst) const
+    {
+        static_assert(sizeof(unsigned long)>=4, "Must have 32-bit or bigger longs");
+        unsigned long hi=bits>>32;
+        unsigned long lo=bits&0xFFFFFFFFull;
+        mpz_set_ui(dst, hi);
+        mpz_mul_2exp(dst, dst, 32);
+        mpz_add_ui(dst, dst, lo);
+    }
     #endif
 
     //explicit operator bool() const
@@ -314,7 +311,7 @@ template<int HI,int LO,int W>
 fw_uint<HI-LO+1> get_bits(const fw_uint<W> &x)
 {
     static const int WRES=HI-LO+1;
-    static const uint64_t MRES=0xFFFFFFFFFFFFFFFFUL>>(64-WRES);
+    static const uint64_t MRES=0xFFFFFFFFFFFFFFFFUL>> (WRES<=0 ? 0 : (64-WRES));
     return fw_uint<HI-LO+1>( (x.bits>>LO) & MRES );
 }
 

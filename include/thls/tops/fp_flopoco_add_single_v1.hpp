@@ -18,6 +18,7 @@ struct intlog2<0>
     enum{ value = 0 };
 };
 
+
 template<int maxPlaces, int WD, int WC>
 void LZOCShifter(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint<WD> &x)
 {
@@ -41,10 +42,59 @@ void LZOCShifter(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint<WD> &x)
     out=shifted;
 }
 
-template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
-THLS_INLINE fp_flopoco<wER,wFR> add(const fp_flopoco<wEX,wFX> &x, const fp_flopoco<wEY,wFY> &y)
+
+/*
+template<int WD, int WC>
+class LZOCShifterImpl
 {
-	static const int DEBUG=0;
+public:
+    static void go(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint<WD> &x)
+    {
+        fw_uint<1> hiCount;
+        auto mid=
+        
+        
+        fw_uint<WC-1> loCount;
+        LZOCShifterImpl<WD,WC-1>::go(out, loCount, mid);
+        
+        out=concat(hiCount,loCount);
+    }
+};
+
+
+template<int WD>
+class LZOCShifterImpl<WD,2>
+{
+public:
+    static void go(fw_uint<WD> &out, fw_uint<1> &count, const fw_uint<WD> &x)
+    {
+        fw_uint<1> hiCount=get_bits<WD-1,WD-2>(x)==0;
+    }
+};
+
+template<int WD>
+class LZOCShifterImpl<WD,1>
+{
+public:
+    static void go(fw_uint<WD> &out, fw_uint<1> &count, const fw_uint<WD> &x)
+    {
+        auto doIt=get_bit<WD-1>(x);
+        out=select(doIt, out<<1, out);
+        count=doIt;
+    }
+};
+
+
+
+template<int maxPlaces, int WD, int WC>
+void LZOCShifter(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint<WD> &x)
+{
+    return LZOCShifterImpl<maxPlaces,WD,WC>::go(out,count,x);
+}*/
+
+template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
+THLS_INLINE fp_flopoco<wER,wFR> add(const fp_flopoco<wEX,wFX> &x, const fp_flopoco<wEY,wFY> &y, int DEBUG=0)
+{
 
     //parameter set up. For now all wEX=wEY=wER and the same holds for fractions
     THLS_STATIC_ASSERT(wEX==wEY && wEY==wER, "All exponent widths must be the same.");
@@ -117,7 +167,7 @@ THLS_INLINE fp_flopoco<wER,wFR> add(const fp_flopoco<wEX,wFX> &x, const fp_flopo
     //vhdl << tab << declare("sXsYExnXY",6) << " <= signX & signY & excX & excY;"<<endl; 
     fw_uint<6> sXsYExnXY = concat(signX, signY, excX, excY);
     //vhdl << tab << declare("sdExnXY",4) << " <= excX & excY;"<<endl; 
-    auto sdExnXY = concat(excX, excY);
+    //auto sdExnXY = concat(excX, excY);
     //vhdl << tab << declare("fracY",wF+1) << " <= "<< zg(wF+1)<<" when excY=\"00\" else ('1' & newY("<<wF-1<<" downto 0));"<<endl;
     auto fracY = select(excY==0b00, zg<wF+1>(), opad_hi<1>(get_bits<wF-1,0>(newY)));
     
@@ -169,7 +219,10 @@ THLS_INLINE fp_flopoco<wER,wFR> add(const fp_flopoco<wEX,wFX> &x, const fp_flopo
     
     //		cout << "********" << wE << " " <<  sizeRightShift  <<endl;
     
+    
+    
     fw_uint<sizeRightShift> shiftVal;
+    
     if (wE>sizeRightShift) {
         //vhdl<<tab<<declare("shiftVal",sizeRightShift) << " <= expDiff("<< sizeRightShift-1<<" downto 0)"
         //<< " when shiftedOut='0' else CONV_STD_LOGIC_VECTOR("<<wFX+3<<","<<sizeRightShift<<") ;" << endl; 
@@ -182,8 +235,8 @@ THLS_INLINE fp_flopoco<wER,wFR> add(const fp_flopoco<wEX,wFX> &x, const fp_flopo
     else 	{ //  wE< sizeRightShift
         //vhdl<<tab<<declare("shiftVal",sizeRightShift) << " <= CONV_STD_LOGIC_VECTOR(0,"<<sizeRightShift-wE <<") & expDiff;" <<	endl;
         shiftVal = checked_cast<sizeRightShift>( concat( zg<sizeRightShift-wE>(), expDiff) );
+        
     }
-    
     if(DEBUG){
         std::cerr<<"  shiftVal = "<<shiftVal<<"\n";
     }
@@ -212,6 +265,7 @@ THLS_INLINE fp_flopoco<wER,wFR> add(const fp_flopoco<wEX,wFX> &x, const fp_flopo
     double cpsticky = getCriticalPath();
     */
     
+    
     // The shifter parameters are:
     //   wIn = wF+1
     //   maxShift = wF+3
@@ -223,9 +277,8 @@ THLS_INLINE fp_flopoco<wER,wFR> add(const fp_flopoco<wEX,wFX> &x, const fp_flopo
     }
     fw_uint<2*wF+4> shiftedFracY = preFracY >> shiftVal.to_int();
     fw_uint<1> sticky = get_bits<wF,0>(shiftedFracY)!=0;
-    
-    
-    
+
+
     //pad fraction of Y [overflow][shifted frac having inplicit 1][guard][round]
     //vhdl<<tab<< declare("fracYfar", wF+4)      << " <= \"0\" & shiftedFracY("<<2*wF+3<<" downto "<<wF+1<<");"<<endl;	
     auto fracYfar = zpad_hi<1>(get_bits<2*wF+3,wF+1>(shiftedFracY));
@@ -292,25 +345,6 @@ THLS_INLINE fp_flopoco<wER,wFR> add(const fp_flopoco<wEX,wFX> &x, const fp_flopo
     
     const int lzocCountWidth=intlog2<wF+5>::value;
     
-    /*
-    // TODO : Complete hack
-    fw_uint<lzocCountWidth> nZerosNew=zg<lzocCountWidth>();
-    fw_uint<wF+5> shiftedFrac = fracGRS;
-    
-    if(DEBUG){
-        std::cerr<<"  shiftedFrac = "<<shiftedFrac<<", nZerosNew = "<<nZerosNew<<"\n";
-    }
-    
-    assert(shiftedFrac!=0);
-    while( get_bit<wF+4>(shiftedFrac) == 0){
-        shiftedFrac=shiftedFrac<<1;
-        nZerosNew=nZerosNew+1;
-        if(DEBUG){
-            std::cerr<<"    shiftedFrac = "<<shiftedFrac<<", nZerosNew = "<<nZerosNew<<"\n";
-        }
-    }
-    */
-    
     fw_uint<lzocCountWidth> nZerosNew;
     fw_uint<wF+5> shiftedFrac;
     LZOCShifter<wF+5>(shiftedFrac, nZerosNew, fracGRS);
@@ -342,7 +376,7 @@ THLS_INLINE fp_flopoco<wER,wFR> add(const fp_flopoco<wEX,wFX> &x, const fp_flopo
     
     // 		//at least in parallel with previous 2 statements
     //vhdl<<tab<<declare("stk")<<"<= shiftedFrac"<<of(1)<<" or shiftedFrac"<<of(0)<<";"<<endl;
-    auto stk = get_bit<1>(shiftedFrac);
+    auto stk = get_bit<1>(shiftedFrac) | get_bit<0>(shiftedFrac);
     //vhdl<<tab<<declare("rnd")<<"<= shiftedFrac"<<of(2)<<";"<<endl;
     auto rnd = get_bit<2>(shiftedFrac);
     //vhdl<<tab<<declare("grd")<<"<= shiftedFrac"<<of(3)<<";"<<endl;
@@ -350,9 +384,16 @@ THLS_INLINE fp_flopoco<wER,wFR> add(const fp_flopoco<wEX,wFX> &x, const fp_flopo
     //vhdl<<tab<<declare("lsb")<<"<= shiftedFrac"<<of(4)<<";"<<endl;
     auto lsb = get_bit<4>(shiftedFrac);
     
+    if(DEBUG){
+        std::cerr<<"  stk = "<<stk<<"\n";
+        std::cerr<<"  rnd = "<<rnd<<"\n";
+        std::cerr<<"  grd = "<<grd<<"\n";
+        std::cerr<<"  lsb = "<<lsb<<"\n";
+    }
+    
     //decide what to add to the guard bit
     //vhdl<<tab<<declare("addToRoundBit")<<"<= '0' when (lsb='0' and grd='1' and rnd='0' and stk='0')  else '1';"<<endl;
-    fw_uint<1> addToRoundBit (!(lsb==0 && grd==1 && rnd==0 && stk==0, zg<1>(), og<1>()));
+    auto addToRoundBit = select(lsb==0 && grd==1 && rnd==0 && stk==0, zg<1>(), og<1>());
     //round
     
     //IntAdder *ra = new IntAdder(target, wE+2+wF+1, inDelayMap("X", getCriticalPath() ) );
@@ -366,6 +407,8 @@ THLS_INLINE fp_flopoco<wER,wFR> add(const fp_flopoco<wEX,wFX> &x, const fp_flopo
     
     auto RoundedExpFrac = expFrac + addToRoundBit;
     if(DEBUG){
+        std::cerr<<"  addToRoundBit = "<<addToRoundBit<<"\n";
+        std::cerr<<"  expFrac = "<<expFrac<<"\n";
         std::cerr<<"  RoundedExpFrac = "<<RoundedExpFrac<<"\n";
     }
     

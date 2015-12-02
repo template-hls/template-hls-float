@@ -1,6 +1,8 @@
 #ifndef fw_uint_on_cpp_int_hpp
 #define fw_uint_on_cpp_int_hpp
 
+#error "This only partially works. Decided to move away from it as the software version."
+
 #ifndef fw_uint_hpp
 #error "Include fw_uint.hpp, rather than this file."
 #endif
@@ -12,7 +14,7 @@
 template<int W>
 struct fw_uint
 {
-    static const int width=W;
+    static const int width=(W<=0) ? 0 : W;
     
     template<unsigned WW>
     using backendv_t = boost::multiprecision::number<boost::multiprecision::cpp_int_backend<WW, WW, boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void> >;
@@ -65,6 +67,13 @@ struct fw_uint
     static fw_uint from_bits(const backend_t &x)
     {
         return fw_uint(x);
+    }
+    
+    void operator=(const fw_uint &o)
+    {
+        if(this!=&o){
+            bits=o.bits;
+        }
     }
 
 
