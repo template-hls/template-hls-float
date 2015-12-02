@@ -72,7 +72,8 @@
 
 */
 
-#define THLS_INLINE inline __attribute__((always_inline))
+//#define THLS_INLINE inline __attribute__((always_inline))
+#define THLS_INLINE
 
 #include <stdint.h>
 #include <cassert>
@@ -106,7 +107,7 @@ namespace thls
     };
 };
 
-#define thls_ctMax(a,b) (ctMax_impl<(a),(b)>::value)
+#define thls_ctMax(a,b) (thls::ctMax_impl<(a),(b)>::value)
 
 #endif
 
@@ -121,8 +122,8 @@ namespace detail
     { static const int value = 1; };
 };
 
-#include "fw_uint_on_cpp_int.hpp"
-//#include "fw_uint_on_masked_uint.hpp"
+//#include "fw_uint_on_cpp_int.hpp"
+#include "fw_uint_on_masked_uint.hpp"
 
 
 /*! Does a cast from on width to another. The two widths

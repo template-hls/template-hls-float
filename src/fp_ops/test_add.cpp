@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include "thls/tops/fp_flopoco_add_single_v1.hpp"
 
 #include <random>
@@ -109,9 +110,9 @@ void test_impl(TImpl &impl)
 		args.push_back(a);
 	}
 	
-	for(int i=0; i<args.size(); i++){
+	for(unsigned i=0; i<args.size(); i++){
 		std::cerr<<"i = "<<i<<"\n";
-		for(int j=0; j<args.size(); j++){
+		for(unsigned j=0; j<args.size(); j++){
 			test_add(impl, args[i], args[j]);
 		}	
 	}

@@ -7,8 +7,9 @@
 
 #include <cstdint>
 #include <climits>
+#include <string>
 
-#include <gmpxx.h>
+#include <gmp.h>
 
 template<int W>
 struct fw_uint
@@ -20,7 +21,7 @@ struct fw_uint
     
     static const int width=W;
     
-    static const uint64_t MASK= (W <= 0) ? 0ull : (0xFFFFFFFFFFFFFFFFULL>>(64-W));
+	static const uint64_t MASK = (W <= 0) ? 0ull : (0xFFFFFFFFFFFFFFFFULL >> (W < 0 ? 0 : (64 - W)));
     
     uint64_t bits;
 
@@ -91,11 +92,11 @@ struct fw_uint
 
 
 #ifndef HLS_SYNTHESIS
-    explicit fw_uint(mpz_class x)
+    explicit fw_uint(mpz_t x)
     {
         assert(W>=0);
         
-        if(mpz_sizeinbase(x.get_mpz_t(),2)>W){
+        if(mpz_sizeinbase(x,2)>W){
             throw std::runtime_error("mpz is too large.");
         }
         std::string dec=x.get_str(); // LAZY
@@ -274,12 +275,14 @@ struct fw_uint
     }
 
     #ifndef HLS_SYNTHESIS
-    mpz_class to_mpz_class() const
+    void to_mpz_t(mpz_t res) const
     {
         static_assert(sizeof(unsigned long)>=4, "Must have 32-bit or bigger longs");
         unsigned long hi=bits>>32;
         unsigned long lo=bits&0xFFFFFFFFull;
-        return (mpz_class(hi)<<32) | mpz_class(lo);
+		mpz_init_set_ui(res, hi);
+		mpz_mul_2exp(res, res, 32);
+		mpz_add_ui(res, res, lo);
     }
     #endif
 

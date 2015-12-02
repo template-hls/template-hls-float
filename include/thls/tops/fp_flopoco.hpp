@@ -330,20 +330,21 @@ fp_flopoco<ExpBits,FracBits>::fp_flopoco(mpfr_t x, bool allowUnderOrOverflow)
         // TODO : Negative zero?
         bits=fw_uint<3+ExpBits+FracBits>();
     }else{        
-        mpz_class fracBits; // Fraction as integer. So in range [2^FracBits..2^(FracBits+1)) rather than [1..1-2^FracBits)
-        int e=mpfr_get_z_2exp(fracBits.get_mpz_t(), x);
+        mpz_t fracBits; // Fraction as integer. So in range [2^FracBits..2^(FracBits+1)) rather than [1..1-2^FracBits)
+		mpz_init(fracBits);
+        int e=mpfr_get_z_2exp(fracBits, x);
         
         bool negative=false;
         if(fracBits < 0){
             negative=true;
-            fracBits=-fracBits;
+			mpz_mul_si(fracBits, fracBits, -1);
         }
         
 
         // Check for explicit bit
-        assert(mpz_tstbit(fracBits.get_mpz_t(), FracBits));
+        assert(mpz_tstbit(fracBits, FracBits));
         // Clear the explicit bit
-        mpz_clrbit(fracBits.get_mpz_t(),FracBits);
+        mpz_clrbit(fracBits,FracBits);
 
         e=e+FracBits; // Actual exponent
 
@@ -354,8 +355,10 @@ fp_flopoco<ExpBits,FracBits>::fp_flopoco(mpfr_t x, bool allowUnderOrOverflow)
         fw_uint<ExpBits> expnt;
         fw_uint<FracBits> frac( fracBits );
 
+		mpz_clear(fracBits);
+
         if(e < traits::min_exponent){
-            if(allowUnderOrOverflow){
+             if(allowUnderOrOverflow){
                 flags=fw_uint<2>(0b00);
             }else{
                 throw std::runtime_error("Exponent out of range.");

@@ -352,7 +352,7 @@ THLS_INLINE fp_flopoco<wER,wFR> add(const fp_flopoco<wEX,wFX> &x, const fp_flopo
     
     //decide what to add to the guard bit
     //vhdl<<tab<<declare("addToRoundBit")<<"<= '0' when (lsb='0' and grd='1' and rnd='0' and stk='0')  else '1';"<<endl;
-    auto addToRoundBit = !(lsb==0 && grd==1 && rnd==0 && stk==0, zg<1>(), og<1>());
+    fw_uint<1> addToRoundBit (!(lsb==0 && grd==1 && rnd==0 && stk==0, zg<1>(), og<1>()));
     //round
     
     //IntAdder *ra = new IntAdder(target, wE+2+wF+1, inDelayMap("X", getCriticalPath() ) );
