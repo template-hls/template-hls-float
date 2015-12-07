@@ -111,7 +111,7 @@ struct fw_uint
     template<int O>
     THLS_INLINE fw_uint<thls_ctMax(W,O)> operator+(const fw_uint<O> &o) const
     {
-        return fw_uint<thls_ctMax(W,O)>( (bits+o.bits) & MASK );
+        return fw_uint<thls_ctMax(W,O)>( (bits+o.bits) & (fw_uint<thls_ctMax(W,O)>::MASK) );
     }
 
     THLS_INLINE fw_uint operator+(int b) const
@@ -122,7 +122,7 @@ struct fw_uint
     template<int O>
     THLS_INLINE fw_uint<thls_ctMax(W,O)> operator-(const fw_uint<O> &o) const
     {
-        return fw_uint<thls_ctMax(W,O)>( (bits-o.bits) & MASK);
+        return fw_uint<thls_ctMax(W,O)>( (bits-o.bits) & (fw_uint<thls_ctMax(W,O)>::MASK));
     }
 
     THLS_INLINE fw_uint operator-(int b) const
@@ -244,7 +244,7 @@ struct fw_uint
     THLS_INLINE fw_uint operator<<(int dist) const
     {
         assert(0<=dist && dist<W);
-        return fw_uint(bits<<dist);
+        return fw_uint( (bits<<dist) & MASK);
     }
 
     std::string to_string() const
@@ -280,7 +280,7 @@ struct fw_uint
         static_assert(sizeof(unsigned long)>=4, "Must have 32-bit or bigger longs");
         unsigned long hi=bits>>32;
         unsigned long lo=bits&0xFFFFFFFFull;
-		mpz_init_set_ui(res, hi);
+		mpz_set_ui(res, hi);
 		mpz_mul_2exp(res, res, 32);
 		mpz_add_ui(res, res, lo);
     }

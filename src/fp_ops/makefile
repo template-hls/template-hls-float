@@ -11,5 +11,9 @@ LDLIBS += -lmpfr -lgmpxx -lgmp
 %.ll : %.cpp
 	clang -I ../../include -std=c++11 -O3 -DNDEBUG=1 -S -emit-llvm $< -o $@
 
+%.cfdg.dot : %.ll
+	../../tools/graph-llvm-ir/graph-llvm-ir 
+	
+
 %.s : %.cpp
 	clang -I ../../include -std=c++11 -O3 -DNDEBUG=1 -S $< -o $@
