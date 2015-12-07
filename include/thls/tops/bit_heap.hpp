@@ -94,7 +94,9 @@ namespace detail
                 if(take_lsb(tmp)){
                     mpz_add_ui(dst, dst, 1);
                 }
-                tmp=tmp>>1;
+                if(H>1){ // Avoid x>>1 when x is one bit
+                    tmp= tmp>>1;
+                }
                 //mpfr_fprintf(stderr, "  dst=%Zd\n", dst);
             }
             mpz_mul_2exp(dst, dst, 1);
@@ -113,7 +115,9 @@ namespace detail
                 if(take_lsb(tmp)){
                     mpz_add_ui(dst, dst, 1);
                 }
-                tmp=tmp>>1;
+                if(H>1){ // Avoid x>>1 when x is one bit
+                    tmp=tmp>>1;
+                }
             }
         }
     };

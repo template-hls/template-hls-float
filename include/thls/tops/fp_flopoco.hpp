@@ -9,15 +9,17 @@
 #include <sstream>
 #endif
 
+#include <limits>
+
 namespace thls
 {
-  
+
 template<int ExpBits,int FracBits>
 struct fp_flopoco
 {
     enum{ exp_bits = ExpBits };
     enum{ frac_bits = FracBits };
-    
+
     THLS_CONSTEXPR fp_flopoco()
         : bits()
     {}
@@ -91,13 +93,13 @@ struct fp_flopoco
 
     bool is_neg_inf() const
     { return is_negative() && is_inf(); }
-    
-    
+
+
     #ifndef THLS_SYNTHESIS
     double to_double_approx() const;
     std::string str() const;
     #endif
-    
+
     //! Does a floating-point specific comparison
     bool equals(const fp_flopoco &o) const
     {
@@ -345,19 +347,19 @@ fp_flopoco<ExpBits,FracBits>::fp_flopoco(mpfr_t x, bool allowUnderOrOverflow)
         // TODO : I cannot work out how we are supposed to get the sign out of
         // a zero. mpfr_sgn returns 0 if the number is +-zero
         fw_uint<1> sign(x->_mpfr_sign==-1);
-        
+
         bits=concat(zg<2>(),sign,zg<ExpBits+FracBits>());
-    }else{        
+    }else{
         mpz_t fracBits; // Fraction as integer. So in range [2^FracBits..2^(FracBits+1)) rather than [1..1-2^FracBits)
 		mpz_init(fracBits);
         int e=mpfr_get_z_2exp(fracBits, x);
-        
+
         bool negative=false;
         if(fracBits < 0){
             negative=true;
 			mpz_mul_si(fracBits, fracBits, -1);
         }
-        
+
 
         // Check for explicit bit
         assert(mpz_tstbit(fracBits, FracBits));
@@ -419,19 +421,23 @@ void fp_flopoco<ExpBits,FracBits>::get(mpfr_t dst, mpfr_rnd_t mode) const
     }else if(flags==fw_uint<2>(0b11)){
         mpfr_set_nan(dst);
     }else{
-        mpz_class fracBits=get_bits<FracBits-1,0>(bits).to_mpz_class();
-        mpz_setbit(fracBits.get_mpz_t(), FracBits); // Add explicit bit
+        mpz_t fracBits;
+        mpz_init(fracBits);
+        get_bits<FracBits-1,0>(bits).to_mpz_t(fracBits);
+        mpz_setbit(fracBits, FracBits); // Add explicit bit
 
         int e=get_bits<FracBits+ExpBits-1,FracBits>(bits).to_int();
         e=e-FracBits-traits::bias; // Move from fraction to integer
 
-        mpfr_set_z_2exp(dst, fracBits.get_mpz_t(), e, mode);        
-            
+        mpfr_set_z_2exp(dst, fracBits, e, mode);
+
         if(negative){
             mpfr_mul_si(dst, dst, -1, MPFR_RNDN);
         }
+
+        mpz_clear(fracBits);
     }
-    
+
 }
 
 
@@ -447,11 +453,11 @@ fp_flopoco<ER,FR> ref_mul(const fp_flopoco<EA,FA> &a, const fp_flopoco<EB,FB> &b
     b.get(mb);
 
     mpfr_mul(mr,ma,mb,MPFR_RNDN);
-    
+
     //mpfr_fprintf(stderr, "mpfr : %Rg * %Rg = %Rg\n", ma, mb, mr);
 
     fp_flopoco<ER,FR> res(mr,true);
-    
+
     //std::cerr<<"   = "<<res.str()<<"\n";
 
     mpfr_clear(ma);
