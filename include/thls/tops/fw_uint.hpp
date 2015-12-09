@@ -32,24 +32,24 @@
      explicit fw_uint<W>(uint64_t x);  // x must be <= 2**W
 
 
-   The width semantics are designed to map to ieee.numeric_std,
+   The width semantics are more strict than ieee.numeric_std,
    so we have:
 
-     decltype(fw_uint<A> + fw_uint<B>)  = fw_uint<max(A,B)>
-     decltype(fw_uint<A> - fw_uint<B>)  = fw_uint<max(A,B)>
+     decltype(fw_uint<A> + fw_uint<A>)  = fw_uint<A>
+     decltype(fw_uint<A> - fw_uint<A>)  = fw_uint<A>
 
      decltype(fw_uint<A> * fw_uint<B>)  = fw_uint<A+B>
 
-     decltype(fw_uint<A> & fw_uint<B>)  = fw_uint<A>
-     decltype(fw_uint<A> | fw_uint<B>)  = fw_uint<A>
-     decltype(fw_uint<A> ^ fw_uint<B>)  = fw_uint<A>
+     decltype(fw_uint<A> & fw_uint<A>)  = fw_uint<A>
+     decltype(fw_uint<A> | fw_uint<A>)  = fw_uint<A>
+     decltype(fw_uint<A> ^ fw_uint<A>)  = fw_uint<A>
 
-     decltype(fw_uint<A> < fw_uint<B>)  = bool
-     decltype(fw_uint<A> <= fw_uint<B>) = bool
-     decltype(fw_uint<A> == fw_uint<B>) = bool
-     decltype(fw_uint<A> >= fw_uint<B>) = bool
-     decltype(fw_uint<A> > fw_uint<B>)  = bool
-     decltype(fw_uint<A> != fw_uint<B>) = bool
+     decltype(fw_uint<A> < fw_uint<A>)  = fw_uint<1>
+     decltype(fw_uint<A> <= fw_uint<A>) = fw_uint<1>
+     decltype(fw_uint<A> == fw_uint<A>) = fw_uint<1>
+     decltype(fw_uint<A> >= fw_uint<A>) = fw_uint<1>
+     decltype(fw_uint<A> > fw_uint<A>)  = fw_uint<1>
+     decltype(fw_uint<A> != fw_uint<A>) = fw_uint<1>
 
      decltype(fw_uint<A> >> int) = fw_uint<A>  // 0<=shift<A
      decltype(fw_uint<A> << int) = fw_uint<A>  // 0<=shift<A
@@ -75,6 +75,33 @@
 #define THLS_INLINE inline __attribute__((always_inline))
 //#define THLS_INLINE
 
+/* Error:
+ *
+ * In file included from C:\Usr\Xilinx2015.4\Vivado_HLS\2015.4\common\technology\autopilot\ap_int.h:60:
+In file included from C:/Usr/Xilinx2015.4/Vivado_HLS/2015.4/common/technology/autopilot/ap_int_syn.h:68:
+In file included from C:/Usr/Xilinx2015.4/Vivado_HLS/2015.4/win64/tools/clang/bin\..\lib\clang\3.1/../../../include/c++/4.5.2\iostream:39:
+In file included from C:/Usr/Xilinx2015.4/Vivado_HLS/2015.4/win64/tools/clang/bin\..\lib\clang\3.1/../../../include/c++/4.5.2\ostream:39:
+In file included from C:/Usr/Xilinx2015.4/Vivado_HLS/2015.4/win64/tools/clang/bin\..\lib\clang\3.1/../../../include/c++/4.5.2\ios:39:
+In file included from C:/Usr/Xilinx2015.4/Vivado_HLS/2015.4/win64/tools/clang/bin\..\lib\clang\3.1/../../../include/c++/4.5.2\exception:151:
+C:/Usr/Xilinx2015.4/Vivado_HLS/2015.4/win64/tools/clang/bin\..\lib\clang\3.1/../../../include/c++/4.5.2\nested_exception.h:122:61: error: redefinition of default argument
+    __throw_with_nested(_Ex&& __ex, const nested_exception* = 0)
+                                                            ^ ~
+C:/Usr/Xilinx2015.4/Vivado_HLS/2015.4/win64/tools/clang/bin\..\lib\clang\3.1/../../../include/c++/4.5.2\nested_exception.h:110:56: note: previous definition is here
+    __throw_with_nested(_Ex&&, const nested_exception* = 0)
+ *
+ *
+ * Solution:
+ * Go delete the second zero.
+ */
+
+
+
+// Workaround for buggy std library which doesn't declare type before
+// using it.
+namespace std{
+	class type_info;
+};
+
 #include <stdint.h>
 #include <cassert>
 
@@ -82,32 +109,46 @@
 
 #if __cplusplus >= 201103L
 
-// ap_uint does not support constexpr anywhere
-#define THLS_CONSTEXPR
+	// ap_uint does not support constexpr anywhere
+	#define THLS_CONSTEXPR
 
-constexpr int thls_ctMax(const int a, const int b)
-{ return a>b ? a : b; }
+	constexpr int thls_ctMax(const int a, const int b)
+	{ return a>b ? a : b; }
 
-#define THLS_STATIC_ASSERT(c,msg) static_assert(c, msg)
+	#define THLS_STATIC_ASSERT(c,msg) static_assert(c, msg)
 
 #else // No C++11
 
-#define THLS_CONSTEXPR
+	#define THLS_CONSTEXPR
 
-#define HLS_INLINE inline __attribute__((always_inline))
+	#define HLS_INLINE inline __attribute__((always_inline))
 
-#define THLS_STATIC_ASSERT(c,msg) assert(c)
+	namespace thls
+	{
+		template<bool b>
+		struct STATIC_ASSERT_FAIL;
 
-namespace thls
-{
-    template<int a,int b>
-    struct ctMax_impl
-    {
-        static const int value=a>b?a:b;
-    };
-};
+		template<>
+		struct STATIC_ASSERT_FAIL<true>
+		{
+			enum{ value = 1 };
+		};
+	}
 
-#define thls_ctMax(a,b) (thls::ctMax_impl<(a),(b)>::value)
+	#define THLS_JOIN2(a,b) a##b
+	#define THLS_JOIN(a,b) THLS_JOIN2(a,b)
+	#define THLS_STATIC_ASSERT(c,msg) enum { THLS_JOIN(static_assert,__COUNTER__) = sizeof(STATIC_ASSERT_FAIL<bool(c)>::value) }
+
+	namespace thls
+	{
+		template<int a,int b>
+		struct ctMax_impl
+		{
+			static const int value=a>b?a:b;
+		};
+	};
+
+	#define thls_ctMax(a,b) (::thls::ctMax_impl<(a),(b)>::value)
 
 #endif
 
@@ -122,9 +163,13 @@ namespace detail
     { static const int value = 1; };
 };
 
+#include "fw_uint_on_ap_uint.hpp"
 //#include "fw_uint_on_cpp_int.hpp"
-#include "fw_uint_on_masked_uint.hpp"
+//#include "fw_uint_on_masked_uint.hpp"
 
+
+namespace thls
+{
 
 /*! Does a cast from on width to another. The two widths
   may be different at compile time, but if the path is
@@ -142,8 +187,8 @@ fw_uint<HI-LO+1> get_bits(const fw_uint<W> &x);
 template<int B,int W>
 fw_uint<W-B> take(const fw_uint<W> &x)
 {
-    static_assert(B>=0, "Cannot take negative bits.");
-    static_assert(B<=W, "Cannot take more than bits in the variable.");
+    THLS_STATIC_ASSERT(B>=0, "Cannot take negative bits.");
+    THLS_STATIC_ASSERT(B<=W, "Cannot take more than bits in the variable.");
     return get_bits<B,0>(x);
 }
 
@@ -250,7 +295,7 @@ fw_uint<P+W> opad_lo(const fw_uint<W> &x)
 template<int B,int W>
 fw_uint<B> extu(const fw_uint<W> &x)
 {
-  static_assert(B>=W, "Cannot extend to smaller width.");
+  THLS_STATIC_ASSERT(B>=W, "Cannot extend to smaller width.");
   return zpad_hi<B-W>(x);
 }
 
@@ -285,6 +330,6 @@ public:
 
 };
 
-
+}; // thls
 
 #endif

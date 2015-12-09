@@ -5,6 +5,9 @@
 #error "Include fw_uint.hpp, rather than this file."
 #endif
 
+#include "C:\Usr\Xilinx2015.4\Vivado_HLS\2015.4\common\technology\autopilot\ap_int.h"
+//#include "ap_int.h"
+
 namespace thls
 {
 
@@ -13,7 +16,10 @@ struct fw_uint
 {
     static const int width=W;
 
-    ap_uint<W> bits;
+    // ap_uint doesn't allow widths <= 0
+    static const int SafeW=width<=0 ? 1 : width;
+
+    ap_uint<SafeW> bits;
 
     THLS_CONSTEXPR fw_uint()
     	: bits(0)
@@ -59,54 +65,53 @@ struct fw_uint
         // TODO : Really need to range-check the actual number
     }
 
-    explicit fw_uint(const ap_uint<W> &x)
+    explicit fw_uint(const ap_uint<SafeW> &x)
         : bits(x)
     {}
 
-    explicit fw_uint(const ap_range_ref<W,false> &x)
+    explicit fw_uint(const ap_range_ref<SafeW,false> &x)
         : bits(x)
     {}
 
-#ifndef HLS_SYNTHESIS
+#ifndef THLS_SYNTHESIS
     explicit fw_uint(mpz_class x)
     {
         if(mpz_sizeinbase(x.get_mpz_t(),2)>W){
             throw std::runtime_error("mpz is too large.");
         }
         std::string dec=x.get_str(); // LAZY
-        bits=ap_uint<W>(dec.c_str());
+        bits=ap_uint<SafeW>(dec.c_str());
     }
 #endif
 
-    template<int O>
-    fw_uint<thls_ctMax(W,O)> operator+(const fw_uint<O> &o) const
+    fw_uint<W> operator+(const fw_uint<W> &o) const
     {
-        ap_uint<thls_ctMax(W,O)> a(bits), b(o.bits);
-        return fw_uint<thls_ctMax(W,O)>(ap_uint<thls_ctMax(W,O)>(a+b));
+        ap_uint<SafeW> a(bits), b(o.bits);
+        return fw_uint<W>(ap_uint<SafeW>(a+b));
     }
 
     fw_uint operator+(int b) const
     {
-        return fw_uint(ap_uint<W>(bits+b));
+        return fw_uint(ap_uint<SafeW>(bits+b));
     }
 
-    template<int O>
-    fw_uint<thls_ctMax(W,O)> operator-(const fw_uint<O> &o) const
+    fw_uint<W> operator-(const fw_uint<W> &o) const
     {
-        ap_uint<thls_ctMax(W,O)> a(bits), b(o.bits);
-        return fw_uint<thls_ctMax(W,O)>(ap_uint<thls_ctMax(W,O)>(a-b));
+        ap_uint<SafeW> a(bits), b(o.bits);
+        return fw_uint<W>(ap_uint<SafeW>(a-b));
     }
 
     fw_uint operator-(int b) const
     {
-        return fw_uint(ap_uint<W>(bits-b));
+        return fw_uint(ap_uint<SafeW>(bits-b));
     }
 
     template<int O>
     fw_uint<O+W> operator*(const fw_uint<O> &o) const
     {
-        ap_uint<W+O> a(bits), b(o.bits);
-        return fw_uint<O+W>(ap_uint<W+O>(a*b));
+    	static const int SafeRW = (O+W <= 0) ? 1 : (O+W);
+        ap_uint<SafeRW> a(bits), b(o.bits);
+        return fw_uint<O+W>(ap_uint<SafeRW>(a*b));
     }
 
     fw_uint<1> operator<(const fw_uint &o) const
@@ -168,39 +173,39 @@ struct fw_uint
     // numeric_std says result width is size of the LHS
 
     fw_uint operator~() const
-    { return fw_uint(ap_uint<W>(~bits)); }
+    { return fw_uint(ap_uint<SafeW>(~bits)); }
 
     template<int O>
     fw_uint operator&(const fw_uint<O> &o) const
     {
         ap_uint<W> b(o.bits);
-        return fw_uint<W>(ap_uint<W>(bits&b));
+        return fw_uint<W>(ap_uint<SafeW>(bits&b));
     }
 
     fw_uint operator&(int b) const
     {
         assert(b>=0);
-        return fw_uint(ap_uint<W>(bits&b));
+        return fw_uint(ap_uint<SafeW>(bits&b));
     }
 
     template<int O>
     fw_uint operator|(const fw_uint<O> &o) const
     {
         ap_uint<W> b(o.bits);
-        return fw_uint<W>(ap_uint<W>(bits|b));
+        return fw_uint<W>(ap_uint<SafeW>(bits|b));
     }
 
     fw_uint operator|(int b) const
     {
         assert(b>=0);
-        return fw_uint(ap_uint<W>(bits|b));
+        return fw_uint(ap_uint<SafeW>(bits|b));
     }
 
     template<int O>
     fw_uint operator^(const fw_uint<O> &o) const
     {
         ap_uint<W> b(o.bits);
-        return fw_uint<W>(ap_uint<W>(bits^b));
+        return fw_uint<W>(ap_uint<SafeW>(bits^b));
     }
 
     fw_uint operator^(int b) const
@@ -213,15 +218,18 @@ struct fw_uint
     fw_uint operator>>(int dist) const
     {
         assert(0<=dist && dist<W);
-        return fw_uint(bits>>dist);
+        ap_uint<SafeW> res(bits>>dist);
+        return fw_uint(res);
     }
     
     fw_uint operator<<(int dist) const
     {
         assert(0<=dist && dist<W);
-        return fw_uint(bits<<dist);
+        ap_uint<SafeW> res(bits<<dist);
+        return fw_uint(res);
     }
 
+#ifndef THLS_SYNTHESIS
     std::string to_string() const
     {
         std::string acc="";
@@ -233,6 +241,7 @@ struct fw_uint
         }
         return "0b"+acc;
     }
+#endif
 
     int to_int() const
     {
@@ -248,7 +257,7 @@ struct fw_uint
         return bits==1;
     }
 
-    #ifndef HLS_SYNTHESIS
+    #ifndef THLS_SYNTHESIS
     mpz_class to_mpz_class() const
     {
         std::string dec( bits.to_string() );   // LAZY
@@ -265,48 +274,27 @@ struct fw_uint
 
 
 
-fw_uint<1> operator||(const fw_uint<1> &a, const fw_uint<1> &b)
+inline fw_uint<1> operator||(const fw_uint<1> &a, const fw_uint<1> &b)
 { return fw_uint<1>(ap_uint<1>(a.bits||b.bits)); }
 
-fw_uint<1> operator&&(const fw_uint<1> &a, const fw_uint<1> &b)
+inline fw_uint<1> operator&&(const fw_uint<1> &a, const fw_uint<1> &b)
 { return fw_uint<1>(ap_uint<1>(a.bits&&b.bits)); }
 
+#ifndef THLS_SYNTHESIS
 template<int W>
-std::ostream &operator<<(std::ostream &dst, const fw_uint<W> &x)
+inline std::ostream &operator<<(std::ostream &dst, const fw_uint<W> &x)
 {
     dst<<x.to_string();
     return dst;
 }
+#endif
 
 
 template<int HI,int LO,int W>
-fw_uint<HI-LO+1> get_bits(const fw_uint<W> &x)
+inline fw_uint<HI-LO+1> get_bits(const fw_uint<W> &x)
 {
-    return fw_uint<HI-LO+1>(ap_uint<HI-LO+1>(x.bits.range(HI,LO)));
-}
-
-template<int P,int W>
-fw_uint<P+W> zpad_hi(const fw_uint<W> &x)
-{
-    return fw_uint<P+W>(ap_uint<P+W>(  (zg<P>().bits,x.bits)  ));
-}
-
-template<int P,int W>
-fw_uint<P+W> opad_hi(const fw_uint<W> &x)
-{
-    return fw_uint<P+W>(ap_uint<P+W>(  (og<P>().bits,x.bits)  ));
-}
-
-template<int P,int W>
-fw_uint<P+W> zpad_lo(const fw_uint<W> &x)
-{
-    return fw_uint<P+W>(ap_uint<P+W>(  (x.bits,zg<P>().bits)  ));
-}
-
-template<int P,int W>
-fw_uint<P+W> opad_lo(const fw_uint<W> &x)
-{
-    return fw_uint<P+W>(ap_uint<P+W>(  (x.bits,og<P>().bits)  ));
+	static const int SafeRW = (HI-LO+1 <= 0) ? 1 : (HI-LO+1);
+    return fw_uint<HI-LO+1>(ap_uint<SafeRW>(x.bits.range(HI,LO)));
 }
 
 
@@ -315,20 +303,30 @@ fw_uint<P+W> opad_lo(const fw_uint<W> &x)
 // some point it could be brought back, but this will do for now.
 
 template<int WA>
-fw_uint<WA> concat(const fw_uint<WA> &a)
+inline fw_uint<WA> concat(const fw_uint<WA> &a)
 { return a; }
 
 template<int WA,int WB>
-fw_uint<WA+WB> concat(const fw_uint<WA> &a, const fw_uint<WB> &b)
-{ return fw_uint<WA+WB>(ap_uint<WA+WB>( (a.bits,b.bits) )); }
+inline fw_uint<WA+WB> concat(const fw_uint<WA> &a, const fw_uint<WB> &b)
+{
+	static const int SafeRW= (WA+WB <= 0) ? 1 : WA+WB;
+	return fw_uint<WA+WB>(ap_uint<SafeRW>( (a.bits,b.bits) ));
+}
 
 template<int WA,int WB,int WC>
-fw_uint<WA+WB+WC> concat(const fw_uint<WA> &a, const fw_uint<WB> &b, const fw_uint<WC> &c)
-{ return fw_uint<WA+WB+WC>(ap_uint<WA+WB+WC>( (a.bits,b.bits,c.bits) )); }
+inline fw_uint<WA+WB+WC> concat(const fw_uint<WA> &a, const fw_uint<WB> &b, const fw_uint<WC> &c)
+{
+	static const int SafeRW= (WA+WB+WC <= 0) ? 1 : WA+WB+WC;
+	return fw_uint<WA+WB+WC>(ap_uint<SafeRW>( (a.bits,b.bits,c.bits) ));
+}
 
 template<int WA,int WB,int WC,int WD>
-fw_uint<WA+WB+WC+WD> concat(const fw_uint<WA> &a, const fw_uint<WB> &b, const fw_uint<WC> &c, const fw_uint<WD> &d)
-{ return fw_uint<WA+WB+WC+WD>(ap_uint<WA+WB+WC+WD>( (a.bits,b.bits,c.bits,d.bits) )); }
+inline fw_uint<WA+WB+WC+WD> concat(const fw_uint<WA> &a, const fw_uint<WB> &b, const fw_uint<WC> &c, const fw_uint<WD> &d)
+{
+	static const int SafeRW= (WA+WB+WC+WD <= 0) ? 1 : WA+WB+WC+WD;
+	return fw_uint<WA+WB+WC+WD>(ap_uint<SafeRW>( (a.bits,b.bits,c.bits,d.bits) ));
+}
     
+}; // thls
 
 #endif

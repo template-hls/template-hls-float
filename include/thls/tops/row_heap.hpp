@@ -3,7 +3,9 @@
 
 #include "fw_uint.hpp"
 
+#ifndef THLS_SYNTHESIS
 #include <iostream>
+#endif
 
 namespace thls
 {
@@ -107,13 +109,13 @@ struct row_heap_compress_iterate<W,2>
 template<int W>
 struct row_heap_compress_iterate<W,1>
 {
-    static_assert(W!=W, "Can't compress a single row.");
+	THLS_STATIC_ASSERT(W!=W, "Can't compress a single row.");
 };
 
 template<int W>
 struct row_heap_compress_iterate<W,0>
 {
-    static_assert(W!=W, "Can't compress no rows.");
+	THLS_STATIC_ASSERT(W!=W, "Can't compress no rows.");
 };
 
 
@@ -129,7 +131,7 @@ row_heap_holder<W,2> compress(const row_heap_holder<W,D> &bh)
 template<int W, int D>
 fw_uint<W> collapse(const row_heap_holder<W,D> &bh)
 {
-    static_assert(D==2,"Will only collapse compressed row heaps.");
+    THLS_STATIC_ASSERT(D==2,"Will only collapse compressed row heaps.");
     return bh.rows[0]+bh.rows[1];
 }
 
@@ -158,7 +160,9 @@ void row_heap_to_mpz(mpz_t r, const row_heap_holder<W,D> &heap)
 template<int W>
 row_heap_holder<W,1> fw_uint_to_row_heap(const fw_uint<W> &x)
 {
-    return row_heap_holder<W,1>({x});
+	row_heap_holder<W,1> res;
+	res.rows[0]=x;
+	return res;
 }
 
 template<int WA,int DA,int WB,int DB>

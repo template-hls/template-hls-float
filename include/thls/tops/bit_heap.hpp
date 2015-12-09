@@ -77,6 +77,7 @@ THLS_INLINE  typename detail::uint_to_bit_heap<W>::heap_t fw_uint_to_bit_heap(co
     return detail::uint_to_bit_heap<W>::build(x);
 }
 
+#ifndef THLS_SYNTHESIS
 namespace detail
 {
     template<class T>
@@ -123,8 +124,6 @@ namespace detail
     };
 };
 
-
-#ifndef THLS_SYNTHESIS
 template<class T>
 void bit_heap_to_mpz(mpz_t r, const T &heap)
 {
@@ -181,7 +180,6 @@ std::ostream &operator<<(std::ostream &dst, const bit_heap_link<H,T> &x)
 
     return dst;
 }
-
 #endif
 
 namespace detail
