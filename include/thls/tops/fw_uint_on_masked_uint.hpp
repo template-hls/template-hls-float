@@ -17,6 +17,9 @@
 #include <sstream>
 #endif
 
+namespace thls
+{
+
 
 template<int W>
 struct fw_uint
@@ -112,10 +115,9 @@ struct fw_uint
     }
 #endif
 
-    template<int O>
-    THLS_INLINE fw_uint<thls_ctMax(W,O)> operator+(const fw_uint<O> &o) const
+    THLS_INLINE fw_uint<W> operator+(const fw_uint<W> &o) const
     {
-        return fw_uint<thls_ctMax(W,O)>( (bits+o.bits) & (fw_uint<thls_ctMax(W,O)>::MASK) );
+        return fw_uint<W>( (bits+o.bits) & MASK );
     }
 
     THLS_INLINE fw_uint operator+(int b) const
@@ -123,10 +125,9 @@ struct fw_uint
         return fw_uint( uint64_t(bits+b) & MASK);
     }
 
-    template<int O>
-    THLS_INLINE fw_uint<thls_ctMax(W,O)> operator-(const fw_uint<O> &o) const
+    THLS_INLINE fw_uint<W> operator-(const fw_uint<W> &o) const
     {
-        return fw_uint<thls_ctMax(W,O)>( (bits-o.bits) & (fw_uint<thls_ctMax(W,O)>::MASK));
+        return fw_uint<W>( (bits-o.bits) & MASK);
     }
 
     THLS_INLINE fw_uint operator-(int b) const
@@ -201,8 +202,7 @@ struct fw_uint
     THLS_INLINE fw_uint operator~() const
     { return fw_uint( bits ^ MASK ); }
 
-    template<int O>
-    THLS_INLINE fw_uint operator&(const fw_uint<O> &o) const
+    THLS_INLINE fw_uint operator&(const fw_uint<W> &o) const
     {
         return fw_uint<W>(bits&o.bits);
     }
@@ -213,8 +213,7 @@ struct fw_uint
         return fw_uint(bits&b);
     }
 
-    template<int O>
-    THLS_INLINE fw_uint operator|(const fw_uint<O> &o) const
+    THLS_INLINE fw_uint operator|(const fw_uint<W> &o) const
     {
         return fw_uint<W>( (bits|o.bits) & MASK );
     }
@@ -225,8 +224,7 @@ struct fw_uint
         return fw_uint( uint64_t(bits|b) & MASK);
     }
 
-    template<int O>
-    THLS_INLINE fw_uint operator^(const fw_uint<O> &o) const
+    THLS_INLINE fw_uint operator^(const fw_uint<W> &o) const
     {
         return fw_uint<W>( (bits^o.bits) & MASK );
     }
@@ -309,23 +307,6 @@ struct fw_uint
     { return to_bool(); }
 };
 
-
-
-THLS_INLINE fw_uint<1> operator||(const fw_uint<1> &a, const fw_uint<1> &b)
-{ return fw_uint<1>(a.bits||b.bits); }
-
-THLS_INLINE fw_uint<1> operator&&(const fw_uint<1> &a, const fw_uint<1> &b)
-{ return fw_uint<1>(a.bits&&b.bits); }
-
-#ifndef THLS_SYNTHESIS
-template<int W>
-std::ostream &operator<<(std::ostream &dst, const fw_uint<W> &x)
-{
-    dst<<x.to_string();
-    return dst;
-}
-#endif
-
 template<int HI,int LO,int W>
 THLS_INLINE fw_uint<HI-LO+1> get_bits(const fw_uint<W> &x)
 {
@@ -368,5 +349,7 @@ THLS_INLINE fw_uint<WD> checked_cast(const fw_uint<WS> &s)
         return ~fw_uint<WD>(); // Poison with ones
     }
 }
+
+}; // thls
 
 #endif

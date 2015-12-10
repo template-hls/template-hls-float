@@ -5,8 +5,19 @@
 #error "Include fw_uint.hpp, rather than this file."
 #endif
 
+// TODO : Dispatch propertly to the correct header.
+// I think VHLS is supposed to do it, but it always
+// picks up the simulation one.
+#ifdef THLS_SYNTHESIS
 #include "C:\Usr\Xilinx2015.4\Vivado_HLS\2015.4\common\technology\autopilot\ap_int.h"
-//#include "ap_int.h"
+#else
+#include "C:\Usr\Xilinx2015.4\Vivado_HLS\2015.4\include\ap_int.h"
+#endif
+
+#ifndef THLS_SYNTHESIS
+#include "gmp.h"
+#include <stdexcept>
+#endif
 
 namespace thls
 {
@@ -17,152 +28,178 @@ struct fw_uint
     static const int width=W;
 
     // ap_uint doesn't allow widths <= 0
-    static const int SafeW=width<=0 ? 1 : width;
+    static const int SafeW= (width<=0) ? 1 : width;
 
     ap_uint<SafeW> bits;
 
-    THLS_CONSTEXPR fw_uint()
+    THLS_INLINE THLS_CONSTEXPR fw_uint()
     	: bits(0)
-    {}
+    {
+        assert(W>=0);
+    }
 
-    fw_uint(const fw_uint &x)
+    THLS_INLINE fw_uint(const fw_uint &x)
     	: bits(x.bits)
-    {}
+    {
+        assert(W>=0);
+    }
 
 
     // Construct 1-bit vector from boolean
     #if __cplusplus >= 201103L
     template<int WW=W>
-    fw_uint(bool b, typename std::enable_if<WW==1>::type * = nullptr )
-        : bits(b)
-    {}
-    #else
-    template<int WW=W>
-    explicit fw_uint(bool b)
+    THLS_INLINE fw_uint(bool b, typename std::enable_if<WW==1>::type * = nullptr )
         : bits(b)
     {
+        assert(W>=0);
+    }
+    #else
+    template<int WW=W>
+    THLS_INLINE explicit fw_uint(bool b)
+        : bits(b)
+    {
+        assert(W>=0);
         assert(WW==1);
     }
     #endif
 
-    explicit fw_uint(int v)
+    THLS_INLINE explicit fw_uint(int v)
         : bits(v)
     {
+        assert(W>=0);
         assert(v>=0); // must be non-negative
-        assert(v < (1ll<<W)); // Must be in range
+        assert(v < (1ll<<SafeW)); // Must be in range
     }
 
-    explicit fw_uint(uint64_t v)
+    THLS_INLINE explicit fw_uint(uint64_t v)
         : bits(v)
     {
+        assert(W>=0);
         assert(v>=0); // must be non-negative
-        assert(v < (1ll<<W)); // Must be in range
+        assert(v < (1ll<<SafeW)); // Must be in range
     }
 
-    explicit fw_uint(const char *value)
+    THLS_INLINE explicit fw_uint(const char *value)
         : bits(value)
     {
+        assert(W>=0);
         // TODO : Really need to range-check the actual number
     }
 
-    explicit fw_uint(const ap_uint<SafeW> &x)
+    THLS_INLINE explicit fw_uint(const ap_uint<SafeW> &x)
         : bits(x)
-    {}
+    {
+        assert(W>=0);
+    }
 
-    explicit fw_uint(const ap_range_ref<SafeW,false> &x)
+    THLS_INLINE explicit fw_uint(const ap_range_ref<SafeW,false> &x)
         : bits(x)
-    {}
+    {
+        assert(W>=0);
+    }
 
 #ifndef THLS_SYNTHESIS
-    explicit fw_uint(mpz_class x)
+    explicit fw_uint(mpz_t x)
     {
-        if(mpz_sizeinbase(x.get_mpz_t(),2)>W){
+        assert(W>=0);
+
+        if(mpz_sizeinbase(x,2)>W){
             throw std::runtime_error("mpz is too large.");
         }
-        std::string dec=x.get_str(); // LAZY
-        bits=ap_uint<SafeW>(dec.c_str());
+        mpz_t tmp;
+        mpz_init_set(tmp, x);
+        if(sizeof(unsigned int)*8 <= W){
+            bits=mpz_get_ui(x);
+        }else{
+            mpz_tdiv_r_2exp(tmp, tmp, 32);
+            bits=mpz_get_ui(x);
+            mpz_set(tmp, x);
+            mpz_tdiv_q_2exp(tmp, tmp, 32);
+            bits=(bits<<32)+bits;
+        }
+        mpz_clear(tmp);
     }
 #endif
 
-    fw_uint<W> operator+(const fw_uint<W> &o) const
+    THLS_INLINE fw_uint<W> operator+(const fw_uint<W> &o) const
     {
         ap_uint<SafeW> a(bits), b(o.bits);
         return fw_uint<W>(ap_uint<SafeW>(a+b));
     }
 
-    fw_uint operator+(int b) const
+    THLS_INLINE fw_uint operator+(int b) const
     {
         return fw_uint(ap_uint<SafeW>(bits+b));
     }
 
-    fw_uint<W> operator-(const fw_uint<W> &o) const
+    THLS_INLINE fw_uint<W> operator-(const fw_uint<W> &o) const
     {
         ap_uint<SafeW> a(bits), b(o.bits);
         return fw_uint<W>(ap_uint<SafeW>(a-b));
     }
 
-    fw_uint operator-(int b) const
+    THLS_INLINE fw_uint operator-(int b) const
     {
         return fw_uint(ap_uint<SafeW>(bits-b));
     }
 
     template<int O>
-    fw_uint<O+W> operator*(const fw_uint<O> &o) const
+    THLS_INLINE fw_uint<O+W> operator*(const fw_uint<O> &o) const
     {
     	static const int SafeRW = (O+W <= 0) ? 1 : (O+W);
         ap_uint<SafeRW> a(bits), b(o.bits);
         return fw_uint<O+W>(ap_uint<SafeRW>(a*b));
     }
 
-    fw_uint<1> operator<(const fw_uint &o) const
+    THLS_INLINE fw_uint<1> operator<(const fw_uint &o) const
     { return fw_uint<1>(bits < o.bits); }
 
-    fw_uint<1> operator<(int o) const
+    THLS_INLINE fw_uint<1> operator<(int o) const
     {
         assert(o>=0);
         return fw_uint<1>(bits < o);
     }
 
-    fw_uint<1> operator<=(const fw_uint &o) const
+    THLS_INLINE fw_uint<1> operator<=(const fw_uint &o) const
     { return fw_uint<1>(bits <= o.bits); }
 
-    fw_uint<1> operator<=(int o) const
+    THLS_INLINE fw_uint<1> operator<=(int o) const
     {
         assert(o>=0);
         return fw_uint<1>(bits <= o);
     }
 
-    fw_uint<1> operator==(const fw_uint &o) const
+    THLS_INLINE fw_uint<1> operator==(const fw_uint &o) const
     { return fw_uint<1>(bits == o.bits); }
 
-    fw_uint<1> operator==(int o) const
+    THLS_INLINE fw_uint<1> operator==(int o) const
     {
         assert(o>=0);
         return fw_uint<1>(bits == o);
     }
 
-    fw_uint<1> operator>=(const fw_uint &o) const
+    THLS_INLINE fw_uint<1> operator>=(const fw_uint &o) const
     { return fw_uint<1>(bits >= o.bits); }
 
-    fw_uint<1> operator>=(int o) const
+    THLS_INLINE fw_uint<1> operator>=(int o) const
     {
         assert(o>=0);
         return fw_uint<1>(bits >= o);
     }
 
-    fw_uint<1> operator>(const fw_uint &o) const
+    THLS_INLINE fw_uint<1> operator>(const fw_uint &o) const
     { return fw_uint<1>(bits > o.bits); }
 
-    fw_uint<1> operator>(int o) const
+    THLS_INLINE fw_uint<1> operator>(int o) const
     {
         assert(o>=0);
         return fw_uint<1>(bits > o);
     }
 
-    fw_uint<1> operator!=(const fw_uint &o) const
+    THLS_INLINE fw_uint<1> operator!=(const fw_uint &o) const
     { return fw_uint<1>(bits != o.bits); }
 
-    fw_uint<1> operator!=(int o) const
+    THLS_INLINE fw_uint<1> operator!=(int o) const
     {
         assert(o>=0);
         return fw_uint<1>(bits != o);
@@ -170,59 +207,54 @@ struct fw_uint
 
     //////////////////////////////////////////////
     // Bitwise ops.
-    // numeric_std says result width is size of the LHS
 
-    fw_uint operator~() const
+    THLS_INLINE fw_uint operator~() const
     { return fw_uint(ap_uint<SafeW>(~bits)); }
 
-    template<int O>
-    fw_uint operator&(const fw_uint<O> &o) const
+    THLS_INLINE fw_uint operator&(const fw_uint<W> &o) const
     {
-        ap_uint<W> b(o.bits);
-        return fw_uint<W>(ap_uint<SafeW>(bits&b));
+        return fw_uint<W>(ap_uint<SafeW>(bits&o.bits));
     }
 
-    fw_uint operator&(int b) const
+    THLS_INLINE fw_uint operator&(int b) const
     {
         assert(b>=0);
         return fw_uint(ap_uint<SafeW>(bits&b));
     }
 
-    template<int O>
-    fw_uint operator|(const fw_uint<O> &o) const
+    THLS_INLINE fw_uint operator|(const fw_uint<W> &o) const
     {
         ap_uint<W> b(o.bits);
-        return fw_uint<W>(ap_uint<SafeW>(bits|b));
+        return fw_uint<W>(ap_uint<SafeW>(bits|o.bits));
     }
 
-    fw_uint operator|(int b) const
+    THLS_INLINE fw_uint operator|(int b) const
     {
         assert(b>=0);
         return fw_uint(ap_uint<SafeW>(bits|b));
     }
 
-    template<int O>
-    fw_uint operator^(const fw_uint<O> &o) const
+    THLS_INLINE fw_uint operator^(const fw_uint<W> &o) const
     {
         ap_uint<W> b(o.bits);
-        return fw_uint<W>(ap_uint<SafeW>(bits^b));
+        return fw_uint<W>(ap_uint<SafeW>(bits^o.bits));
     }
 
-    fw_uint operator^(int b) const
+    THLS_INLINE fw_uint operator^(int b) const
     {
         assert(b>=0);
         return fw_uint(bits^b);
     }
 
 
-    fw_uint operator>>(int dist) const
+    THLS_INLINE fw_uint operator>>(int dist) const
     {
         assert(0<=dist && dist<W);
         ap_uint<SafeW> res(bits>>dist);
         return fw_uint(res);
     }
-    
-    fw_uint operator<<(int dist) const
+
+    THLS_INLINE fw_uint operator<<(int dist) const
     {
         assert(0<=dist && dist<W);
         ap_uint<SafeW> res(bits<<dist);
@@ -241,57 +273,45 @@ struct fw_uint
         }
         return "0b"+acc;
     }
+
+    void to_mpz_t(mpz_t res) const
+    {
+        static_assert(sizeof(unsigned long)>=4, "Must have 32-bit or bigger longs");
+        mpz_set_ui(res, 0);
+        int todo=W;
+        int offset=0;
+        mpz_t tmp;
+        mpz_init(tmp);
+        while(todo>0){
+            uint32_t curr=(uint32_t)(bits>>offset);
+            mpz_set_ui(tmp, curr);
+            mpz_mul_2exp(tmp, tmp, offset);
+            mpz_add(res, res, tmp);
+            offset+=32;
+            todo-=32;
+        }
+        mpz_clear(tmp);
+    }
 #endif
 
-    int to_int() const
+    THLS_INLINE int to_int() const
     {
         return (int)bits;
     }
 
-    uint64_t to_uint64() const
+    THLS_INLINE uint64_t to_uint64() const
     { return (uint64_t)bits; }
 
-    bool to_bool() const
+    THLS_INLINE bool to_bool() const
     {
         assert(W==1);
         return bits==1;
     }
-
-    #ifndef THLS_SYNTHESIS
-    mpz_class to_mpz_class() const
-    {
-        std::string dec( bits.to_string() );   // LAZY
-        return mpz_class(dec);
-    }
-    #endif
-
-    //explicit operator bool() const
-    //{ return to_bool(); }
-
-    operator bool() const
-    { return to_bool(); }
 };
 
 
-
-inline fw_uint<1> operator||(const fw_uint<1> &a, const fw_uint<1> &b)
-{ return fw_uint<1>(ap_uint<1>(a.bits||b.bits)); }
-
-inline fw_uint<1> operator&&(const fw_uint<1> &a, const fw_uint<1> &b)
-{ return fw_uint<1>(ap_uint<1>(a.bits&&b.bits)); }
-
-#ifndef THLS_SYNTHESIS
-template<int W>
-inline std::ostream &operator<<(std::ostream &dst, const fw_uint<W> &x)
-{
-    dst<<x.to_string();
-    return dst;
-}
-#endif
-
-
 template<int HI,int LO,int W>
-inline fw_uint<HI-LO+1> get_bits(const fw_uint<W> &x)
+THLS_INLINE  fw_uint<HI-LO+1> get_bits(const fw_uint<W> &x)
 {
 	static const int SafeRW = (HI-LO+1 <= 0) ? 1 : (HI-LO+1);
     return fw_uint<HI-LO+1>(ap_uint<SafeRW>(x.bits.range(HI,LO)));
@@ -303,30 +323,85 @@ inline fw_uint<HI-LO+1> get_bits(const fw_uint<W> &x)
 // some point it could be brought back, but this will do for now.
 
 template<int WA>
-inline fw_uint<WA> concat(const fw_uint<WA> &a)
+THLS_INLINE  fw_uint<WA> concat(const fw_uint<WA> &a)
 { return a; }
 
-template<int WA,int WB>
-inline fw_uint<WA+WB> concat(const fw_uint<WA> &a, const fw_uint<WB> &b)
+namespace detail
 {
-	static const int SafeRW= (WA+WB <= 0) ? 1 : WA+WB;
-	return fw_uint<WA+WB>(ap_uint<SafeRW>( (a.bits,b.bits) ));
+    template<int WA,int WB>
+    struct concat_two
+    {
+        static fw_uint<WA+WB> go(const fw_uint<WA> &a, const fw_uint<WB> &b)
+        {
+            assert(WA>0);
+            assert(WB>0);
+            return fw_uint<WA+WB>(ap_uint<WA+WB>( (a.bits,b.bits) ));
+        }
+    };
+
+    template<int WA>
+    struct concat_two<WA,0>
+    {
+        static fw_uint<WA> go(const fw_uint<WA> &a, const fw_uint<0> &b)
+        {
+            assert(WA>0);
+            return a;
+        }
+    };
+
+    template<int WB>
+    struct concat_two<0,WB>
+    {
+        static fw_uint<WB> go(const fw_uint<0> &a, const fw_uint<WB> &b)
+        {
+            assert(WB>0);
+            return b;
+        }
+    };
+
+    template<>
+    struct concat_two<0,0>
+    {
+        static fw_uint<0> go(const fw_uint<0> &a, const fw_uint<0> &b)
+        {
+            return a;
+        }
+    };
+};
+
+template<int WA,int WB>
+THLS_INLINE  fw_uint<WA+WB> concat(const fw_uint<WA> &a, const fw_uint<WB> &b)
+{
+    // We have to deal with the case where W==0. ap_uint doesn't like
+    // this, but under my type system it is legal to instantiate zero
+    // width (but not negative width) types.
+    return detail::concat_two<WA,WB>::go(a,b);
 }
 
 template<int WA,int WB,int WC>
-inline fw_uint<WA+WB+WC> concat(const fw_uint<WA> &a, const fw_uint<WB> &b, const fw_uint<WC> &c)
+THLS_INLINE  fw_uint<WA+WB+WC> concat(const fw_uint<WA> &a, const fw_uint<WB> &b, const fw_uint<WC> &c)
 {
-	static const int SafeRW= (WA+WB+WC <= 0) ? 1 : WA+WB+WC;
-	return fw_uint<WA+WB+WC>(ap_uint<SafeRW>( (a.bits,b.bits,c.bits) ));
+	return concat(a,concat(b,c));
 }
 
 template<int WA,int WB,int WC,int WD>
-inline fw_uint<WA+WB+WC+WD> concat(const fw_uint<WA> &a, const fw_uint<WB> &b, const fw_uint<WC> &c, const fw_uint<WD> &d)
+THLS_INLINE  fw_uint<WA+WB+WC+WD> concat(const fw_uint<WA> &a, const fw_uint<WB> &b, const fw_uint<WC> &c, const fw_uint<WD> &d)
 {
-	static const int SafeRW= (WA+WB+WC+WD <= 0) ? 1 : WA+WB+WC+WD;
-	return fw_uint<WA+WB+WC+WD>(ap_uint<SafeRW>( (a.bits,b.bits,c.bits,d.bits) ));
+	return concat(concat(a,b),concat(c,d));
 }
-    
+
+template<int WD,int WS>
+fw_uint<WD> checked_cast(const fw_uint<WS> &s)
+{
+    static const int SafeWD=WD<=0 ? 1 : WD;
+    if(WD==WS){
+        return fw_uint<WD>(ap_uint<SafeWD>(s.bits));
+    }else{
+        assert(0);
+        return ~fw_uint<WD>(); // Poison with ones
+    }
+}
+
 }; // thls
 
 #endif

@@ -163,9 +163,23 @@ namespace detail
     { static const int value = 1; };
 };
 
-#include "fw_uint_on_ap_uint.hpp"
-//#include "fw_uint_on_cpp_int.hpp"
-//#include "fw_uint_on_masked_uint.hpp"
+#if !( defined(THLS_FW_UINT_ON_AP_UINT) || defined(THLS_FW_UINT_ON_CPP_UINT) || defined(THLS_FW_UINT_ON_MASKED_UINT) )
+#	ifdef THLS_SYNTHESIS
+#		define THLS_FW_UINT_ON_AP_UINT
+#	else
+#		define THLS_FW_UINT_ON_MASKED_UINT
+#	endif
+#endif
+
+#if defined(THLS_FW_UINT_ON_AP_UINT)
+#	include "fw_uint_on_ap_uint.hpp"
+#elif defined(THLS_FW_UINT_ON_CPP_UINT)
+#	include "fw_uint_on_cpp_int.hpp"
+#elif defined(THLS_FW_UINT_ON_MASKED_UINT)
+#	include "fw_uint_on_masked_uint.hpp"
+#else
+#	error "No fw_uint backend is selected."
+#endif
 
 
 namespace thls
@@ -180,12 +194,21 @@ namespace thls
 template<int WD,int WS>
 fw_uint<WD> checked_cast(const fw_uint<WS> &s);
 
-
+/*
 template<int HI,int LO,int W>
-fw_uint<HI-LO+1> get_bits(const fw_uint<W> &x);
+THLS_INLINE fw_uint<HI-LO+1> get_bits(const fw_uint<W> &x);
+*/
+
+THLS_INLINE  fw_uint<1> operator||(const fw_uint<1> &a, const fw_uint<1> &b)
+{ return a|b; }
+
+THLS_INLINE  fw_uint<1> operator&&(const fw_uint<1> &a, const fw_uint<1> &b)
+{ return a&b; }
+
+
 
 template<int B,int W>
-fw_uint<W-B> take(const fw_uint<W> &x)
+THLS_INLINE fw_uint<W-B> take(const fw_uint<W> &x)
 {
     THLS_STATIC_ASSERT(B>=0, "Cannot take negative bits.");
     THLS_STATIC_ASSERT(B<=W, "Cannot take more than bits in the variable.");
@@ -193,119 +216,225 @@ fw_uint<W-B> take(const fw_uint<W> &x)
 }
 
 template<int B,int W>
-fw_uint<1> get_bit(const fw_uint<W> &x)
+THLS_INLINE fw_uint<1> get_bit(const fw_uint<W> &x)
 {
-    return get_bits<B,B,W>(x);
+    return get_bits<B,B>(x);
 }
 
 
 template<int W>
-fw_uint<1> take_lsb(const fw_uint<W> &x)
+THLS_INLINE fw_uint<1> take_lsb(const fw_uint<W> &x)
 {
   return get_bit<0>(x);
 }
 
 template<int W>
-fw_uint<W-1> drop_lsb(const fw_uint<W> &x)
+THLS_INLINE fw_uint<W-1> drop_lsb(const fw_uint<W> &x)
 {
   return get_bits<W-1,1>(x);
 }
 
 template<int W>
-fw_uint<1> take_msb(const fw_uint<W> &x)
+THLS_INLINE fw_uint<1> take_msb(const fw_uint<W> &x)
 {
   return get_bit<W-1>(x);
 }
 
 template<int W>
-fw_uint<W-1> drop_msb(const fw_uint<W> &x)
+THLS_INLINE fw_uint<W-1> drop_msb(const fw_uint<W> &x)
 {
   return get_bits<W-2,0>(x);
 }
 
 
 template<int B,int W>
-fw_uint<B> take_lsbs(const fw_uint<W> &x)
+THLS_INLINE fw_uint<B> take_lsbs(const fw_uint<W> &x)
 {
   return get_bits<B-1,0>(x);
 }
 
 template<int B,int W>
-fw_uint<W-B> drop_lsbs(const fw_uint<W> &x)
+THLS_INLINE fw_uint<W-B> drop_lsbs(const fw_uint<W> &x)
 {
   return get_bits<W-1,B>(x);
 }
 
 template<int B,int W>
-fw_uint<B> take_msbs(const fw_uint<W> &x)
+THLS_INLINE fw_uint<B> take_msbs(const fw_uint<W> &x)
 {
   return get_bits<W-1,W-B>(x);
 }
 
 template<int B,int W>
-fw_uint<W-B> drop_msbs(const fw_uint<W> &x)
+THLS_INLINE fw_uint<W-B> drop_msbs(const fw_uint<W> &x)
 {
   return get_bits<W-1-B,0>(x);
 }
 
 
 template<int A,int B>
-fw_uint<A+B> full_mul(const fw_uint<A> &a, const fw_uint<B> &b)
+THLS_INLINE fw_uint<A+B> full_mul(const fw_uint<A> &a, const fw_uint<B> &b)
 {
     return a*b;
 }
 
 template<int W>
-fw_uint<W> zg()
+THLS_INLINE fw_uint<W> zg()
 {
     return fw_uint<W>(0);
 }
 
 template<int W>
-fw_uint<W> og()
+THLS_INLINE fw_uint<W> og()
 {
     return ~zg<W>();
 }
 
 template<int P,int W>
-fw_uint<P+W> zpad_hi(const fw_uint<W> &x)
+THLS_INLINE fw_uint<P+W> zpad_hi(const fw_uint<W> &x)
 {
   return concat(zg<P>(),x);
 }
 
 template<int P,int W>
-fw_uint<P+W> opad_hi(const fw_uint<W> &x)
+THLS_INLINE fw_uint<P+W> opad_hi(const fw_uint<W> &x)
 {
   return concat(og<P>(),x);
 }
 
 template<int P,int W>
-fw_uint<P+W> zpad_lo(const fw_uint<W> &x)
+THLS_INLINE fw_uint<P+W> zpad_lo(const fw_uint<W> &x)
 {
   return concat(x,zg<P>());
 }
 
 template<int P,int W>
-fw_uint<P+W> opad_lo(const fw_uint<W> &x)
+THLS_INLINE fw_uint<P+W> opad_lo(const fw_uint<W> &x)
 {
   return concat(x,og<P>());
 }
 
 
 template<int B,int W>
-fw_uint<B> extu(const fw_uint<W> &x)
+THLS_INLINE fw_uint<B> extu(const fw_uint<W> &x)
 {
   THLS_STATIC_ASSERT(B>=W, "Cannot extend to smaller width.");
   return zpad_hi<B-W>(x);
 }
 
 template<int W>
-fw_uint<W> select(bool b, const fw_uint<W> &a, const fw_uint<W> &c)
+THLS_INLINE fw_uint<W> add_with_cin(const fw_uint<W> &x, const fw_uint<W> &y, const fw_uint<1> &cin)
 {
-  if(b){
-    return a;
+  return (x+y+zpad_hi<W-1>(cin));
+}
+
+template<int W>
+THLS_INLINE fw_uint<W> add_cin(const fw_uint<W> &x, const fw_uint<1> &cin)
+{
+  return (x+zpad_hi<W-1>(cin));
+}
+
+template<class T>
+const T &select(const fw_uint<1> &c0, const T &v0, const T &def)
+{
+  if(c0.to_bool()){
+    return v0;
   }else{
-    return c;
+    return def;
+  }
+}
+
+template<class T>
+const T &select(bool c0, const T &v0, const T &def)
+{
+  if(c0){
+    return v0;
+  }else{
+    return def;
+  }
+}
+
+template<class T,class C1>
+const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, const T &v1, const T &def)
+{
+  if(c0.to_bool()){
+    return v0;
+  }else{
+    return select(c1,v1,def);
+  }
+}
+
+template<class T,class C1>
+const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, const T &def)
+{
+  if(c0){
+    return v0;
+  }else{
+    return select(c1,v1,def);
+  }
+}
+
+template<class T,class C1,class C2>
+const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const T &def)
+{
+  if(c0.to_bool()){
+    return v0;
+  }else{
+    return select(c1,v1,c2,c2,def);
+  }
+}
+
+template<class T,class C1,class C2>
+const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const T &def)
+{
+  if(c0){
+    return v0;
+  }else{
+    return select(c1,v1,c2,v2,def);
+  }
+}
+
+template<class T,class C1,class C2,class C3>
+const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const C3 &c3, const T &v3, const T &def)
+{
+  if(c0.to_bool()){
+    return v0;
+  }else{
+    return select(c1,v1,c2,c2,c3,v3,def);
+  }
+}
+
+template<class T,class C1,class C2,class C3>
+const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const C2 &c3, const T &v3, const T &def)
+{
+  if(c0){
+    return v0;
+  }else{
+    return select(c1,v1,c2,v2,c3,v3,def);
+  }
+}
+
+
+template<class T>
+const T &select(const fw_uint<1> &c0, const T &v0,
+  const fw_uint<1> &c1, const T &v1,
+  const fw_uint<1> &c2, const T &v2,
+  const fw_uint<1> &c3, const T &v3,
+  const fw_uint<1> &c4, const T &v4,
+  const T &def)
+{
+  if(c0.to_bool()){
+    return v0;
+  }else if(c1.to_bool()){
+    return v1;
+  }else if(c2.to_bool()){
+    return v2;
+  }else if(c3.to_bool()){
+    return v3;
+  }else if(c4.to_bool()){
+    return v4;
+  }else{
+    return def;
   }
 }
 
@@ -323,12 +452,21 @@ public:
     }
   }
 
-  const fw_uint<WD> &operator()(const fw_uint<WA> &addr) const
+  THLS_INLINE const fw_uint<WD> &operator()(const fw_uint<WA> &addr) const
   {
     return entries[addr.to_int()];
   }
-
 };
+
+#ifndef THLS_SYNTHESIS
+template<int W>
+inline std::ostream &operator<<(std::ostream &dst, const fw_uint<W> &x)
+{
+    dst<<x.to_string();
+    return dst;
+}
+#endif
+
 
 }; // thls
 

@@ -365,10 +365,29 @@ namespace detail
     h'(i) = nS(i) + nC(i-1), were nC(-1) = 0
 */
 
-THLS_INLINE std::pair<fw_uint<1>,fw_uint<1> > compress_3_2(const fw_uint<3> &x)
+
+template<class A,class B>
+struct ipair
+{
+	A first;
+	B second;
+
+	THLS_INLINE ipair(const A &a, const B &b)
+		: first(a)
+		, second(b)
+	{}
+};
+
+template<class A,class B>
+THLS_INLINE ipair<A,B> make_ipair(const A &a, const B &b)
+{
+	return ipair<A,B>(a,b);
+}
+
+THLS_INLINE ipair<fw_uint<1>,fw_uint<1> > compress_3_2(const fw_uint<3> &x)
 {
     auto tmp=zpad_hi<1>(get_bit<0>(x))+zpad_hi<1>(get_bit<1>(x))+zpad_hi<1>(get_bit<2>(x));
-    return std::make_pair(
+    return make_ipair(
         get_bit<1>(tmp),
         get_bit<0>(tmp)
     );
@@ -385,11 +404,11 @@ struct compress_column_impl
     typedef fw_uint<base_t::carry_t::width+1> carry_t;
     typedef fw_uint<base_t::sum_t::width+1> sum_t;
 
-    THLS_INLINE static std::pair<carry_t,sum_t> build(const fw_uint<W> &x)
+    THLS_INLINE static ipair<carry_t,sum_t> build(const fw_uint<W> &x)
     {
         auto local=compress_3_2(take_lsbs<3>(x));
         auto next=base_t::build(drop_lsbs<3>(x));
-        return std::make_pair(
+        return make_ipair(
             concat(local.first,next.first),
             concat(local.second,next.second)
         );
@@ -402,8 +421,8 @@ struct compress_column_impl<0>
     typedef fw_uint<0> carry_t;
     typedef fw_uint<0> sum_t;
 
-    THLS_INLINE static std::pair<carry_t,sum_t> build(const fw_uint<0> &)
-    { return std::make_pair(zg<0>(),zg<0>()); }
+    THLS_INLINE static ipair<carry_t,sum_t> build(const fw_uint<0> &)
+    { return make_ipair(zg<0>(),zg<0>()); }
 };
 
 template<>
@@ -412,8 +431,8 @@ struct compress_column_impl<1>
     typedef fw_uint<0> carry_t;
     typedef fw_uint<1> sum_t;
 
-    THLS_INLINE static std::pair<carry_t,sum_t> build(const fw_uint<1> &x)
-    { return std::make_pair(zg<0>(),x); }
+    THLS_INLINE static ipair<carry_t,sum_t> build(const fw_uint<1> &x)
+    { return make_ipair(zg<0>(),x); }
 };
 
 template<>
@@ -422,8 +441,8 @@ struct compress_column_impl<2>
     typedef fw_uint<1> carry_t;
     typedef fw_uint<1> sum_t;
 
-    THLS_INLINE static std::pair<carry_t,sum_t> build(const fw_uint<2> &x)
-    { return std::make_pair(take_msb(x)&take_lsb(x),take_msb(x)^take_lsb(x)); }
+    THLS_INLINE static ipair<carry_t,sum_t> build(const fw_uint<2> &x)
+    { return make_ipair(take_msb(x)&take_lsb(x),take_msb(x)^take_lsb(x)); }
 };
 
 
@@ -442,10 +461,10 @@ struct compress_step<bit_heap_root<H> >
     typedef bit_heap_root<nHeight> next_t;
     typedef fw_uint<nCarry> carry_t;
 
-    THLS_INLINE static std::pair<carry_t,next_t> build(const this_t &x)
+    THLS_INLINE static ipair<carry_t,next_t> build(const this_t &x)
     {
-        std::pair<fw_uint<nCarry>,fw_uint<nSum> > cols=compress_column_impl<H>::build(x.bits);
-        return std::make_pair(
+        ipair<fw_uint<nCarry>,fw_uint<nSum> > cols=compress_column_impl<H>::build(x.bits);
+        return make_ipair(
             cols.first,
             bit_heap_root<nSum>(cols.second)
         );
@@ -466,7 +485,7 @@ struct compress_step<bit_heap_link<H,LSBs> >
     typedef bit_heap_link<nHeight, typename compress_next::next_t> next_t;
     typedef fw_uint<nCarry> carry_t;
 
-    THLS_INLINE static std::pair<carry_t,next_t> build(const this_t &x)
+    THLS_INLINE static ipair<carry_t,next_t> build(const this_t &x)
     {
         auto cols=compress_column_impl<H>::build(x.bits); // first is carry, second is sum
         auto next=compress_next::build(x.lsbs); // first is carry, second is bit-heap
@@ -475,7 +494,7 @@ struct compress_step<bit_heap_link<H,LSBs> >
             concat(cols.second,next.first),
             next.second
         );
-        return std::make_pair(
+        return make_ipair(
             r_carry,
             r_next
         );
