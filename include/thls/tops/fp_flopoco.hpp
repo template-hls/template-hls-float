@@ -47,7 +47,7 @@ struct fp_flopoco
     fw_uint<2> get_flags() const
     { return get_bits<ExpBits+FracBits+2,ExpBits+FracBits+1>(bits); }
 
-    bool get_sign() const
+    fw_uint<1> get_sign() const
     { return get_bit<ExpBits+FracBits>(bits); }
 
     fw_uint<ExpBits> get_exp_bits() const
