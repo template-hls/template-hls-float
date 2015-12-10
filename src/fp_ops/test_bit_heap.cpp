@@ -39,7 +39,7 @@ void test_level_4(const fw_uint<WB> &b,const fw_uint<WC> &c,const fw_uint<WD> &d
 
 		auto abcd=extu<WT>(a)+extu<WT>(b)+extu<WT>(c)+extu<WT>(d);
 
-		abcd.to_mpz(ref);
+		abcd.to_mpz_t(ref);
 		bit_heap_to_mpz(got, bh_abcd);
 
 		if(mpz_cmp(ref, got)){
@@ -59,7 +59,7 @@ void test_level_4(const fw_uint<WB> &b,const fw_uint<WC> &c,const fw_uint<WD> &d
 
 		fw_uint<WT> abcd_comp=bit_heap_collapse(bh_abcd_comp);
 
-		abcd_comp.to_mpz(got);
+		abcd_comp.to_mpz_t(got);
 		if(mpz_cmp(ref, got)){
 			std::cerr<<" a="<<a<<", b="<<b<<", c="<<c<<", c="<<d<<" = "<<abcd<<"\n";
 			mpfr_fprintf(stderr, "  got=%Zd, ref=%Zd\n", got, ref);
@@ -91,7 +91,7 @@ void test_level_3(const fw_uint<WB> &b,const fw_uint<WC> &c)
 
 		auto ab=extu<WT>(a)+extu<WT>(b)+extu<WT>(c);
 
-		ab.to_mpz(ref);
+		ab.to_mpz_t(ref);
 		bit_heap_to_mpz(got, bh_abc);
 
 		if(mpz_cmp(ref, got)){
@@ -132,7 +132,7 @@ void test_level_2(const fw_uint<WB> &b)
 
 		auto ab=extu<WT>(a)+extu<WT>(b);
 
-		ab.to_mpz(ref);
+		ab.to_mpz_t(ref);
 		bit_heap_to_mpz(got, bh_ab);
 
 		if(mpz_cmp(ref, got)){

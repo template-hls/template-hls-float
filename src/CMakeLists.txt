@@ -28,12 +28,31 @@ find_library(GMPXX_LIBRARIES NAMES gmpxx libgmpxx )
 include_directories( ../include )
 
 # Creates an executable and adds it as a test.
-function(add_executable_test PREFIX NAME)
+function(add_executable_test PREFIX NAME )
 add_executable(${NAME} ${NAME}.cpp)
 target_link_libraries(${NAME} ${MPFR_LIBRARY} ${GMP_LIBRARIES})
 add_test(${PREFIX}_${NAME} ${EXECUTABLE_OUTPUT_PATH}/${NAME})
-
 endfunction(add_executable_test)
+
+# Creates an executable, and also adds it with each fw_uint implementation
+function(add_executable_test_with_fw_uint PREFIX NAME )
+
+set(VHLS_DIR "/cygdrive/C/Usr/Xilinx2015.4/Vivado_HLS/2015.4")
+
+add_executable_test(${PREFIX} ${NAME})
+
+add_executable(${NAME}_ap_uint ${NAME}.cpp)
+target_link_libraries(${NAME}_ap_uint ${MPFR_LIBRARY} ${GMP_LIBRARIES})
+target_compile_definitions(${NAME}_ap_uint PUBLIC "-DTHLS_FW_UINT_ON_AP_UINT=1")
+target_include_directories(${NAME}_ap_uint PUBLIC "${VHLS_DIR}/include")
+add_test(${PREFIX}_${NAME}_ap_uint ${EXECUTABLE_OUTPUT_PATH}/${NAME}_ap_uint)
+
+add_executable(${NAME}_masked_uint ${NAME}.cpp)
+target_link_libraries(${NAME}_masked_uint ${MPFR_LIBRARY} ${GMP_LIBRARIES})
+target_compile_definitions(${NAME}_masked_uint PUBLIC "-DTHLS_FW_UINT_ON_MASKED_UINT=1")
+add_test(${PREFIX}_${NAME}_masked_uint ${EXECUTABLE_OUTPUT_PATH}/${NAME}_masked_uint)
+
+endfunction(add_executable_test_with_fw_uint)
 
 enable_testing()
 

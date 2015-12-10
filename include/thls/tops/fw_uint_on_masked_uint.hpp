@@ -7,13 +7,18 @@
 
 #include <cstdint>
 #include <climits>
-#include <string>
 #include <cstdlib>
 #include <stdlib.h>
+
+#ifndef THLS_SYNTHESIS
+#include <string>
+#include <gmp.h>
 #include <stdexcept>
 #include <sstream>
+#endif
 
-#include <gmp.h>
+namespace thls
+{
 
 
 template<int W>
@@ -65,6 +70,7 @@ struct fw_uint
         assert(v <= MASK); // Must be in range
     }
 
+#ifndef THLS_SYNTHESIS
     explicit fw_uint(const char *value)
     {
         assert(W>=0);
@@ -75,6 +81,7 @@ struct fw_uint
         assert( bits<= MASK);
         bits=bits&MASK;
     }
+#endif
 
     THLS_INLINE static fw_uint from_bits(const uint64_t &x)
     {
@@ -82,7 +89,7 @@ struct fw_uint
     }
 
 
-#ifndef HLS_SYNTHESIS
+#ifndef THLS_SYNTHESIS
     explicit fw_uint(mpz_t x)
     {
         assert(W>=0);
@@ -108,10 +115,9 @@ struct fw_uint
     }
 #endif
 
-    template<int O>
-    THLS_INLINE fw_uint<thls_ctMax(W,O)> operator+(const fw_uint<O> &o) const
+    THLS_INLINE fw_uint<W> operator+(const fw_uint<W> &o) const
     {
-        return fw_uint<thls_ctMax(W,O)>( (bits+o.bits) & (fw_uint<thls_ctMax(W,O)>::MASK) );
+        return fw_uint<W>( (bits+o.bits) & MASK );
     }
 
     THLS_INLINE fw_uint operator+(int b) const
@@ -119,10 +125,9 @@ struct fw_uint
         return fw_uint( uint64_t(bits+b) & MASK);
     }
 
-    template<int O>
-    THLS_INLINE fw_uint<thls_ctMax(W,O)> operator-(const fw_uint<O> &o) const
+    THLS_INLINE fw_uint<W> operator-(const fw_uint<W> &o) const
     {
-        return fw_uint<thls_ctMax(W,O)>( (bits-o.bits) & (fw_uint<thls_ctMax(W,O)>::MASK));
+        return fw_uint<W>( (bits-o.bits) & MASK);
     }
 
     THLS_INLINE fw_uint operator-(int b) const
@@ -197,8 +202,7 @@ struct fw_uint
     THLS_INLINE fw_uint operator~() const
     { return fw_uint( bits ^ MASK ); }
 
-    template<int O>
-    THLS_INLINE fw_uint operator&(const fw_uint<O> &o) const
+    THLS_INLINE fw_uint operator&(const fw_uint<W> &o) const
     {
         return fw_uint<W>(bits&o.bits);
     }
@@ -209,8 +213,7 @@ struct fw_uint
         return fw_uint(bits&b);
     }
 
-    template<int O>
-    THLS_INLINE fw_uint operator|(const fw_uint<O> &o) const
+    THLS_INLINE fw_uint operator|(const fw_uint<W> &o) const
     {
         return fw_uint<W>( (bits|o.bits) & MASK );
     }
@@ -221,8 +224,7 @@ struct fw_uint
         return fw_uint( uint64_t(bits|b) & MASK);
     }
 
-    template<int O>
-    THLS_INLINE fw_uint operator^(const fw_uint<O> &o) const
+    THLS_INLINE fw_uint operator^(const fw_uint<W> &o) const
     {
         return fw_uint<W>( (bits^o.bits) & MASK );
     }
@@ -247,6 +249,7 @@ struct fw_uint
         return fw_uint( (bits<<dist) & MASK);
     }
 
+#ifndef THLS_SYNTHESIS
     std::string to_string() const
     {
         std::string acc="";
@@ -258,6 +261,7 @@ struct fw_uint
         }
         return "0b"+acc;
     }
+#endif
 
     THLS_INLINE int to_int() const
     {
@@ -274,7 +278,7 @@ struct fw_uint
         return bits==1;
     }
 
-    #ifndef HLS_SYNTHESIS
+    #ifndef THLS_SYNTHESIS
     void to_mpz_t(mpz_t res) const
     {
         static_assert(sizeof(unsigned long)>=4, "Must have 32-bit or bigger longs");
@@ -302,23 +306,6 @@ struct fw_uint
     THLS_INLINE operator bool() const
     { return to_bool(); }
 };
-
-
-
-THLS_INLINE fw_uint<1> operator||(const fw_uint<1> &a, const fw_uint<1> &b)
-{ return fw_uint<1>(a.bits||b.bits); }
-
-THLS_INLINE fw_uint<1> operator&&(const fw_uint<1> &a, const fw_uint<1> &b)
-{ return fw_uint<1>(a.bits&&b.bits); }
-
-#ifndef HLS_SYNTHESIS
-template<int W>
-std::ostream &operator<<(std::ostream &dst, const fw_uint<W> &x)
-{
-    dst<<x.to_string();
-    return dst;
-}
-#endif
 
 template<int HI,int LO,int W>
 THLS_INLINE fw_uint<HI-LO+1> get_bits(const fw_uint<W> &x)
@@ -362,5 +349,7 @@ THLS_INLINE fw_uint<WD> checked_cast(const fw_uint<WS> &s)
         return ~fw_uint<WD>(); // Poison with ones
     }
 }
+
+}; // thls
 
 #endif

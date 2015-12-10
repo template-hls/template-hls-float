@@ -2,15 +2,15 @@
 
 using namespace thls;
 
-fw_uint<32> add32x8_compressor(
-    fw_uint<32> x0,
-    fw_uint<32> x1,
-    fw_uint<32> x2,
-    fw_uint<32> x3,
-    fw_uint<32> x4,
-    fw_uint<32> x5,
-    fw_uint<32> x6,
-    fw_uint<32> x7
+fw_uint<64> add64x8_compressor(
+    fw_uint<64> x0,
+    fw_uint<64> x1,
+    fw_uint<64> x2,
+    fw_uint<64> x3,
+    fw_uint<64> x4,
+    fw_uint<64> x5,
+    fw_uint<64> x6,
+    fw_uint<64> x7
 )
 {
 #pragma HLS INTERFACE ap_ctrl_none register port=return
@@ -39,7 +39,7 @@ fw_uint<32> add32x8_compressor(
 
     auto bh_c01234567=compress(bh_x01234567);
 
-    fw_uint<32> res=bit_heap_collapse(bh_c01234567);
+    fw_uint<64> res=bit_heap_collapse(bh_c01234567);
 
     return res;
 }
