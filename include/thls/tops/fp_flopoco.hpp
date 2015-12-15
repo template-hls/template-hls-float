@@ -368,18 +368,18 @@ fp_flopoco<ExpBits,FracBits>::fp_flopoco(mpfr_t x, bool allowUnderOrOverflow)
 			mpz_mul_si(fracBits, fracBits, -1);
         }
 
-        mpfr_fprintf(stderr, "x=%Rg, e=%d, frac=0x%Zx\n", x, e, fracBits);
+        //mpfr_fprintf(stderr, "x=%Rg, e=%d, frac=0x%Zx\n", x, e, fracBits);
 
         // Check for explicit bit
         assert(mpz_tstbit(fracBits, FracBits));
         // Clear the explicit bit
         mpz_clrbit(fracBits,FracBits);
         
-        mpfr_fprintf(stderr, "           frac=0x%Zx\n",fracBits);
+        //mpfr_fprintf(stderr, "           frac=0x%Zx\n",fracBits);
 
         e=e+FracBits; // Actual exponent
 
-        mpfr_fprintf(stderr, "   2^%d * (2^%d + %Zd) / 2^(%d)\n", e, FracBits, fracBits, FracBits);
+        //mpfr_fprintf(stderr, "   2^%d * (2^%d + %Zd) / 2^(%d)\n", e, FracBits, fracBits, FracBits);
         //std::cerr<<" 2^"<<e<<" * (2^"<<FracBits<<" + "<<fracBits<<") / 2^("<<FracBits<<")\n";
 
         fw_uint<2> flags(0b01);

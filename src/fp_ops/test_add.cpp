@@ -81,7 +81,7 @@ void test_impl(TImpl &impl)
 	mpfr_t tmp2;
 	mpfr_init2(tmp2, TType::frac_bits+1);
 
-	for(int i=0; i<1000; i++){
+	for(int i=0; i<100; i++){
 		mpfr_urandomb(tmp, state);
 		args.push_back(TType(tmp));
 
