@@ -92,7 +92,7 @@ namespace detail
             auto tmp=x.bits;
             for(int i=0;i<H;i++){
                 //std::cerr<<"  lsb = "<<take_lsb(tmp)<<"\n";
-                if(take_lsb(tmp)){
+                if(take_lsb(tmp).to_bool()){
                     mpz_add_ui(dst, dst, 1);
                 }
                 if(H>1){ // Avoid x>>1 when x is one bit
@@ -113,7 +113,7 @@ namespace detail
             //std::cerr<<x.bits<<"\n";
             auto tmp=x.bits;
             for(int i=0;i<H;i++){
-                if(take_lsb(tmp)){
+                if(take_lsb(tmp).to_bool()){
                     mpz_add_ui(dst, dst, 1);
                 }
                 if(H>1){ // Avoid x>>1 when x is one bit

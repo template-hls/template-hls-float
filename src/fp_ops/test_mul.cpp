@@ -19,7 +19,7 @@ void test_mul(const TImpl &impl, const TType &fa, const TType &fb)
 	ref_mul(fref, fa, fb);
 	
 	
-	if(!fref.equals(fgot)){
+	if(!fref.equals(fgot).to_bool()){
 		impl(fa,fb, 1); // Do version with debug output
 		
 		std::cerr<<"  a : "<<fa.str()<<"  "<<fa.to_double_approx()<<"\n";
@@ -86,8 +86,13 @@ void test_impl(TImpl &impl)
 		mpfr_urandomb(tmp, state);
 		args.push_back(TType(tmp));
 		
-		mpfr_grandom(tmp, tmp2, state, MPFR_RNDN);
+		// Avoid mpfr_grandom, as VHLS uses an older version of mpfr.h
+		mpfr_set_d(tmp, ldexp(grng(rng),52), MPFR_RNDN);
+		mpfr_add_d(tmp, tmp, grng(rng), MPFR_RNDN);
 		args.push_back(TType(tmp));
+
+		mpfr_set_d(tmp2, ldexp(grng(rng),52), MPFR_RNDN);
+		mpfr_add_d(tmp2, tmp2, grng(rng), MPFR_RNDN);
 		args.push_back(TType(tmp2));
 		
 		mpfr_div(tmp, tmp, tmp2, MPFR_RNDN);

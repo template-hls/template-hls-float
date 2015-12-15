@@ -117,19 +117,19 @@ int main()
 {
 
 	test_impl<fp_flopoco<8,26>>(add<8,26,8,26,8,26>);
-	test_impl<fp_flopoco<8,25>>(add<8,25,8,25,8,25>);
+	//test_impl<fp_flopoco<8,25>>(add<8,25,8,25,8,25>);
 	test_impl<fp_flopoco<8,24>>(add<8,24,8,24,8,24>);
-	test_impl<fp_flopoco<8,23>>(add<8,23,8,23,8,23>);
-	test_impl<fp_flopoco<8,22>>(add<8,22,8,22,8,22>);
-	test_impl<fp_flopoco<8,21>>(add<8,21,8,21,8,21>);
-	test_impl<fp_flopoco<8,20>>(add<8,20,8,20,8,20>);
+	//test_impl<fp_flopoco<8,23>>(add<8,23,8,23,8,23>);
+	//test_impl<fp_flopoco<8,22>>(add<8,22,8,22,8,22>);
+	//test_impl<fp_flopoco<8,21>>(add<8,21,8,21,8,21>);
+	//test_impl<fp_flopoco<8,20>>(add<8,20,8,20,8,20>);
 	test_impl<fp_flopoco<8,19>>(add<8,19,8,19,8,19>);
-	test_impl<fp_flopoco<8,18>>(add<8,18,8,18,8,18>);
+	//test_impl<fp_flopoco<8,18>>(add<8,18,8,18,8,18>);
 	test_impl<fp_flopoco<8,17>>(add<8,17,8,17,8,17>);
-	test_impl<fp_flopoco<8,16>>(add<8,16,8,16,8,16>);
-	test_impl<fp_flopoco<8,15>>(add<8,15,8,15,8,15>);
+	//test_impl<fp_flopoco<8,16>>(add<8,16,8,16,8,16>);
+	//test_impl<fp_flopoco<8,15>>(add<8,15,8,15,8,15>);
 	test_impl<fp_flopoco<8,14>>(add<8,14,8,14,8,14>);
-	test_impl<fp_flopoco<8,13>>(add<8,13,8,13,8,13>);
+	//test_impl<fp_flopoco<8,13>>(add<8,13,8,13,8,13>);
 
 	// FAIL:
 	//test_impl<fp_flopoco<8,12>>(add<8,12,8,12,8,12>);

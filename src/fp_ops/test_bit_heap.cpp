@@ -14,7 +14,7 @@ std::exponential_distribution<float> erng;
 
 using namespace thls;
 
-//#define QUICK
+#define QUICK
 
 template<int WA,int WB,int WC,int WD>
 void test_level_4(const fw_uint<WB> &b,const fw_uint<WC> &c,const fw_uint<WD> &d)

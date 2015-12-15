@@ -86,29 +86,33 @@ THLS_INLINE fp_flopoco<wER,wFR> mul(const fp_flopoco<wEX,wFX> &x, const fp_flopo
     if (1+wFR >= wFX+wFY+2) {
         /* => no rounding needed - possible padding;
            in this case correctlyRounded_ is irrelevant: result is exact  */
-        fw_uint<wFR> resSig = norm ? concat(get_bits<wFX+wFY,0>(sigProd) , zg<1+wFR-(wFX+wFY+2)>())
-                                   : concat(get_bits<wFX+wFY-1,0>(sigProd) , zg<1+wFR-(wFX+wFY+2)+1>());
+        fw_uint<wFR> resSig = select(norm,
+           concat(get_bits<wFX+wFY,0>(sigProd) , zg<1+wFR-(wFX+wFY+2)>()),
+           concat(get_bits<wFX+wFY-1,0>(sigProd) , zg<1+wFR-(wFX+wFY+2)+1>())
+        );
 
         fw_uint<2> expPostNormB = get_bits<wER+1,wER>(expPostNorm);
-        fw_uint<2> excPostNorm = (expPostNormB==0b00).to_bool() ? fw_uint<2>(0b01) :
-                                 (expPostNormB==0b01).to_bool() ? fw_uint<2>(0b10) :
-                                 ((expPostNormB==0b11) || (expPostNormB==0b10)).to_bool() ? fw_uint<2>(0b11) :
-                                 fw_uint<2>(0b11); // Impossible last case?
+        fw_uint<2> excPostNorm = select(
+            expPostNormB==0b00, fw_uint<2>(0b01),
+            expPostNormB==0b01, fw_uint<2>(0b10),
+            (expPostNormB==0b11) || (expPostNormB==0b10) , fw_uint<2>(0b11),
+            fw_uint<2>(0b11)// Impossible last case?
+        ); 
 
-        fw_uint<2> finalExc=(exc==0b11||exc==0b10||exc==0b00).to_bool() ? exc : excPostNorm;
+        fw_uint<2> finalExc=select(exc==0b11||exc==0b10||exc==0b00,  exc , excPostNorm);
 
         R = concat(finalExc,sign, get_bits<wER-1,0>(expPostNorm), resSig);
     }
     else{
         // significand normalization shift
-        fw_uint<sigProdSize> sigProdExt = norm==1 ? concat(get_bits<sigProdSize-2,0>(sigProd) , zg<1>())
-                                                  : concat(get_bits<sigProdSize-3,0>(sigProd) , zg<2>());
+        fw_uint<sigProdSize> sigProdExt = select(norm==1 , concat(get_bits<sigProdSize-2,0>(sigProd) , zg<1>())
+                                                         , concat(get_bits<sigProdSize-3,0>(sigProd) , zg<2>()) );
 
         fw_uint<2+wER+wFR> expSig = concat(expPostNorm , get_bits<sigProdSize-1,sigProdSize-wFR>(sigProdExt));
 
         fw_uint<1> sticky = get_bit<wFX+wFY+1-wFR>(sigProdExt);
 
-        fw_uint<1> guard = get_bits<wFX+wFY+1-wFR-1,0>(sigProdExt) == zg<wFX+wFY+1-wFR-1+1>() ? fw_uint<1>(0) : fw_uint<1>(1);
+        fw_uint<1> guard = select( get_bits<wFX+wFY+1-wFR-1,0>(sigProdExt) == zg<wFX+wFY+1-wFR-1+1>() , fw_uint<1>(0) , fw_uint<1>(1) );
 
         fw_uint<1> round = sticky & ( (guard & ~get_bit<wFX+wFY+1-wFR+1>(sigProdExt))
             | (get_bit<wFX+wFY + 1 - wFR+1>(sigProdExt) ));
@@ -121,12 +125,12 @@ THLS_INLINE fp_flopoco<wER,wFR> mul(const fp_flopoco<wEX,wFX> &x, const fp_flopo
 
         fw_uint<2> expSigPostRoundB=get_bits<wER+wFR+1,wER+wFR>(expSigPostRound);
 
-        fw_uint<2> excPostNorm = (expSigPostRoundB==0b00).to_bool() ? fw_uint<2>(0b01) :
-                                 (expSigPostRoundB==0b01).to_bool() ? fw_uint<2>(0b10) :
-                                 (expSigPostRoundB==0b11||expSigPostRoundB==0b10).to_bool() ? fw_uint<2>(0b00) :
-                                 fw_uint<2>(0b11);
+        fw_uint<2> excPostNorm = select(expSigPostRoundB==0b00, fw_uint<2>(0b01) ,
+                                 expSigPostRoundB==0b01, fw_uint<2>(0b10) ,
+                                 (expSigPostRoundB==0b11||expSigPostRoundB==0b10),  fw_uint<2>(0b00) ,
+                                 fw_uint<2>(0b11));
 
-        fw_uint<2> finalExc=(exc==0b11||exc==0b10||exc==0b00).to_bool() ? exc : excPostNorm;
+        fw_uint<2> finalExc=select (exc==0b11||exc==0b10||exc==0b00,  exc , excPostNorm);
 
         R = concat(finalExc,sign, get_bits<wER+wFR-1,0>(expSigPostRound));
     }

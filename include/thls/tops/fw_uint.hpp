@@ -56,6 +56,7 @@
 
    Other operations:
 
+     // IDX must be valid if executed (it is legal to compile with invalid IDX)
      decltype(get_bit<IDX>(fw_uint<A>)) = bool
 
      decltype(get_bits<HI,LO>(fw_uint<A>)) = fw_uint<HI-LO+1>
@@ -210,8 +211,8 @@ THLS_INLINE  fw_uint<1> operator&&(const fw_uint<1> &a, const fw_uint<1> &b)
 template<int B,int W>
 THLS_INLINE fw_uint<W-B> take(const fw_uint<W> &x)
 {
-    THLS_STATIC_ASSERT(B>=0, "Cannot take negative bits.");
-    THLS_STATIC_ASSERT(B<=W, "Cannot take more than bits in the variable.");
+    assert(B>=0);
+    assert(B<=W);
     return get_bits<B,0>(x);
 }
 
@@ -380,7 +381,7 @@ const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, const T &v1, co
   if(c0.to_bool()){
     return v0;
   }else{
-    return select(c1,v1,c2,c2,def);
+    return select(c1,v1,c2,v2,def);
   }
 }
 
@@ -400,7 +401,7 @@ const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, const T &v1, co
   if(c0.to_bool()){
     return v0;
   }else{
-    return select(c1,v1,c2,c2,c3,v3,def);
+    return select(c1,v1,c2,v2,c3,v3,def);
   }
 }
 
@@ -414,7 +415,7 @@ const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, c
   }
 }
 
-
+/*
 template<class T>
 const T &select(const fw_uint<1> &c0, const T &v0,
   const fw_uint<1> &c1, const T &v1,
@@ -436,7 +437,7 @@ const T &select(const fw_uint<1> &c0, const T &v0,
   }else{
     return def;
   }
-}
+}*/
 
 template<int WD,int WA>
 struct lut

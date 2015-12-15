@@ -9,9 +9,11 @@
 // I think VHLS is supposed to do it, but it always
 // picks up the simulation one.
 #ifdef THLS_SYNTHESIS
-#include "C:\Usr\Xilinx2015.4\Vivado_HLS\2015.4\common\technology\autopilot\ap_int.h"
+#include "../common\technology\autopilot\ap_int.h"
+//#include "C:\Usr\Xilinx2015.4\Vivado_HLS\2015.4\common\technology\autopilot\ap_int.h"
 #else
-#include "C:\Usr\Xilinx2015.4\Vivado_HLS\2015.4\include\ap_int.h"
+#include "ap_int.h"
+//#include "C:\Usr\Xilinx2015.4\Vivado_HLS\2015.4\include\ap_int.h"
 #endif
 
 #ifndef THLS_SYNTHESIS

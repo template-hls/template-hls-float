@@ -103,10 +103,11 @@ struct fw_uint
             bits=mpz_get_ui(x);
         }else{
             mpz_tdiv_r_2exp(tmp, tmp, 32);
-            bits=mpz_get_ui(x);
+            bits=mpz_get_ui(tmp);
             mpz_set(tmp, x);
             mpz_tdiv_q_2exp(tmp, tmp, 32);
-            bits=(uint64_t(bits)<<32)+bits;
+            uint32_t r2=mpz_get_ui(tmp);
+            bits=(uint64_t(r2)<<32)+bits;
         }
         mpz_clear(tmp);
 
@@ -310,6 +311,8 @@ struct fw_uint
 template<int HI,int LO,int W>
 THLS_INLINE fw_uint<HI-LO+1> get_bits(const fw_uint<W> &x)
 {
+    assert( W>HI );
+    assert( LO>=0 );
     static const int WRES=HI-LO+1;
     static const uint64_t MRES=0xFFFFFFFFFFFFFFFFUL>> (WRES<=0 ? 0 : (64-WRES));
     return fw_uint<HI-LO+1>( (x.bits>>LO) & MRES );

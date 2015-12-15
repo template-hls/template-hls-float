@@ -16,7 +16,7 @@ std::exponential_distribution<float> erng;
 
 using namespace thls;
 
-//#define QUICK
+#define QUICK
 
 template<int WA,int WB,int WC,int WD,int WE>
 void test_level_5(const fw_uint<WB> &b,const fw_uint<WC> &c,const fw_uint<WD> &d,const fw_uint<WE> &e)
@@ -40,7 +40,7 @@ void test_level_5(const fw_uint<WB> &b,const fw_uint<WC> &c,const fw_uint<WD> &d
 		
 		auto abcde=extu<WT>(a)+extu<WT>(b)+extu<WT>(c)+extu<WT>(d)+extu<WT>(e);
 		
-		abcde.to_mpz(ref);
+		abcde.to_mpz_t(ref);
 		row_heap_to_mpz(got, bh_abcde);
 		
 		if(mpz_cmp(ref, got)){
@@ -61,7 +61,7 @@ void test_level_5(const fw_uint<WB> &b,const fw_uint<WC> &c,const fw_uint<WD> &d
 		
 		fw_uint<WT> abcde_comp=collapse(bh_abcde_comp);
 		
-		abcde_comp.to_mpz(got);
+		abcde_comp.to_mpz_t(got);
 		if(mpz_cmp(ref, got)){
 			std::cerr<<" a="<<a<<", b="<<b<<", c="<<c<<", d="<<d<<", e="<<e<<" = "<<abcde<<"\n";
 			mpfr_fprintf(stderr, "  got=%Zd, ref=%Zd\n", got, ref);
@@ -95,7 +95,7 @@ void test_level_4(const fw_uint<WB> &b,const fw_uint<WC> &c,const fw_uint<WD> &d
 		
 		auto abcd=extu<WT>(a)+extu<WT>(b)+extu<WT>(c)+extu<WT>(d);
 		
-		abcd.to_mpz(ref);
+		abcd.to_mpz_t(ref);
 		row_heap_to_mpz(got, bh_abcd);
 		
 		if(mpz_cmp(ref, got)){
@@ -116,7 +116,7 @@ void test_level_4(const fw_uint<WB> &b,const fw_uint<WC> &c,const fw_uint<WD> &d
 		
 		fw_uint<WT> abcd_comp=collapse(bh_abcd_comp);
 		
-		abcd_comp.to_mpz(got);
+		abcd_comp.to_mpz_t(got);
 		if(mpz_cmp(ref, got)){
 			std::cerr<<" a="<<a<<", b="<<b<<", c="<<c<<", d="<<d<<" = "<<abcd<<"\n";
 			mpfr_fprintf(stderr, "  got=%Zd, ref=%Zd\n", got, ref);
@@ -147,7 +147,7 @@ void test_level_3(const fw_uint<WB> &b,const fw_uint<WC> &c)
 		
 		auto abc=extu<WT>(a)+extu<WT>(b)+extu<WT>(c);
 		
-		abc.to_mpz(ref);
+		abc.to_mpz_t(ref);
 		row_heap_to_mpz(got, bh_abc);
 		
 		if(mpz_cmp(ref, got)){
@@ -167,7 +167,7 @@ void test_level_3(const fw_uint<WB> &b,const fw_uint<WC> &c)
 		
 		fw_uint<WT> abc_comp=collapse(bh_abc_comp);
 		
-		abc_comp.to_mpz(got);
+		abc_comp.to_mpz_t(got);
 		if(mpz_cmp(ref, got)){
 			std::cerr<<" a="<<a<<", b="<<b<<", c="<<c<<" = "<<abc<<"\n";
 			mpfr_fprintf(stderr, "  got=%Zd, ref=%Zd\n", got, ref);
@@ -199,14 +199,16 @@ void test_level_2(const fw_uint<WB> &b)
 	for(int i=0; i<(1<<WA); i++){
 		fw_uint<WA> a(i);
 		
+		const int WT=thls_ctMax(WA,WB);
+		
 		auto bh_a=fw_uint_to_row_heap(a);
 		auto bh_b=fw_uint_to_row_heap(b);
 		
 		auto bh_ab=bh_a+bh_b;
 		
-		auto ab=a+b;
+		auto ab=extu<WT>(a)+extu<WT>(b);
 		
-		ab.to_mpz(ref);
+		ab.to_mpz_t(ref);
 		row_heap_to_mpz(got, bh_ab);
 		
 		if(mpz_cmp(ref, got)){
@@ -240,7 +242,7 @@ void test_level_1()
 		
 		auto bh_a=fw_uint_to_row_heap(tmp);
 		
-		tmp.to_mpz(ref);
+		tmp.to_mpz_t(ref);
 		row_heap_to_mpz(got, bh_a);
 		
 		if(mpz_cmp(ref, got)){
