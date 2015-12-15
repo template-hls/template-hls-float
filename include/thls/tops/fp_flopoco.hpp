@@ -380,12 +380,12 @@ fp_flopoco<ExpBits,FracBits>::fp_flopoco(mpfr_t x, bool allowUnderOrOverflow)
         e=e+FracBits; // Actual exponent
 
         //mpfr_fprintf(stderr, "   2^%d * (2^%d + %Zd) / 2^(%d)\n", e, FracBits, fracBits, FracBits);
-        //std::cerr<<" 2^"<<e<<" * (2^"<<FracBits<<" + "<<fracBits<<") / 2^("<<FracBits<<")\n";
-
+        
         fw_uint<2> flags(0b01);
         fw_uint<1> sign(negative);
         fw_uint<ExpBits> expnt;
         fw_uint<FracBits> frac( fracBits );
+        //std::cerr<<"frac.bits = "<<frac.bits<<", mask="<<frac.MASK<<"\n";
 
 		mpz_clear(fracBits);
 
@@ -404,6 +404,7 @@ fp_flopoco<ExpBits,FracBits>::fp_flopoco(mpfr_t x, bool allowUnderOrOverflow)
         }else{
             expnt=fw_uint<ExpBits>( e + traits::bias );
         }
+        //std::cerr<<"bits = "<<flags<<" & "<<sign<<" & "<<expnt<<" & "<<frac<<"\n";
         bits=concat(flags,sign,expnt,frac);
     }
 }
@@ -497,6 +498,8 @@ fp_flopoco<ER,FR> ref_add(const fp_flopoco<EA,FA> &a, const fp_flopoco<EB,FB> &b
     b.get(mb);
 
     mpfr_add(mr,ma,mb,MPFR_RNDN);
+    
+    //mpfr_fprintf(stderr, "mpfr : %Rg + %Rg = %Rg\n", ma, mb, mr);
 
     fp_flopoco<ER,FR> res(mr,true);
 
@@ -540,7 +543,8 @@ std::string fp_flopoco<ExpBits,FracBits>::str() const
         fw_uint<ExpBits> expnt=get_bits<ExpBits+FracBits-1,FracBits>(bits);
         fw_uint<FracBits> frac=get_bits<FracBits-1,0>(bits);
         acc<<" expnt="<<expnt<<"="<<(expnt.to_int()-126);
-        acc<<" frac="<<frac<<"="<<(ldexp(frac.to_int()+(1<<FracBits),-FracBits-1));
+        
+        acc<<" frac="<<frac<<"= (approx)"<<(ldexp(frac.to_int()+ldexp(1,FracBits),-FracBits-1));
     }else if( (flags==0b10).to_bool() ){
         acc<<select(negative==1, "-inf" , "+inf");
     }else{

@@ -20,6 +20,43 @@
 namespace thls
 {
 
+namespace detail
+{
+    template<int W>
+    struct bits_holder
+    {
+        typedef typename bits_holder< (W<=0) ? 1 : W-1 >::bits_t bits_t;
+        static const int bits_w = bits_holder< (W<=0) ? 1 : W-1 >::bits_w;
+    };
+    
+    template<>
+    struct bits_holder<1>
+    {
+        typedef uint32_t bits_t;
+        static const int bits_w = 32;
+    };
+    
+    template<>
+    struct bits_holder<33>
+    {
+        typedef uint64_t bits_t;
+        static const int bits_w = 64;
+    };
+    
+    // TODO : How do we detect support for 128 bit?
+    template<>
+    struct bits_holder<65>
+    {
+        typedef unsigned __int128 bits_t;
+        static const int bits_w = 128;
+    };
+    
+    template<>
+    struct bits_holder<129>
+    {
+        // No bits_t defined for this
+    };
+};
 
 template<int W>
 struct fw_uint
@@ -27,13 +64,17 @@ struct fw_uint
     // Note that negative widths _are_ allowed, but they
     // must never be executed.
 
-    THLS_STATIC_ASSERT(W<=64, "W must be <=64.");
+    THLS_STATIC_ASSERT(W<=128, "W must be <= 128.");
 
     static const int width=W;
+    
+    typedef typename detail::bits_holder<width>::bits_t bits_t;
+    static const int bits_w = detail::bits_holder<width>::bits_w;
 
-	static const uint64_t MASK = (W <= 0) ? 0ull : (0xFFFFFFFFFFFFFFFFULL >> (W < 0 ? 0 : (64 - W)));
+    static const bits_t ALL_ONES =  bits_t(0)-bits_t(1);
+	static const bits_t MASK = (W <= 0) ? 0ull : (ALL_ONES >> (W < 0 ? 0 : (bits_w - W)));
 
-    uint64_t bits;
+    bits_t bits;
 
     THLS_INLINE fw_uint()
     	: bits(0)
@@ -58,18 +99,17 @@ struct fw_uint
         assert(W>=0);
 
         assert(v>=0); // must be non-negative
-        assert(uint64_t(v) <= MASK); // Must be in range
+        assert(bits_t(v) <= MASK); // Must be in range
     }
-
-    THLS_INLINE explicit fw_uint(uint64_t v)
+    
+    THLS_INLINE explicit fw_uint(bits_t v)
         : bits(v & MASK)
-    {
+    {   
         assert(W>=0);
 
         assert(v>=0); // must be non-negative
         assert(v <= MASK); // Must be in range
     }
-
 #ifndef THLS_SYNTHESIS
     explicit fw_uint(const char *value)
     {
@@ -83,7 +123,7 @@ struct fw_uint
     }
 #endif
 
-    THLS_INLINE static fw_uint from_bits(const uint64_t &x)
+    THLS_INLINE static fw_uint from_bits(const bits_t &x)
     {
         return fw_uint(x);
     }
@@ -102,12 +142,16 @@ struct fw_uint
         if(sizeof(unsigned int)*8 <= W){
             bits=mpz_get_ui(x);
         }else{
-            mpz_tdiv_r_2exp(tmp, tmp, 32);
-            bits=mpz_get_ui(tmp);
-            mpz_set(tmp, x);
-            mpz_tdiv_q_2exp(tmp, tmp, 32);
-            uint32_t r2=mpz_get_ui(tmp);
-            bits=(uint64_t(r2)<<32)+bits;
+            bits=0;
+            int offset=0;
+            while(offset<W){
+                mpz_set(tmp,x);
+                mpz_tdiv_q_2exp(tmp, tmp, offset);
+                mpz_tdiv_r_2exp(tmp, tmp, 32);
+                uint32_t limb=mpz_get_ui(tmp);
+                bits=bits | (bits_t(limb)<<offset);
+                offset+=32;
+            }
         }
         mpz_clear(tmp);
 
@@ -123,7 +167,7 @@ struct fw_uint
 
     THLS_INLINE fw_uint operator+(int b) const
     {
-        return fw_uint( uint64_t(bits+b) & MASK);
+        return fw_uint( bits_t(bits+b) & MASK);
     }
 
     THLS_INLINE fw_uint<W> operator-(const fw_uint<W> &o) const
@@ -133,13 +177,14 @@ struct fw_uint
 
     THLS_INLINE fw_uint operator-(int b) const
     {
-        return fw_uint( uint64_t(bits-b) & MASK);
+        return fw_uint( bits_t(bits-b) & MASK);
     }
 
     template<int O>
     THLS_INLINE fw_uint<O+W> operator*(const fw_uint<O> &o) const
     {
-        return fw_uint<O+W>(bits*o.bits);
+        typedef typename fw_uint<O+W>::bits_t res_bits_t;
+        return fw_uint<O+W>(res_bits_t(bits)*res_bits_t(o.bits));
     }
 
     THLS_INLINE fw_uint<1> operator<(const fw_uint &o) const
@@ -157,7 +202,7 @@ struct fw_uint
     THLS_INLINE fw_uint<1> operator<=(int o) const
     {
         assert(o>=0);
-        return fw_uint<1>(bits <= o);
+        return fw_uint<1>(bits <= bits_t(o));
     }
 
     THLS_INLINE fw_uint<1> operator==(const fw_uint &o) const
@@ -166,7 +211,7 @@ struct fw_uint
     THLS_INLINE fw_uint<1> operator==(int o) const
     {
         assert(o>=0);
-        return fw_uint<1>(bits == uint64_t(o));
+        return fw_uint<1>(bits == bits_t(o));
     }
 
     THLS_INLINE fw_uint<1> operator>=(const fw_uint &o) const
@@ -175,7 +220,7 @@ struct fw_uint
     THLS_INLINE fw_uint<1> operator>=(int o) const
     {
         assert(o>=0);
-        return fw_uint<1>(bits >= (uint64_t)o);
+        return fw_uint<1>(bits >= (bits_t)o);
     }
 
     THLS_INLINE fw_uint<1> operator>(const fw_uint &o) const
@@ -193,7 +238,7 @@ struct fw_uint
     THLS_INLINE fw_uint<1> operator!=(int o) const
     {
         assert(o>=0);
-        return fw_uint<1>(bits != (uint64_t)o);
+        return fw_uint<1>(bits != (bits_t)o);
     }
 
     //////////////////////////////////////////////
@@ -222,7 +267,7 @@ struct fw_uint
     THLS_INLINE fw_uint operator|(int b) const
     {
         assert(b>=0);
-        return fw_uint( uint64_t(bits|b) & MASK);
+        return fw_uint( bits_t(bits|b) & MASK);
     }
 
     THLS_INLINE fw_uint operator^(const fw_uint<W> &o) const
@@ -233,7 +278,7 @@ struct fw_uint
     THLS_INLINE fw_uint operator^(int b) const
     {
         assert(b>=0);
-        return fw_uint( uint64_t(bits^b) & MASK);
+        return fw_uint( bits_t(bits^b) & MASK);
     }
 
 
@@ -271,7 +316,10 @@ struct fw_uint
     }
 
     THLS_INLINE uint64_t to_uint64() const
-    { return bits; }
+    {
+        assert( bits == uint64_t(bits_t(bits)) );
+        return uint64_t(bits);
+    }
 
     THLS_INLINE bool to_bool() const
     {
@@ -282,23 +330,24 @@ struct fw_uint
     #ifndef THLS_SYNTHESIS
     void to_mpz_t(mpz_t res) const
     {
+        mpz_t tmp;
+        mpz_init(tmp);
+        
+        mpz_set_ui(res, 0);
+        
         static_assert(sizeof(unsigned long)>=4, "Must have 32-bit or bigger longs");
-        unsigned long hi=bits>>32;
-        unsigned long lo=bits&0xFFFFFFFFull;
-		mpz_set_ui(res, hi);
-		mpz_mul_2exp(res, res, 32);
-		mpz_add_ui(res, res, lo);
+        int offset=0;
+        while(offset<W){
+            uint32_t limb=uint32_t( (bits>>offset)&0xFFFFFFFFull );
+            mpz_set_ui(tmp, limb);
+            mpz_mul_2exp(tmp, tmp, offset);
+            mpz_add(res, res, tmp);
+            offset+=32;
+        }
+        
+        mpz_clear(tmp);
     }
 
-    void to_mpz(mpz_t dst) const
-    {
-        static_assert(sizeof(unsigned long)>=4, "Must have 32-bit or bigger longs");
-        unsigned long hi=bits>>32;
-        unsigned long lo=bits&0xFFFFFFFFull;
-        mpz_set_ui(dst, hi);
-        mpz_mul_2exp(dst, dst, 32);
-        mpz_add_ui(dst, dst, lo);
-    }
     #endif
 
     //explicit operator bool() const
@@ -311,11 +360,13 @@ struct fw_uint
 template<int HI,int LO,int W>
 THLS_INLINE fw_uint<HI-LO+1> get_bits(const fw_uint<W> &x)
 {
+    typedef typename fw_uint<HI-LO+1>::bits_t bits_t;
+    static const bits_t MASK=fw_uint<HI-LO+1>::MASK;
+    
     assert( W>HI );
     assert( LO>=0 );
-    static const int WRES=HI-LO+1;
-    static const uint64_t MRES=0xFFFFFFFFFFFFFFFFUL>> (WRES<=0 ? 0 : (64-WRES));
-    return fw_uint<HI-LO+1>( (x.bits>>LO) & MRES );
+    
+    return fw_uint<HI-LO+1>( bits_t(x.bits>>LO) & MASK );
 }
 
 template<int WA>
@@ -329,8 +380,10 @@ THLS_INLINE fw_uint<WA+WB> concat(const fw_uint<WA> &a, const fw_uint<WB> &b)
     // be executed, but will still be compiled (i.e. things that
     // would be fixed with static_if.
     static const int S=(WB < 0) ? 0 : WB;
+    
+    typedef typename fw_uint<WA+WB>::bits_t bits_t;
 
-    return fw_uint<WA+WB>( (a.bits<<S)+b.bits );
+    return fw_uint<WA+WB>( (bits_t(a.bits)<<S) | bits_t(b.bits) );
 }
 
 template<int WA,int WB,int WC>

@@ -23,11 +23,11 @@ void test_add(const TImpl &impl, const TType &fa, const TType &fb)
 
 		std::cerr<<"  a : "<<fa.str()<<"  "<<fa.to_double_approx()<<"\n";
 		std::cerr<<" + \n";
-		std::cerr<<"  b : "<<fa.str()<<"  "<<fa.to_double_approx()<<"\n";
+		std::cerr<<"  b : "<<fb.str()<<"  "<<fb.to_double_approx()<<"\n";
 		std::cerr<<" = \n";
 		std::cerr<<"ref : "<<fref.str()<<"  "<<fref.to_double_approx()<<"\n";
 		std::cerr<<" vs \n";
-		std::cerr<<"ref : "<<fgot.str()<<"  "<<fgot.to_double_approx()<<"\n";
+		std::cerr<<"got : "<<fgot.str()<<"  "<<fgot.to_double_approx()<<"\n";
 
 		std::stringstream tmp;
 		tmp<<fa.bits<<" "<<fb.bits<<" \n";
@@ -116,20 +116,23 @@ void test_impl(TImpl &impl)
 int main()
 {
 
-	test_impl<fp_flopoco<8,26>>(add<8,26,8,26,8,26>);
+	//test_impl<fp_flopoco<8,26>>(add<8,26,8,26,8,26>);
 	//test_impl<fp_flopoco<8,25>>(add<8,25,8,25,8,25>);
 	test_impl<fp_flopoco<8,24>>(add<8,24,8,24,8,24>);
 	//test_impl<fp_flopoco<8,23>>(add<8,23,8,23,8,23>);
 	//test_impl<fp_flopoco<8,22>>(add<8,22,8,22,8,22>);
 	//test_impl<fp_flopoco<8,21>>(add<8,21,8,21,8,21>);
 	//test_impl<fp_flopoco<8,20>>(add<8,20,8,20,8,20>);
-	test_impl<fp_flopoco<8,19>>(add<8,19,8,19,8,19>);
+	//test_impl<fp_flopoco<8,19>>(add<8,19,8,19,8,19>);
 	//test_impl<fp_flopoco<8,18>>(add<8,18,8,18,8,18>);
-	test_impl<fp_flopoco<8,17>>(add<8,17,8,17,8,17>);
+	//test_impl<fp_flopoco<8,17>>(add<8,17,8,17,8,17>);
 	//test_impl<fp_flopoco<8,16>>(add<8,16,8,16,8,16>);
 	//test_impl<fp_flopoco<8,15>>(add<8,15,8,15,8,15>);
-	test_impl<fp_flopoco<8,14>>(add<8,14,8,14,8,14>);
+	//test_impl<fp_flopoco<8,14>>(add<8,14,8,14,8,14>);
 	//test_impl<fp_flopoco<8,13>>(add<8,13,8,13,8,13>);
+	
+	test_impl<fp_flopoco<8,32>>(add<8,32,8,32,8,32>);
+	test_impl<fp_flopoco<11,52>>(add<11,52,11,52,11,52>);
 
 	// FAIL:
 	//test_impl<fp_flopoco<8,12>>(add<8,12,8,12,8,12>);

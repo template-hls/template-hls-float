@@ -70,7 +70,7 @@ struct fw_uint
     {
         assert(W>=0);
         assert(v>=0); // must be non-negative
-        assert(v < (1ll<<SafeW)); // Must be in range
+        assert(v < (ap_uint<SafeW+1>(1)<<SafeW)); // Must be in range
     }
 
     THLS_INLINE explicit fw_uint(uint64_t v)
@@ -78,7 +78,7 @@ struct fw_uint
     {
         assert(W>=0);
         assert(v>=0); // must be non-negative
-        assert(v < (1ll<<SafeW)); // Must be in range
+        assert(v < (ap_uint<SafeW+1>(1)<<SafeW)); // Must be in range
     }
 
     THLS_INLINE explicit fw_uint(const char *value)
@@ -285,7 +285,7 @@ struct fw_uint
         mpz_t tmp;
         mpz_init(tmp);
         while(todo>0){
-            uint32_t curr=(uint32_t)(bits>>offset);
+            uint32_t curr=(bits>>offset).to_ulong();
             mpz_set_ui(tmp, curr);
             mpz_mul_2exp(tmp, tmp, offset);
             mpz_add(res, res, tmp);

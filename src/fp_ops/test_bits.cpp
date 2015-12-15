@@ -4,9 +4,14 @@
 
 #include <stdint.h>
 
+#include <mpfr.h>
+#include <iostream>
+
 using namespace thls;
 
 #define assert_fw_uint( x ) if(!fw_uint<1>(x).to_bool()){ fprintf(stderr, "Fail, line %d : %s\n", __LINE__, #x); exit(1); }
+
+#define assert_bool( x ) if(!x){ fprintf(stderr, "Fail, line %d : %s\n", __LINE__, #x); exit(1); }
 
 void test_bits()
 {
@@ -32,13 +37,60 @@ void test_bits()
     assert_fw_uint( (get_bits<7,4>(alt)==0b1010) );
 	
 	assert_fw_uint(concat(alt,alt)==fw_uint<16>(0b1010101010101010));
+    assert_fw_uint(~concat(alt,alt)==fw_uint<16>(0b0101010101010101));
 	assert_fw_uint(zpad_hi<8>(alt)==fw_uint<16>(0b0000000010101010));
 	assert_fw_uint(opad_hi<8>(alt)==fw_uint<16>(0b1111111110101010));
 	
 	assert_fw_uint(alt*alt == fw_uint<16>(0b111000011100100) );
+    
+    mpz_t tmp1, tmp2;
+    mpz_init(tmp1);
+    mpz_init(tmp2);
+    
+    fw_uint<70> one70(1);
+    auto var70=one70;
+    for(int i=0; i<70; i++){
+        auto x=(var70>>i);
+        assert_fw_uint( x == one70 );
+        
+        var70.to_mpz_t(tmp2);
+        mpz_set_ui(tmp1, 1);
+        mpz_mul_2exp(tmp1, tmp1, i);
+        
+        mpfr_fprintf(stderr, "ref=%Zd, got=%Zd\n", tmp1, tmp2);
+        
+        assert_bool(!mpz_cmp(tmp1, tmp2));
+        
+        fw_uint<70> y(tmp1);
+        assert_bool(!mpz_cmp(tmp1,tmp2));
+        
+        var70=var70<<1;
+    }
+    
+    one70=fw_uint<70>(1);
+    var70=one70;
+    for(int i=0; i<70; i++){
+        auto x=(var70>>i);
+        assert_fw_uint( x == one70 );
+        var70=var70+var70;
+    }
+    
+    mpz_clear(tmp1);
+    mpz_clear(tmp2);
 }
 int main()
 {
+    /*
+    std::cerr<<std::hex<<"   1 = 0x"<<(fw_uint<1>::MASK)<<"\n";
+    std::cerr<<std::hex<<"  16 = 0x"<<(fw_uint<16>::MASK)<<"\n";
+    std::cerr<<std::hex<<"  32 = 0x"<<(fw_uint<32>::MASK)<<"\n";
+    std::cerr<<std::hex<<"  33 = 0x"<<(fw_uint<33>::MASK)<<"\n";
+    std::cerr<<std::hex<<"  64 = 0x"<<(fw_uint<64>::MASK)<<"\n";
+    fprintf(stderr, "  65 = 0x%llx%08llx\n", uint64_t(fw_uint<65>::MASK>>64), uint64_t(fw_uint<65>::MASK&0xFFFFFFFFFFFFFFFFull));
+    fprintf(stderr, " 128 = 0x%llx%08llx\n", uint64_t(fw_uint<128>::MASK>>64), uint64_t(fw_uint<128>::MASK&0xFFFFFFFFFFFFFFFFull));
+    */
+    
     test_bits();
+    fprintf(stderr, "Done\n");
     return 0;
 }

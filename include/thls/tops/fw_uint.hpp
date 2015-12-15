@@ -207,6 +207,18 @@ THLS_INLINE  fw_uint<1> operator&&(const fw_uint<1> &a, const fw_uint<1> &b)
 { return a&b; }
 
 
+template<int W>
+THLS_INLINE fw_uint<W> zg()
+{
+    return fw_uint<W>(0);
+}
+
+template<int W>
+THLS_INLINE fw_uint<W> og()
+{
+    return ~zg<W>();
+}
+
 
 template<int B,int W>
 THLS_INLINE fw_uint<W-B> take(const fw_uint<W> &x)
@@ -251,25 +263,49 @@ THLS_INLINE fw_uint<W-1> drop_msb(const fw_uint<W> &x)
 template<int B,int W>
 THLS_INLINE fw_uint<B> take_lsbs(const fw_uint<W> &x)
 {
-  return get_bits<B-1,0>(x);
+  assert(B>=0);
+  assert(B<=W);
+  if(B==0){
+    return zg<B>();
+  }else{
+    return get_bits<B-1,0>(x);
+  }
 }
 
 template<int B,int W>
 THLS_INLINE fw_uint<W-B> drop_lsbs(const fw_uint<W> &x)
 {
-  return get_bits<W-1,B>(x);
+  assert(B>=0);
+  assert(B<=W);
+  if(B==W){
+    return zg<W-B>();
+  }else{
+    return get_bits<W-1,B>(x);
+  }
 }
 
 template<int B,int W>
 THLS_INLINE fw_uint<B> take_msbs(const fw_uint<W> &x)
 {
-  return get_bits<W-1,W-B>(x);
+  assert(B>=0);
+  assert(B<=W);
+  if(B==0){
+    return zg<B>();
+  }else{
+    return get_bits<W-1,W-B>(x);
+  }
 }
 
 template<int B,int W>
 THLS_INLINE fw_uint<W-B> drop_msbs(const fw_uint<W> &x)
 {
-  return get_bits<W-1-B,0>(x);
+  assert(B>=0);
+  assert(B<=W);
+  if(B==W){
+    return zg<W-B>();
+  }else{
+    return get_bits<W-1-B,0>(x);
+  }
 }
 
 
@@ -279,17 +315,7 @@ THLS_INLINE fw_uint<A+B> full_mul(const fw_uint<A> &a, const fw_uint<B> &b)
     return a*b;
 }
 
-template<int W>
-THLS_INLINE fw_uint<W> zg()
-{
-    return fw_uint<W>(0);
-}
 
-template<int W>
-THLS_INLINE fw_uint<W> og()
-{
-    return ~zg<W>();
-}
 
 template<int P,int W>
 THLS_INLINE fw_uint<P+W> zpad_hi(const fw_uint<W> &x)
