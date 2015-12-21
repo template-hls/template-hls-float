@@ -34,7 +34,11 @@ struct fp_flopoco
     // will be flushed to zero or infinity.
     // Number of bits in number must _always_ match FracBits
     fp_flopoco(mpfr_t x, bool allowUnderOrOverflow=false);
-
+        
+    
+    void get_exponent(int &e) const;
+    void get_fraction(mpfr_t &dst) const;
+ 
     // The destination must have the same fractional width
     void get(mpfr_t dst) const;
 
@@ -56,7 +60,6 @@ struct fp_flopoco
 
     fw_uint<FracBits> get_frac_bits() const
     { return get_bits<FracBits-1,0>(bits); }
-
 
     fw_uint<1> is_zero() const
     { return get_flags()==fw_uint<2>(0b00); }
@@ -151,7 +154,7 @@ namespace std
         static const int bias = (1<<(ExpBits-1))-1;
 
         static const int min_exponent = 0-bias;
-        static const int max_exponent = 0+bias-1;
+        static const int max_exponent = 0+bias+1;
 
         //one more than the smallest negative power of the radix that is a valid normalized floating-point value
         // static const int min_exponent10 = TODO;
@@ -179,20 +182,28 @@ namespace std
         {
             return T(concat(thls::fw_uint<3>(0b010),thls::og<ExpBits>(),thls::og<FracBits>()));
         }
+        
+        // Not in std
+        static THLS_CONSTEXPR T neg_max()
+        {
+            return T(concat(thls::fw_uint<3>(0b011),thls::og<ExpBits>(),thls::og<FracBits>()));
+        }
 
         static THLS_CONSTEXPR T lowest()
         { // == -max()
             return T(concat(thls::fw_uint<3>(0b011),thls::og<ExpBits>(),thls::og<FracBits>()));
         }
 
-        static THLS_CONSTEXPR T espilon()
+        static THLS_CONSTEXPR T epsilon()
         { // == 2^-(FracBits+1)
           // expnt == ExpBits -FracBits-1
+            assert(0); // not tested
             return T(concat(thls::fw_uint<3>(0b010),thls::fw_uint<ExpBits>( bias - FracBits-1) ,thls::zg<FracBits>()));
         }
 
         static THLS_CONSTEXPR T round_error()
         { // == 0.5
+            assert(0); // not tested
             return T(concat(thls::fw_uint<3>(0b010),thls::fw_uint<ExpBits>( bias - 1 ) ,thls::zg<FracBits>()));
         }
 
@@ -234,6 +245,18 @@ namespace std
         {
             return T(concat(thls::fw_uint<3>(0b001),thls::zg<ExpBits>() ,thls::zg<FracBits>()));
         }
+        
+        // Not part of std
+        static THLS_CONSTEXPR T pos_one()
+        {
+            return T(concat(thls::fw_uint<3>(0b010),thls::fw_uint<ExpBits>(bias),thls::zg<FracBits>()));
+        }
+
+        // Not part of std
+        static THLS_CONSTEXPR T neg_one()
+        {
+            return T(concat(thls::fw_uint<3>(0b011),thls::fw_uint<ExpBits>(bias),thls::zg<FracBits>()));
+        }
     };
 };
 
@@ -243,78 +266,72 @@ template<int ExpBits,int FracBits>
 fp_flopoco<ExpBits,FracBits> nextup(const fp_flopoco<ExpBits,FracBits> &x)
 {
     typedef std::numeric_limits<fp_flopoco<ExpBits,FracBits>> traits;
+    typedef fp_flopoco<ExpBits,FracBits> fp_t;
 
-    if(x.is_pos_inf()){
-        return x;
-    }else if(x.is_pos_normal()){
-        if(x.get_frac_bits()==og<FracBits>()){
-            if(x.get_exp_bits()==og<ExpBits>()){
-                return traits::infinity();
-            }else{
-                return concat(fw_uint<3>(0b010),x.get_exp_bits()+1,zg<FracBits>());
-            }
-        }else{
-            return concat(fw_uint<3>(0b010),x.get_exp_bits(),x.get_frac_bits()+1);
-        }
-    }else if(x.is_pos_zero()){
-        return traits::min();
-    }else if(x.is_neg_zero()){
-        return traits::pos_zero();
-    }else if(x.is_neg_normal()){
-        if(x.get_frac_bits()==zg<FracBits>()){
-            if(x.get_exp_bits()==zg<ExpBits>()){
-                return traits::neg_zero();
-            }else{
-                return concat(fw_uint<3>(0b011),x.get_exp_bits()-1,og<FracBits>());
-            }
-        }else{
-            return concat(fw_uint<3>(0b011),x.get_exp_bits(),x.get_frac_bits()-1);
-        }
-    }else if(x.is_neg_inf()){
-        return traits::lowest();
-    }else{
-        assert(x.is_nan());
-        return x; // nan -> nan
-    }
+    return select(
+        x.is_pos_inf(),
+            x,
+        x.is_pos_normal(),
+            select(x.get_frac_bits()==og<FracBits>(),
+                select(x.get_exp_bits()==og<ExpBits>(),
+                    traits::infinity(),
+                    fp_t(concat(fw_uint<3>(0b010),x.get_exp_bits()+1,zg<FracBits>()))
+                ),
+                fp_t(concat(fw_uint<3>(0b010),x.get_exp_bits(),x.get_frac_bits()+1))
+            ),
+        x.is_pos_zero(),
+            traits::min(),
+        x.is_neg_zero(),
+            traits::pos_zero(),
+        x.is_neg_normal(),
+            select(x.get_frac_bits()==zg<FracBits>(),
+                select(x.get_exp_bits()==zg<ExpBits>(),
+                    traits::neg_zero(),
+                    fp_t(concat(fw_uint<3>(0b011),x.get_exp_bits()-1,og<FracBits>()))
+                ),
+                fp_t(concat(fw_uint<3>(0b011),x.get_exp_bits(),x.get_frac_bits()-1))
+            ),
+        x.is_neg_inf(),
+            traits::lowest(),
+        // else
+            traits::quiet_NaN() // x==nan
+    );
 }
 
 template<int ExpBits,int FracBits>
 fp_flopoco<ExpBits,FracBits> nextdown(const fp_flopoco<ExpBits,FracBits> &x)
 {
     typedef std::numeric_limits<fp_flopoco<ExpBits,FracBits>> traits;
+    typedef fp_flopoco<ExpBits,FracBits> fp_t;
 
-    if(x.is_pos_inf()){
-        return traits::max();
-    }else if(x.is_pos_normal()){
-        if(x.get_frac_bits()==zg<FracBits>()){
-            if(x.get_exp_bits()==zg<ExpBits>()){
-                return traits::pos_zero();
-            }else{
-                return concat(fw_uint<3>(0b010),x.get_exp_bits()-1,zg<FracBits>());
-            }
-        }else{
-            return concat(fw_uint<3>(0b010),x.get_exp_bits(),x.get_frac_bits()-1);
-        }
-    }else if(x.is_pos_zero()){
-        return traits::neg_zero();
-    }else if(x.is_neg_zero()){
-        return traits::neg_min();
-    }else if(x.is_neg_normal()){
-        if(x.get_frac_bits()==og<FracBits>()){
-            if(x.get_exp_bits()==og<ExpBits>()){
-                return traits::neg_infinity();
-            }else{
-                return concat(fw_uint<3>(0b011),x.get_exp_bits()+1,og<FracBits>());
-            }
-        }else{
-            return concat(fw_uint<3>(0b011),x.get_exp_bits(),x.get_frac_bits()+1);
-        }
-    }else if(x.is_neg_inf()){
-        return x;
-    }else{
-        assert(x.is_nan());
-        return x;
-    }
+    return select(
+        x.is_pos_inf(),
+            traits::max(),
+        x.is_pos_normal(),
+            select(x.get_frac_bits()==zg<FracBits>(),
+                select(x.get_exp_bits()==zg<ExpBits>(),
+                    traits::pos_zero(),
+                    fp_t(concat(fw_uint<3>(0b010),x.get_exp_bits()-1,zg<FracBits>()))
+                ),    
+                fp_t(concat(fw_uint<3>(0b010),x.get_exp_bits(),x.get_frac_bits()-1))
+            ),
+        x.is_pos_zero(),
+            traits::neg_zero(),
+        x.is_neg_zero(),
+            traits::neg_min(),
+        x.is_neg_normal(),
+            select(x.get_frac_bits()==og<FracBits>(),
+                select(x.get_exp_bits()==og<ExpBits>(),
+                    traits::neg_infinity(),
+                    fp_t(concat(fw_uint<3>(0b011),x.get_exp_bits()+1,og<FracBits>()))
+                ),
+                fp_t(concat(fw_uint<3>(0b011),x.get_exp_bits(),x.get_frac_bits()+1))
+            ),
+        x.is_neg_inf(),
+            x,
+        // else
+            traits::quiet_NaN()
+    );
 }
 
 
@@ -542,9 +559,9 @@ std::string fp_flopoco<ExpBits,FracBits>::str() const
 
         fw_uint<ExpBits> expnt=get_bits<ExpBits+FracBits-1,FracBits>(bits);
         fw_uint<FracBits> frac=get_bits<FracBits-1,0>(bits);
-        acc<<" expnt="<<expnt<<"="<<(expnt.to_int()-126);
+        acc<<" expnt="<<expnt<<"="<<(expnt.to_int()-128);
         
-        acc<<" frac="<<frac<<"= (approx)"<<(ldexp(frac.to_int()+ldexp(1,FracBits),-FracBits-1));
+        acc<<" frac="<<frac<<"= (approx)"<<(ldexp(frac.to_int()+ldexp(1,FracBits),-FracBits));
     }else if( (flags==0b10).to_bool() ){
         acc<<select(negative==1, "-inf" , "+inf");
     }else{

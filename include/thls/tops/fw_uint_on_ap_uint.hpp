@@ -82,10 +82,42 @@ struct fw_uint
     }
 
     THLS_INLINE explicit fw_uint(const char *value)
-        : bits(value)
     {
         assert(W>=0);
-        // TODO : Really need to range-check the actual number
+        
+        // Special case binary
+        if(!strncmp("0b", value, 2)){
+            bits=0;
+            
+            const char *read=value+2;
+            
+            int done=0;
+            while(done<W){
+                switch(*read){
+                case 0:
+                    throw std::runtime_error("Not enough binary digits in string.");
+                case '_':
+                    break;
+                case '0':
+                    bits=(bits<<1)+0;
+                    done++;
+                    break;
+                case '1':
+                    bits=(bits<<1)+1;
+                    done++;
+                    break;
+                default:
+                    throw std::runtime_error("Unexpected characterin string.");
+                }
+                read++;
+            }
+            if(*read!=0){
+                throw std::runtime_error("Unexpected trailing characgers in binary string.");
+            }
+        }else{
+            // TODO : Really need to range-check the actual number
+            bits=ap_uint<SafeW>(value);
+        }
     }
 
     THLS_INLINE explicit fw_uint(const ap_uint<SafeW> &x)

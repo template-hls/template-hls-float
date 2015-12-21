@@ -9,6 +9,7 @@
 #include <climits>
 #include <cstdlib>
 #include <stdlib.h>
+#include <string.h>
 
 #ifndef THLS_SYNTHESIS
 #include <string>
@@ -114,12 +115,43 @@ struct fw_uint
     explicit fw_uint(const char *value)
     {
         assert(W>=0);
-
-        std::stringstream tmp;
-        tmp<<std::string(value);
-        tmp>>bits;
-        assert( bits<= MASK);
-        bits=bits&MASK;
+        
+        // Special case binary
+        if(!strncmp("0b", value, 2)){
+            bits=0;
+            
+            const char *read=value+2;
+            
+            int done=0;
+            while(done<W){
+                switch(*read){
+                case 0:
+                    throw std::runtime_error("Not enough binary digits in string.");
+                case '_':
+                    break;
+                case '0':
+                    bits=(bits<<1)+0;
+                    done++;
+                    break;
+                case '1':
+                    bits=(bits<<1)+1;
+                    done++;
+                    break;
+                default:
+                    throw std::runtime_error("Unexpected characterin string.");
+                }
+                read++;
+            }
+            if(*read!=0){
+                throw std::runtime_error("Unexpected trailing characgers in binary string.");
+            }
+        }else{
+            std::stringstream tmp;
+            tmp<<std::string(value);
+            tmp>>bits;
+            assert( bits<= MASK);
+            bits=bits&MASK;
+        }
     }
 #endif
 
@@ -353,8 +385,8 @@ struct fw_uint
     //explicit operator bool() const
     //{ return to_bool(); }
 
-    THLS_INLINE operator bool() const
-    { return to_bool(); }
+    //THLS_INLINE operator bool() const
+    //{ return to_bool(); }
 };
 
 template<int HI,int LO,int W>

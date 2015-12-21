@@ -432,7 +432,7 @@ const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, const T &v1, co
 }
 
 template<class T,class C1,class C2,class C3>
-const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const C2 &c3, const T &v3, const T &def)
+const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const C3 &c3, const T &v3, const T &def)
 {
   if(c0){
     return v0;
@@ -440,6 +440,49 @@ const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, c
     return select(c1,v1,c2,v2,c3,v3,def);
   }
 }
+
+
+template<class T,class C1,class C2,class C3,class C4>
+const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const C3 &c3, const T &v3, const C4 &c4, const T &v4, const T &def)
+{
+  if(c0.to_bool()){
+    return v0;
+  }else{
+    return select(c1,v1,c2,v2,c3,v3,c4,v4,def);
+  }
+}
+
+template<class T,class C1,class C2,class C3,class C4>
+const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const C3 &c3, const T &v3, const C4 &c4, const T &v4, const T &def)
+{
+  if(c0){
+    return v0;
+  }else{
+    return select(c1,v1,c2,v2,c3,v3,c4,v4,def);
+  }
+}
+
+
+template<class T,class C1,class C2,class C3,class C4,class C5>
+const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const C3 &c3, const T &v3, const C4 &c4, const T &v4, const C5 &c5, const T &v5,const T &def)
+{
+  if(c0.to_bool()){
+    return v0;
+  }else{
+    return select(c1,v1,c2,v2,c3,v3,c4,v4,c5,v5,def);
+  }
+}
+
+template<class T,class C1,class C2,class C3,class C4,class C5>
+const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const C3 &c3, const T &v3, const C4 &c4, const T &v4, const C5 &c5, const T &v5, const T &def)
+{
+  if(c0){
+    return v0;
+  }else{
+    return select(c1,v1,c2,v2,c3,v3,c4,v4,c5,v5,def);
+  }
+}
+
 
 /*
 template<class T>
