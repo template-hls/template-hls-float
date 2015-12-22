@@ -54,6 +54,10 @@ void test_impl(TImpl &impl)
 	    args.push_back(TType(tmp));
 	}
 
+	args.push_back(limits_t::min());
+	args.push_back(limits_t::neg_min());
+	args.push_back(limits_t::max());
+	args.push_back(limits_t::neg_max());
 	args.push_back(limits_t::infinity());
 	args.push_back(limits_t::neg_infinity());
 

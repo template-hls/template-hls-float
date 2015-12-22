@@ -398,7 +398,9 @@ THLS_INLINE fw_uint<HI-LO+1> get_bits(const fw_uint<W> &x)
     assert( W>HI );
     assert( LO>=0 );
     
-    return fw_uint<HI-LO+1>( bits_t(x.bits>>LO) & MASK );
+    static const int SAFE_LO = LO<0 ? 0 : LO;
+    
+    return fw_uint<HI-LO+1>( bits_t(x.bits>>SAFE_LO) & MASK );
 }
 
 template<int WA>
