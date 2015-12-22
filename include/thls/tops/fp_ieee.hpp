@@ -47,6 +47,22 @@ struct fp_ieee
 #endif
 
     fw_uint<1+ExpBits+FracBits> bits;
+        
+    //! Returns flags equivalent to flopoco format flags
+    fw_uint<2> get_flags() const
+    {
+        return select(
+            get_exp_bits()==zg<ExpBits>(),
+                fw_uint<2>(0b00), // zero, with de-normals treated as zero
+            get_exp_bits()==og<ExpBits>(),
+                select(get_frac_bits()==zg<FracBits>(),
+                    fw_uint<2>(0b10), // infinity
+                    fw_uint<2>(0b11)  // nan
+                ),
+            // else
+                fw_uint<2>(0b00) // normal
+        );
+    }
 
     fw_uint<1> get_sign() const
     { return get_bit<ExpBits+FracBits>(bits); }
@@ -228,6 +244,7 @@ namespace std
 
         static THLS_CONSTEXPR T signalling_NaN()
         {
+            // This just returns a quiet nan (MSB of fraction is one)
             return T(concat(thls::zg<1>(),thls::og<ExpBits>() ,thls::zg<FracBits>()));
         }
 
@@ -249,6 +266,10 @@ namespace std
         }
         
         // Not part of std
+        static THLS_CONSTEXPR T zero()
+        { return pos_zero(); }
+        
+        // Not part of std
         static THLS_CONSTEXPR T pos_one()
         {
             return T(concat(thls::zg<1>(),thls::fw_uint<ExpBits>(bias),thls::zg<FracBits>()));
@@ -259,6 +280,10 @@ namespace std
         {
             return T(concat(thls::og<1>(),thls::fw_uint<ExpBits>(bias),thls::zg<FracBits>()));
         }
+        
+        // Not part of std
+        static THLS_CONSTEXPR T one()
+        { return pos_one(); }
     };
 };
 

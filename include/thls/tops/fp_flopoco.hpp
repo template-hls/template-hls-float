@@ -250,6 +250,10 @@ namespace std
         }
         
         // Not part of std
+        static THLS_CONSTEXPR T zero()
+        { return pos_zero(); }
+        
+        // Not part of std
         static THLS_CONSTEXPR T pos_one()
         {
             return T(concat(thls::fw_uint<3>(0b010),thls::fw_uint<ExpBits>(bias),thls::zg<FracBits>()));
@@ -260,6 +264,10 @@ namespace std
         {
             return T(concat(thls::fw_uint<3>(0b011),thls::fw_uint<ExpBits>(bias),thls::zg<FracBits>()));
         }
+        
+        // Not part of std
+        static THLS_CONSTEXPR T one()
+        { return pos_one(); }
     };
 };
 
