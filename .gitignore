@@ -1,2 +1,4 @@
 /MpfrMpir
-/build_win
+/build_*
+*.exe
+*.stackdump
