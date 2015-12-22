@@ -1,7 +1,8 @@
-#ifndef thls_fp_flopoco_mul_v1_hpp
-#define thls_fp_flopoco_mul_v1_hpp
+#ifndef thls_fp_flopoco_add_v1_hpp
+#define thls_fp_flopoco_add_v1_hpp
 
 #include "thls/tops/fp_flopoco.hpp"
+#include "thls/tops/fp_promote.hpp"
 
 namespace thls
 {
@@ -78,18 +79,25 @@ class LZOCShifterImpl
 {
     static void stage(fw_uint<WD> &out, fw_uint<1> &bit, const fw_uint<WD> &x)
     {
-        assert( WD > (1<<(WC-1)) );
+        assert( WD >= (1<<(WC-1)) );
         
         static const int SHIFT=(1<<(WC-1));
         fw_uint<SHIFT> hi=get_bits<WD-1,WD-SHIFT>(x);
         
-        static const int BASE= WD-2*SHIFT ? 0 : WD-2*SHIFT;
-        auto lo=get_bits<WD-SHIFT-1,BASE>(x);
-        
-        assert( ((x==zg<WD>()) || (hi!=zg<SHIFT>()) || (lo!=zg<lo.width>())).to_bool() );
-        
-        bit= (hi==zg<SHIFT>());
-        out=select(bit, (x<<SHIFT), x);
+        if(SHIFT==WD){
+            // We are just a zero detector
+            bit= (hi==zg<SHIFT>());
+            out= x;
+        }else{
+            
+            static const int BASE= WD-2*SHIFT ? 0 : WD-2*SHIFT;
+            auto lo=get_bits<WD-SHIFT-1,BASE>(x);
+            
+            assert( ((x==zg<WD>()) || (hi!=zg<SHIFT>()) || (lo!=zg<lo.width>())).to_bool() );
+            
+            bit= (hi==zg<SHIFT>());
+            out=select(bit, (x<<SHIFT), x);
+        }
     }
     
 public:
@@ -128,7 +136,7 @@ template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
 THLS_INLINE fp_flopoco<wER,wFR> add(const fp_flopoco<wEX,wFX> &xPre, const fp_flopoco<wEY,wFY> &yPre, int DEBUG=0)
 {
     
-    #if 1
+    #if 0
     //parameter set up. For now all wEX=wEY=wER and the same holds for fractions
     THLS_STATIC_ASSERT(wEX==wEY && wEY==wER, "All exponent widths must be the same.");
     THLS_STATIC_ASSERT(wFX==wFY && wFY==wFR, "All fraction widths must be the same.");
@@ -157,7 +165,10 @@ THLS_INLINE fp_flopoco<wER,wFR> add(const fp_flopoco<wEX,wFX> &xPre, const fp_fl
 
     // Copyright : This is heavily based on copyright work of Bogdan Pasca and Florent de Dinechin (2010)
 
-
+    if(DEBUG){
+        std::cerr<<"  x = "<<x.str()<<"\n";
+        std::cerr<<"  y = "<<y.str()<<"\n";
+    }
 
     const int sizeRightShift = intlog2<wF+3>::value;
 
@@ -280,7 +291,7 @@ THLS_INLINE fp_flopoco<wER,wFR> add(const fp_flopoco<wEX,wFX> &xPre, const fp_fl
     if (wE>sizeRightShift) {
         //vhdl<<tab<<declare("shiftVal",sizeRightShift) << " <= expDiff("<< sizeRightShift-1<<" downto 0)"
         //<< " when shiftedOut='0' else CONV_STD_LOGIC_VECTOR("<<wFX+3<<","<<sizeRightShift<<") ;" << endl;
-        shiftVal = checked_cast<sizeRightShift>(  select(shiftedOut==0, get_bits< sizeRightShift-1, 0>(expDiff), fw_uint<sizeRightShift>(wFX+3)) );
+        shiftVal = checked_cast<sizeRightShift>(  select(shiftedOut==0, get_bits< sizeRightShift-1, 0>(expDiff), fw_uint<sizeRightShift>(wF+3)) );
     }
     else if (wE==sizeRightShift) {
         //vhdl<<tab<<declare("shiftVal", sizeRightShift) << " <= expDiff" << range(sizeRightShift-1,0) << ";" << endl ;

@@ -2,6 +2,7 @@ include_directories( ${MPFR_INCLUDE_DIR} )
 
 add_executable_test_with_fw_uint(base test_bits)
 add_executable_test_with_fw_uint(base test_fp_flopoco)
+add_executable_test_with_fw_uint(base test_fp_ieee)
 
 add_executable_test_with_fw_uint(base test_bit_heap)
 add_executable_test_with_fw_uint(base test_row_heap)
@@ -10,3 +11,4 @@ add_executable_test_with_fw_uint(base test_add)
 add_executable_test_with_fw_uint(base test_mul)
 add_executable_test_with_fw_uint(base test_mul_different_frac)
 add_executable_test_with_fw_uint(base test_add_different_frac)
+add_executable_test_with_fw_uint(base test_add_different_exp)
