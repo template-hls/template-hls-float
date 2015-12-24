@@ -16,21 +16,8 @@ void make_input(std::vector<TType> &args, int n)
 	
 	mpfr_t tmp;
 	mpfr_init2(tmp, TType::frac_bits+1);
-    
-    ////////////////////////////////////////
-    // Basic edge cases
-    args.push_back(limits_t::neg_infinity());
-    args.push_back(limits_t::neg_max());
-    args.push_back(limits_t::neg_one());
-    args.push_back(limits_t::neg_min());
-    args.push_back(limits_t::neg_zero());
-    args.push_back(limits_t::zero());
-    args.push_back(limits_t::min());
-    args.push_back(limits_t::one());
-	args.push_back(limits_t::max());
-	args.push_back(limits_t::infinity());
 	
-    ////////////////////////////////////////
+	////////////////////////////////////////
 	// Small integers
 	for(double a=1; a<=10; a++){
 		mpfr_set_d(tmp, a, MPFR_RNDN);
@@ -39,6 +26,17 @@ void make_input(std::vector<TType> &args, int n)
         args.push_back(TType(tmp));
         mpfr_mul_si(tmp, tmp, -1, MPFR_RNDN);
 	}
+    
+    ////////////////////////////////////////
+    // Basic edge cases
+    args.push_back(limits_t::neg_infinity());
+    args.push_back(limits_t::neg_max());
+    args.push_back(limits_t::neg_min());
+    args.push_back(limits_t::neg_zero());
+    args.push_back(limits_t::zero());
+    args.push_back(limits_t::min());
+    args.push_back(limits_t::max());
+	args.push_back(limits_t::infinity());
 	
     
     ////////////////////////////////////////
@@ -86,12 +84,12 @@ void make_input(std::vector<TType> &args, int n)
 	}
     
     //////////////////////////////////////
-    // Binary powers less than one
-    for(int i=1;i<TType::frac_bits+4;i++){
+    // Binary powers around one, covering range for potential normalisation problems
+    for(int i=-TType::frac_bits-6;i<TType::frac_bits+6;i++){
         mpfr_set_d(tmp, ldexp(1.0, -i), MPFR_RNDN);
-        args.push_back(TType(tmp));
+        args.push_back(TType(tmp,true));
         mpfr_mul_si(tmp, tmp, -1, MPFR_RNDN);
-        args.push_back(TType(tmp));
+        args.push_back(TType(tmp,true));
         mpfr_mul_si(tmp, tmp, -1, MPFR_RNDN);
     }
 	

@@ -1,4 +1,4 @@
-#include "thls/tops/fp_flopoco_add_single_v1.hpp"
+#include "thls/tops/fp_flopoco_add_dual_v1.hpp"
 
 #include "thls/tops/make_input.hpp"
 
@@ -60,33 +60,12 @@ void test_impl(TImpl &impl)
 int main()
 {
 
-	//test_impl<fp_flopoco<8,26>>(add<8,26,8,26,8,26>);
-	//test_impl<fp_flopoco<8,25>>(add<8,25,8,25,8,25>);
-	test_impl<fp_flopoco<8,24>>(add<8,24,8,24,8,24>);
-	//test_impl<fp_flopoco<8,23>>(add<8,23,8,23,8,23>);
-	//test_impl<fp_flopoco<8,22>>(add<8,22,8,22,8,22>);
-	//test_impl<fp_flopoco<8,21>>(add<8,21,8,21,8,21>);
-	//test_impl<fp_flopoco<8,20>>(add<8,20,8,20,8,20>);
-	//test_impl<fp_flopoco<8,19>>(add<8,19,8,19,8,19>);
-	//test_impl<fp_flopoco<8,18>>(add<8,18,8,18,8,18>);
-	//test_impl<fp_flopoco<8,17>>(add<8,17,8,17,8,17>);
-	//test_impl<fp_flopoco<8,16>>(add<8,16,8,16,8,16>);
-	//test_impl<fp_flopoco<8,15>>(add<8,15,8,15,8,15>);
-	//test_impl<fp_flopoco<8,14>>(add<8,14,8,14,8,14>);
-	//test_impl<fp_flopoco<8,13>>(add<8,13,8,13,8,13>);
-	
-	test_impl<fp_flopoco<8,32>>(add<8,32,8,32,8,32>);
-	test_impl<fp_flopoco<11,52>>(add<11,52,11,52,11,52>);
-	
-	test_impl<fp_flopoco<6,10>>(add<6,10,6,10,6,10>);
-	test_impl<fp_flopoco<6,11>>(add<6,11,6,11,6,11>);
-	test_impl<fp_flopoco<6,12>>(add<6,12,6,12,6,12>);
-	test_impl<fp_flopoco<6,13>>(add<6,13,6,13,6,13>);
-	test_impl<fp_flopoco<6,14>>(add<6,14,6,14,6,14>);
-	test_impl<fp_flopoco<6,15>>(add<6,15,6,15,6,15>);
-
-	test_impl<fp_flopoco<8,12>>(add<8,12,8,12,8,12>);
-	test_impl<fp_flopoco<8,11>>(add<8,11,8,11,8,11>);
+	test_impl<fp_flopoco<8,23>>(add_dual<8,23,8,23,8,23>);
+	test_impl<fp_flopoco<6,23>>(add_dual<6,23,6,23,6,23>);
+	test_impl<fp_flopoco<6,12>>(add_dual<6,12,6,12,6,12>);
+	test_impl<fp_flopoco<5,12>>(add_dual<5,12,5,12,5,12>);
+	test_impl<fp_flopoco<5,11>>(add_dual<5,11,5,11,5,11>);
+	test_impl<fp_flopoco<5,10>>(add_dual<5,10,5,10,5,10>);
 
 
 	fprintf(stderr, "Done\n");

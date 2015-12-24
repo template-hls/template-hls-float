@@ -219,6 +219,12 @@ THLS_INLINE fw_uint<W> og()
     return ~zg<W>();
 }
 
+template<int W>
+THLS_INLINE fw_uint<W> cg(int x)
+{
+  return fw_uint<W>(x);
+}
+
 
 template<int B,int W>
 THLS_INLINE fw_uint<W-B> take(const fw_uint<W> &x)
@@ -507,6 +513,12 @@ const T &select(const fw_uint<1> &c0, const T &v0,
     return def;
   }
 }*/
+
+template<int W>
+THLS_INLINE fw_uint<W> copybit(const fw_uint<1> &b)
+{
+  return select(b, og<W>(), zg<W>());
+}
 
 template<int WD,int WA>
 struct lut

@@ -89,11 +89,11 @@ class LZOCShifterImpl
             bit= (hi==zg<SHIFT>());
             out= x;
         }else{
-            
+            #ifndef NDEBUG
             static const int BASE= WD-2*SHIFT ? 0 : WD-2*SHIFT;
             auto lo=get_bits<WD-SHIFT-1,BASE>(x);
-            
             assert( ((x==zg<WD>()) || (hi!=zg<SHIFT>()) || (lo!=zg<lo.width>())).to_bool() );
+            #endif
             
             bit= (hi==zg<SHIFT>());
             out=select(bit, (x<<SHIFT), x);
