@@ -66,17 +66,17 @@ void test_impl(TImpl &impl)
 
 int main()
 {
-	test_impl<fp_flopoco<8,23>,fp_flopoco<8,23>,fp_flopoco<8,23> >(add<8,23,8,23,8,23>);
-	test_impl<fp_flopoco<8,16>,fp_flopoco<8,16>,fp_flopoco<8,16> >(add<8,16,8,16,8,16>);
+	test_impl<fp_flopoco<8,23>,fp_flopoco<8,23>,fp_flopoco<8,23> >(add_single<8,23,8,23,8,23>);
+	test_impl<fp_flopoco<8,16>,fp_flopoco<8,16>,fp_flopoco<8,16> >(add_single<8,16,8,16,8,16>);
 	
-	test_impl<fp_flopoco<8,16>,fp_flopoco<8,10>,fp_flopoco<8,16> >(add<8,16,8,10,8,16>);
-	test_impl<fp_flopoco<8,16>,fp_flopoco<8,16>,fp_flopoco<8,10> >(add<8,16,8,16,8,10>);
+	test_impl<fp_flopoco<8,16>,fp_flopoco<8,10>,fp_flopoco<8,16> >(add_single<8,16,8,10,8,16>);
+	test_impl<fp_flopoco<8,16>,fp_flopoco<8,16>,fp_flopoco<8,10> >(add_single<8,16,8,16,8,10>);
 	
-	test_impl<fp_flopoco<8,27>,fp_flopoco<8,26>,fp_flopoco<8,27> >(add<8,27,8,26,8,27>);
-	test_impl<fp_flopoco<8,27>,fp_flopoco<8,27>,fp_flopoco<8,26> >(add<8,27,8,27,8,26>);
+	test_impl<fp_flopoco<8,27>,fp_flopoco<8,26>,fp_flopoco<8,27> >(add_single<8,27,8,26,8,27>);
+	test_impl<fp_flopoco<8,27>,fp_flopoco<8,27>,fp_flopoco<8,26> >(add_single<8,27,8,27,8,26>);
 	
-	test_impl<fp_flopoco<8,30>,fp_flopoco<8,20>,fp_flopoco<8,30> >(add<8,30,8,20,8,30>);
-	test_impl<fp_flopoco<8,30>,fp_flopoco<8,30>,fp_flopoco<8,20> >(add<8,30,8,30,8,20>);
+	test_impl<fp_flopoco<8,30>,fp_flopoco<8,20>,fp_flopoco<8,30> >(add_single<8,30,8,20,8,30>);
+	test_impl<fp_flopoco<8,30>,fp_flopoco<8,30>,fp_flopoco<8,20> >(add_single<8,30,8,30,8,20>);
   
 	fprintf(stderr, "Done\n");
 

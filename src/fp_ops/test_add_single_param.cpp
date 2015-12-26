@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
 	
 
 	if( (1<<E) > F){ 
-		auto r=test_impl<fp_flopoco<E,F>>(add<E,F,E,F,E,F>, n, *dst);
+		auto r=test_impl<fp_flopoco<E,F>>(add_single<E,F,E,F,E,F>, n, *dst);
 		fprintf(stdout, "%d, %d, %s, %d, %d, %d", E, F, r.first==0?"pass":"fail", n, r.first, r.second);
 	}else{
 		fprintf(stdout, "%d, %d, invalid, 0, 0, 0", E, F);
