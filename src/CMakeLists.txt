@@ -58,5 +58,6 @@ endfunction(add_executable_test_with_fw_uint)
 enable_testing()
 
 add_subdirectory(fp_ops)
+add_subdirectory(ct_rng)
 
 

@@ -162,7 +162,7 @@ THLS_INLINE fp_flopoco<wER,wFR> add_dual(const fp_flopoco<wEX,wFX> &xPre, const 
         zg<1>()
     );
     
-    int DEBUG_close = DEBUG && selectClosePath.to_bool();
+    //int DEBUG_close = DEBUG && selectClosePath.to_bool();
     int DEBUG_far = DEBUG && !selectClosePath.to_bool();
 
 
@@ -702,6 +702,13 @@ THLS_INLINE fp_flopoco<wER,wFR> add_dual(const fp_flopoco<wEX,wFX> &xPre, const 
 
     return fp_flopoco<wER,wFR>(R);
 }
+
+template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
+THLS_INLINE fp_flopoco<wER,wFR> add_fast(const fp_flopoco<wEX,wFX> &xPre, const fp_flopoco<wEY,wFY> &yPre, int DEBUG=0)
+{
+    return add_dual<wER,wFR,wEX,wFX,wEY,wFY>(xPre, yPre, DEBUG);
+};
+
 
 
 }; // thls

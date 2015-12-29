@@ -1,4 +1,4 @@
-float fp_mul_native_8_23(
+extern float fp_mul_native_8_23(
     float a,
     float b
 )

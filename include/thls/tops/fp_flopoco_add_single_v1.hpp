@@ -133,7 +133,7 @@ void LZOCShifter(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint<WD> &x)
 }
 
 template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
-THLS_INLINE fp_flopoco<wER,wFR> add(const fp_flopoco<wEX,wFX> &xPre, const fp_flopoco<wEY,wFY> &yPre, int DEBUG=0)
+THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, const fp_flopoco<wEY,wFY> &yPre, int DEBUG=0)
 {
     
     #if 0
@@ -539,6 +539,12 @@ THLS_INLINE fp_flopoco<wER,wFR> add(const fp_flopoco<wEX,wFX> &xPre, const fp_fl
 
     return fp_flopoco<wER,wFR>(R);
 }
+
+template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
+THLS_INLINE fp_flopoco<wER,wFR> add_small(const fp_flopoco<wEX,wFX> &xPre, const fp_flopoco<wEY,wFY> &yPre, int DEBUG=0)
+{
+    return add_single<wER,wFR,wEX,wFX,wEY,wFY>(xPre, yPre, DEBUG);
+};
 
 
 }; // thls

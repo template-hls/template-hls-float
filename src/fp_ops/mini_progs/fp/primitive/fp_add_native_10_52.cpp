@@ -1,4 +1,4 @@
-double fp_add_native_20_53(
+extern double fp_add_native_20_53(
     double a,
     double b
 )

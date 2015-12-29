@@ -42,3 +42,5 @@ endfunction(add_param_test)
 #        add_param_test(${E} ${F})
 #    endforeach(F)
 #endforeach(E)
+
+add_subdirectory(mini_progs)
