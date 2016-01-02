@@ -16,6 +16,8 @@ add_executable_test_with_fw_uint(base test_add_single_different_exp)
 
 add_executable_test_with_fw_uint(base test_add_dual)
 
+add_executable_test_with_fw_uint(base test_lut_opt)
+
 add_custom_target(test_add_param_run)
 
 function(add_param_test E F )

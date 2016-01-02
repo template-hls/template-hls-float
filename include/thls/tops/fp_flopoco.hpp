@@ -614,6 +614,7 @@ std::string fp_flopoco<ExpBits,FracBits>::str() const
 }
 #endif
 
+#if 0
 //! Does an IEEE style comparison
 /*! \note This considers nans to be uncomparable
 */
@@ -707,7 +708,7 @@ fw_uint<1> less_than_equal(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wF
             na.get_flags_exp_frac_bits()<=nb.get_flags_exp_frac_bits()
     );
 }
-
+#endif
 
 }; // thls
 

@@ -1,11 +1,11 @@
 #ifndef thls_tops_ct_rng_lcg_mod_p_hpp
 #define thls_tops_ct_rng_lcg_mod_p_hpp
 
-#include "thls/tops/ct_rng.hpp"
+#include "thls/tops/ct/ct_rng.hpp"
 
 namespace thls
 {
-namespace ct_rng
+namespace ct
 {
 
 template<uint32_t X,uint32_t M>
@@ -81,7 +81,7 @@ struct make_minstdrand0
 {
     static_assert((S%lcg_mod_p_M2)!=0, "Seed must not be zero.");
     
-    typedef lcg_mod_p_state<(S%lcg_mod_p_M2),lcg_mod_p_A2,lcg_mod_p_M2> value;
+    typedef lcg_mod_p_state<(S%lcg_mod_p_M2),lcg_mod_p_A2,lcg_mod_p_M2> type;
 };
 
 template<uint32_t S=3922919429>
@@ -89,7 +89,7 @@ struct make_lcg_mod_2y32m5
 {
     static_assert((S%lcg_mod_p_M1)!=0, "Seed must not be zero.");
     
-    typedef lcg_mod_p_state<(S%lcg_mod_p_M1),lcg_mod_p_A1,lcg_mod_p_M1> value;
+    typedef lcg_mod_p_state<(S%lcg_mod_p_M1),lcg_mod_p_A1,lcg_mod_p_M1> type;
 };
 
 
@@ -103,12 +103,12 @@ private:
 
     static const uint32_t S2=uint32_t( (uint64_t(S) * Ai) % M );
 public:    
-    typedef lcg_mod_p_state<S2,A,M> value;
+    typedef lcg_mod_p_state<S2,A,M> type;
 };
 
 
 template<>
-struct verify_ct_rng_fixed<make_minstdrand0<>::value>
+struct verify_ct_rng_fixed<make_minstdrand0<>::type>
 {
     static const uint32_t value1 = 1119407881ul; // mod(2013771743*power_mod(16807,1,2147483647),2147483647)
     static const uint32_t value2 = 1931508247ul;
@@ -118,7 +118,7 @@ struct verify_ct_rng_fixed<make_minstdrand0<>::value>
 
 
 template<>
-struct verify_ct_rng_fixed<make_lcg_mod_2y32m5<>::value>
+struct verify_ct_rng_fixed<make_lcg_mod_2y32m5<>::type>
 {
     static const uint32_t value1 = 4020269147ul; // mod(3922919429*power_mod(1588635695,1,4294967291),4294967291)
     static const uint32_t value2 = 2884350374ul;
@@ -130,6 +130,6 @@ struct verify_ct_rng_fixed<make_lcg_mod_2y32m5<>::value>
 }; // ct_rng
 }; // thls
 
-template struct thls::ct_rng::verify_ct_rng<thls::ct_rng::make_minstdrand0<>::value>;
+template struct thls::ct_rng::verify_ct_rng<thls::ct_rng::make_minstdrand0<>::type>;
 
 #endif

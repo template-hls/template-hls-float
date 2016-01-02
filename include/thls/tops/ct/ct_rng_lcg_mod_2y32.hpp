@@ -1,11 +1,11 @@
 #ifndef thls_tops_ct_rng_lcg_mod_2y32_hpp
 #define thls_tops_ct_rng_lcg_mod_2y32_hpp
 
-#include "thls/tops/ct_rng.hpp"
+#include "thls/tops/ct/ct_rng.hpp"
 
 namespace thls
 {
-namespace ct_rng
+namespace ct
 {
     static const uint32_t lcg_mod_2y32_A = 1664525ul;
     static const uint32_t lcg_mod_2y32_C = 1013904223ul;
@@ -82,7 +82,7 @@ public:
 template<uint32_t S=949333985>
 struct make_quick_and_dirty
 {
-    typedef lcg_mod_2y32_state<S,lcg_mod_2y32_A,lcg_mod_2y32_C> value;
+    typedef lcg_mod_2y32_state<S,lcg_mod_2y32_A,lcg_mod_2y32_C> type;
 };
 
 
@@ -96,12 +96,12 @@ private:
 
     static const uint32_t Si=S*Ai + Ci;
 public:    
-    typedef lcg_mod_2y32_state<Si,A,C> value;
+    typedef lcg_mod_2y32_state<Si,A,C> type;
 };
 
 
 template<>
-struct verify_ct_rng_fixed<make_quick_and_dirty<>::value>
+struct verify_ct_rng_fixed<make_quick_and_dirty<>::type>
 {
     /*  T:matrix([1664525,1013904223],[0,1]);
         x0:matrix([949333985,1]);
@@ -117,6 +117,6 @@ struct verify_ct_rng_fixed<make_quick_and_dirty<>::value>
 }; // ct_rng
 }; // thls
 
-template struct thls::ct_rng::verify_ct_rng<thls::ct_rng::make_quick_and_dirty<>::value>;
+template struct thls::ct::verify_ct_rng<thls::ct::make_quick_and_dirty<>::type>;
 
 #endif
