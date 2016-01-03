@@ -13,9 +13,6 @@
 namespace thls
 {
 
-namespace detail
-{
-
 /*! Only converts with the same format */
 template<int E,int F>
 void convert(fp_flopoco<E,F> &dst, const fp_ieee<E,F> &src)
@@ -23,8 +20,8 @@ void convert(fp_flopoco<E,F> &dst, const fp_ieee<E,F> &src)
     dst=fp_flopoco<E,F>(concat(
         src.get_flags(),
         src.get_sign(),
-        src.get_exponent(),
-        src.get_fraction()
+        src.get_exp_bits(),
+        src.get_frac_bits()
     ));
 }
 
@@ -32,8 +29,8 @@ void convert(fp_flopoco<E,F> &dst, const fp_ieee<E,F> &src)
 template<int E,int F>
 void convert(fp_ieee<E,F> &dst, const fp_flopoco<E,F> &src)
 {
-    auto over=src.is_normal() && src.get_exponent()==og<E>();
-    auto under=src.is_normal() && src.get_exponent()==zg<E>();
+    auto over=src.is_normal() && src.get_exp_bits()==og<E>();
+    auto under=src.is_normal() && src.get_exp_bits()==zg<E>();
     dst=fp_ieee<E,F>(concat(
         src.get_sign(),
         select(
@@ -42,7 +39,7 @@ void convert(fp_ieee<E,F> &dst, const fp_flopoco<E,F> &src)
             src.is_nan() | src.is_inf() | over,
                 og<E>(),
             // else
-                src.get_exponent()
+                src.get_exp_bits()
         ),
         select(
             src.is_zero() | src.is_inf() | over | under,
@@ -50,7 +47,7 @@ void convert(fp_ieee<E,F> &dst, const fp_flopoco<E,F> &src)
             src.is_nan(),
                 og<F>(),
             // else
-                src.get_fraction()
+                src.get_frac_bits()
         )
     ));
 }

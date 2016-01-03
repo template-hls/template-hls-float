@@ -305,6 +305,7 @@ struct test_policy
                 value_t b=input[j];
                 policy_t::to_mpfr(inB, b);
 
+
                 //mpfr_fprintf(stderr, "%Rg,%Rg,  %g,%g\n", inA,inB, a,b);
 
 

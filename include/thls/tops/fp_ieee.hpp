@@ -60,7 +60,7 @@ struct fp_ieee
                     fw_uint<2>(0b11)  // nan
                 ),
             // else
-                fw_uint<2>(0b00) // normal
+                fw_uint<2>(0b01) // normal
         );
     }
 

@@ -213,11 +213,25 @@ THLS_INLINE fw_uint<W> zg()
     return fw_uint<W>(0);
 }
 
+namespace {
+    const fw_uint<1> zg1 = zg<1>();
+    const fw_uint<2> zg2 = zg<2>();
+    const fw_uint<3> zg3 = zg<3>();
+    const fw_uint<4> zg4 = zg<4>();
+};
+
 template<int W>
 THLS_INLINE fw_uint<W> og()
 {
     return ~zg<W>();
 }
+
+namespace {
+    const fw_uint<1> og1 = og<1>();
+    const fw_uint<2> og2 = og<2>();
+    const fw_uint<3> og3 = og<3>();
+    const fw_uint<4> og4 = og<4>();
+};
 
 template<int W>
 THLS_INLINE fw_uint<W> cg(int x)
@@ -519,6 +533,29 @@ THLS_INLINE fw_uint<W> copybit(const fw_uint<1> &b)
 {
   return select(b, og<W>(), zg<W>());
 }
+
+
+    template<int HI,int LO,int W>
+    struct concat_array_impl {
+        static fw_uint<(HI - LO + 1) * W> go(const fw_uint<W> *x) {
+          return concat(x[HI], concat_array_impl<HI - 1, LO, W>::go(x));
+        };
+    };
+
+    template<int LO,int W>
+    struct concat_array_impl<LO,LO,W> {
+        static fw_uint<W> go(const fw_uint<W> *x) {
+          return x[LO];
+        };
+    };
+
+    template<int HI,int LO,int W>
+    fw_uint<(HI-LO+1)*W> concat_array(const fw_uint<W> *x)
+    {
+      static_assert(HI>=LO, "Range must be non-empty");
+      return concat_array_impl<HI,LO,W>::go(x);
+    };
+
 
 template<int WD,int WA>
 struct lut

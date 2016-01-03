@@ -355,7 +355,7 @@ fp_flopoco<ExpBits,FracBits> nextdown(const fp_flopoco<ExpBits,FracBits> &x)
                 select(x.get_exp_bits()==zg<ExpBits>(),
                     traits::pos_zero(),
                     fp_t(concat(fw_uint<3>(0b010),x.get_exp_bits()-1,zg<FracBits>()))
-                ),    
+                ),
                 fp_t(concat(fw_uint<3>(0b010),x.get_exp_bits(),x.get_frac_bits()-1))
             ),
         x.is_pos_zero(),
@@ -434,13 +434,13 @@ fp_flopoco<ExpBits,FracBits>::fp_flopoco(mpfr_t x, bool allowUnderOrOverflow)
         assert(mpz_tstbit(fracBits, FracBits));
         // Clear the explicit bit
         mpz_clrbit(fracBits,FracBits);
-        
+
         //mpfr_fprintf(stderr, "           frac=0x%Zx\n",fracBits);
 
         e=e+FracBits; // Actual exponent
 
         //mpfr_fprintf(stderr, "   2^%d * (2^%d + %Zd) / 2^(%d)\n", e, FracBits, fracBits, FracBits);
-        
+
         fw_uint<2> flags(0b01);
         fw_uint<1> sign(negative);
         fw_uint<ExpBits> expnt;
@@ -558,7 +558,7 @@ fp_flopoco<ER,FR> ref_add(const fp_flopoco<EA,FA> &a, const fp_flopoco<EB,FB> &b
     b.get(mb);
 
     mpfr_add(mr,ma,mb,MPFR_RNDN);
-    
+
     //mpfr_fprintf(stderr, "mpfr : %Rg + %Rg = %Rg\n", ma, mb, mr);
 
     fp_flopoco<ER,FR> res(mr,true);
@@ -574,6 +574,36 @@ template<int ER,int FR,int EA,int FA,int EB,int FB>
 void ref_add(fp_flopoco<ER,FR> &dst, const fp_flopoco<EA,FA> &a, const fp_flopoco<EB,FB> &b)
 {
     dst=ref_add<ER,FR>(a,b);
+}
+
+template<int ER,int FR,int EA,int FA,int EB,int FB>
+fp_flopoco<ER,FR> ref_div(const fp_flopoco<EA,FA> &a, const fp_flopoco<EB,FB> &b)
+{
+    mpfr_t ma, mb, mr;
+    mpfr_init2(ma,FA+1);
+    mpfr_init2(mb,FB+1);
+    mpfr_init2(mr,FR+1);
+
+    a.get(ma);
+    b.get(mb);
+
+    mpfr_div(mr,ma,mb,MPFR_RNDN);
+
+    //mpfr_fprintf(stderr, "mpfr : %Rg + %Rg = %Rg\n", ma, mb, mr);
+
+    fp_flopoco<ER,FR> res(mr,true);
+
+    mpfr_clear(ma);
+    mpfr_clear(mb);
+    mpfr_clear(mr);
+
+    return res;
+}
+
+template<int ER,int FR,int EA,int FA,int EB,int FB>
+void ref_div(fp_flopoco<ER,FR> &dst, const fp_flopoco<EA,FA> &a, const fp_flopoco<EB,FB> &b)
+{
+    dst=ref_div<ER,FR>(a,b);
 }
 
 
@@ -603,16 +633,27 @@ std::string fp_flopoco<ExpBits,FracBits>::str() const
         fw_uint<ExpBits> expnt=get_bits<ExpBits+FracBits-1,FracBits>(bits);
         fw_uint<FracBits> frac=get_bits<FracBits-1,0>(bits);
         acc<<" e="<<expnt<<"="<<(expnt.to_int()- (1<<(ExpBits-1))+1);
-        
+
         acc<<" f="<<frac<<"= (approx)"<<(ldexp(frac.to_int()+ldexp(1,FracBits),-FracBits));
     }else if( (flags==0b10).to_bool() ){
         acc<<select(negative==1, "-inf" , "+inf");
     }else{
-        acc<<" nan"; 
+        acc<<" nan";
     }
     return acc.str();
 }
 #endif
+
+template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
+THLS_INLINE fp_flopoco<wER,wFR> mul(const fp_flopoco<wEX,wFX> &x, const fp_flopoco<wEY,wFY> &y, int DEBUG=0);
+
+
+
+
+template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
+THLS_INLINE fp_flopoco<wER,wFR> div(const fp_flopoco<wEX,wFX> &x, const fp_flopoco<wEY,wFY> &y, int DEBUG=0);
+
+
 
 
 }; // thls
