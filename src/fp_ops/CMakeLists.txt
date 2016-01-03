@@ -14,6 +14,10 @@ add_executable_test_with_fw_uint(base test_add_single)
 add_executable_test_with_fw_uint(base test_add_single_different_frac)
 add_executable_test_with_fw_uint(base test_add_single_different_exp)
 
+add_executable_test_with_fw_uint(base test_policy)
+add_executable_test_with_fw_uint(base test_policy_native)
+add_executable_test_with_fw_uint(base test_policy_flopoco)
+
 add_executable_test_with_fw_uint(base test_add_dual)
 
 add_executable_test_with_fw_uint(base test_lut_opt)

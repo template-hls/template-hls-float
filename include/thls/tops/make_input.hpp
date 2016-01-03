@@ -15,7 +15,7 @@ void make_input(std::vector<TType> &args, int n)
 	
 	
 	mpfr_t tmp;
-	mpfr_init2(tmp, TType::frac_bits+1);
+	mpfr_init2(tmp, limits_t::digits);
 	
 	////////////////////////////////////////
 	// Small integers

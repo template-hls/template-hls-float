@@ -15,7 +15,7 @@ std::exponential_distribution<float> erng;
 using namespace thls;
 
 int main() {
-    static const int N = 128;
+    static const int N = 16;
     static const int T = 6;
 
     typedef lut_opt_spec<N, T, 1> lut_opt;

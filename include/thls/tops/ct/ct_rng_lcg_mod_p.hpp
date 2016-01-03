@@ -130,6 +130,6 @@ struct verify_ct_rng_fixed<make_lcg_mod_2y32m5<>::type>
 }; // ct_rng
 }; // thls
 
-template struct thls::ct_rng::verify_ct_rng<thls::ct_rng::make_minstdrand0<>::type>;
+template struct thls::ct::verify_ct_rng<thls::ct::make_minstdrand0<>::type>;
 
 #endif

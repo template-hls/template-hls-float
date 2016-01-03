@@ -2,5 +2,5 @@
 
 int main()
 {
-    thls::ct_rng::verify_ct_rng<thls::ct_rng::make_quick_and_dirty<>::type>::run();
+    thls::ct::verify_ct_rng<thls::ct::make_quick_and_dirty<>::type>::run();
 }

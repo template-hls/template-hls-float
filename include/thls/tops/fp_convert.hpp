@@ -5,7 +5,7 @@
 #include "fp_ieee.hpp"
 
 /*
-    This does potentiall lossy conversion between formats. For
+    This does potentially lossy conversion between formats. For
     lossless conversions, look at fp_promote.
 
 */
@@ -15,96 +15,44 @@ namespace thls
 
 namespace detail
 {
-    template<int DstE,int SrcE>
-    struct promote_exp_impl
-    {
-        static fw_uint<DstE> go(const fw_uint<SrcE> &e)
-        {
-            static_assert( DstE >= SrcE, "Cannot promote to narrower exponent" );
-            
-            static const int SrcBias=(1<<(SrcE-1))-1;
-            static const int DstBias=(1<<(DstE-1))-1;
-            
-            static_assert(DstBias >= SrcBias, "Assumptions violated"); 
-            
-            return zpad_hi<DstE-SrcE>(e)+(DstBias-SrcBias);
-        }
-    };
-    
-    template<int E>
-    struct promote_exp_impl<E,E>
-    {
-        static const fw_uint<E> &go(const fw_uint<E> &e)
-        { return e; }
-    };
-    
-    template<int DstF,int SrcF>
-    struct promote_frac_impl
-    {
-        static fw_uint<DstF> go(const fw_uint<SrcF> &f)
-        {
-            static_assert( DstF >= SrcF, "Cannot promote to narrower fraction.");
-            return concat(f, zg<DstF-SrcF>());
-        }
-    };
-    
-    template<int F>
-    struct promote_frac_impl<F,F>
-    {
-        static fw_uint<F> go(const fw_uint<F> &f)
-        { return f; }
-    };
-    
-    template<int DstE,int DstF,int SrcE,int SrcF>
-    struct promote_impl
-    {
-        static fp_flopoco<DstE,DstF> go(const fp_flopoco<SrcE,SrcF> &src)
-        {
-            return fp_flopoco<DstE,DstF>(
-                concat(
-                    src.get_flags(),
-                    src.get_sign(),
-                    promote_exp_impl<DstE,SrcE>::go(src.get_exp_bits()),
-                    promote_frac_impl<DstF,SrcF>::go(src.get_frac_bits())
-                )
-            );
-        }
-        
-        static fp_ieee<DstE,DstF> go(const fp_ieee<SrcE,SrcF> &src)
-        {
-            return fp_ieee<DstE,DstF>(
-                concat(
-                    src.get_sign(),
-                    promote_exp_impl<DstE,SrcE>::go(src.get_exp_bits()),
-                    promote_frac_impl<DstF,SrcF>::go(src.get_frac_bits())
-                )
-            );
-        }
-    };
-    
-    template<int E, int F>
-    struct promote_impl<E,F,E,F>
-    {
-        static const fp_flopoco<E,F> &go(const fp_flopoco<E,F> &src)
-        { return src; }
-        
-        static const fp_ieee<E,F> &go(const fp_ieee<E,F> &src)
-        { return src; }
-    };
-};
 
-/*! Expand the exponent and/or fraction width. It is an error to attempt
-    to narrow either with this function */
-template<int DstE,int DstF,int SrcE,int SrcF>
-void promote(fp_flopoco<DstE,DstF> &dst, const fp_flopoco<SrcE,SrcF> &src)
+/*! Only converts with the same format */
+template<int E,int F>
+void convert(fp_flopoco<E,F> &dst, const fp_ieee<E,F> &src)
 {
-    dst=detail::promote_impl<DstE,DstF,SrcE,SrcF>::go(src);
+    dst=fp_flopoco<E,F>(concat(
+        src.get_flags(),
+        src.get_sign(),
+        src.get_exponent(),
+        src.get_fraction()
+    ));
 }
 
-template<int DstE,int DstF,int SrcE,int SrcF>
-void promote(fp_ieee<DstE,DstF> &dst, const fp_ieee<SrcE,SrcF> &src)
+/*! Only converts with the same format */
+template<int E,int F>
+void convert(fp_ieee<E,F> &dst, const fp_flopoco<E,F> &src)
 {
-    dst=detail::promote_impl<DstE,DstF,SrcE,SrcF>::go(src);
+    auto over=src.is_normal() && src.get_exponent()==og<E>();
+    auto under=src.is_normal() && src.get_exponent()==zg<E>();
+    dst=fp_ieee<E,F>(concat(
+        src.get_sign(),
+        select(
+            src.is_zero() | under,
+                zg<E>(),
+            src.is_nan() | src.is_inf() | over,
+                og<E>(),
+            // else
+                src.get_exponent()
+        ),
+        select(
+            src.is_zero() | src.is_inf() | over | under,
+                zg<F>(),
+            src.is_nan(),
+                og<F>(),
+            // else
+                src.get_fraction()
+        )
+    ));
 }
 
 

@@ -62,7 +62,7 @@ struct fp_flopoco
     { return get_bits<FracBits-1,0>(bits); }
     
     //! Gets the concatenation of the exp(high) and frac(lo) bits
-    fw_uint<FracBits> get_exp_frac_bits() const
+    fw_uint<ExpBits+FracBits> get_exp_frac_bits() const
     { return get_bits<ExpBits+FracBits-1,0>(bits); }
     
     //! Gets the concatenation of the flags(high), exp(mid) and frac(lo) bits
@@ -70,8 +70,8 @@ struct fp_flopoco
         sign, but you need to be careful about the multiple zeros and multiple
         infinities.
     */
-    fw_uint<FracBits> get_flags_exp_frac_bits() const
-    { return get_bits<ExpBits+FracBits-1,0>(bits); }
+    fw_uint<2+ExpBits+FracBits> get_flags_exp_frac_bits() const
+    { return concat(get_flags(),get_exp_frac_bits()); }
     
     /*! Returns a code such that there is a total ordering on classes (NaN,-Inf,-Norm,Zero,+Norm,+Inf) */
     fw_uint<3> get_equality_class() const
@@ -614,101 +614,6 @@ std::string fp_flopoco<ExpBits,FracBits>::str() const
 }
 #endif
 
-#if 0
-//! Does an IEEE style comparison
-/*! \note This considers nans to be uncomparable
-*/
-template<int wEA,int FA,int wEB,int FB>
-fw_uint<1> equals(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wFA> &b) const
-{
-    static const wE=thls_ctMax(wEA,wEB);
-    static const wF=thls_ctMax(wFA,wFB);
-    
-    auto na=promote<wE,wF>(a);
-    auto nb=promote<wE,wF>(b);
-    
-    return select(
-        na.is_nan() | nb.is_nan(),
-            zg<1>(), // Nan not equal to anything
-        na.get_flags() != nb.get_flags(),
-            zg<1>(), // Flags must be the same 
-        na.is_zero(),
-            og<1>(), // Any two zeros are the same
-        // else
-            na.get_exp_frac_bits()==nb.get_exp_frac_bits()
-    );
-}
-
-template<int wEA,int FA,int wEB,int FB>
-fw_uint<1> not_equals(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wFA> &b) const
-{
-    static const wE=thls_ctMax(wEA,wEB);
-    static const wF=thls_ctMax(wFA,wFB);
-    
-    auto na=promote<wE,wF>(a);
-    auto nb=promote<wE,wF>(b);
-    
-    return select(
-        na.is_nan() | nb.is_nan(),
-            og<1>(), // Nan not equal to everything
-        na.get_flags() != nb.get_flags(),
-            og<1>(), // Flags must be the same
-        na.is_zero(),
-            zg<1>(), // Any two zeros are the same
-        // else
-            na.get_exp_frac_bits()!=nb.get_exp_frac_bits()
-    );
-}
-
-
-
-//! Does an IEEE style comparison
-/*! \note This considers nans to be uncomparable
-*/
-template<int wEA,int FA,int wEB,int FB>
-fw_uint<1> less_than(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wFA> &b) const
-{
-    static const wE=thls_ctMax(wEA,wEB);
-    static const wF=thls_ctMax(wFA,wFB);
-    
-    auto sfa= // TODO
-    
-    auto na=promote<wE,wF>(a);
-    auto nb=promote<wE,wF>(b);
-    
-    return select(
-        
-    );
-}
-
-//! Does an IEEE style comparison
-/*! \note This considers nans to be uncomparable
-*/
-template<int wEA,int FA,int wEB,int FB>
-fw_uint<1> less_than_equal(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wFA> &b) const
-{
-    static const wE=thls_ctMax(wEA,wEB);
-    static const wF=thls_ctMax(wFA,wFB);
-    
-    auto na=promote<wE,wF>(a);
-    auto nb=promote<wE,wF>(b);
-    
-    return select(
-        (na.is_nan() | nb.is_nan())
-            zg<1>(),  // Any nan, return false
-        (na.is_zero() & nb.is_zero())
-            og<1>(),  // Zeros are equal
-        // Pre: neither is nan, both are not zero
-        na.is_negative() ^ nb.is_negative(),
-            na.is_negative() // If different signs, first must be negative for less than equal
-        // Pre: not nan, not _both_ zero, same sign
-        na.is_negative(),
-            na.get_flags_exp_frac_bits()>=nb.get_flags_exp_frac_bits()
-        // na.is_positive()
-            na.get_flags_exp_frac_bits()<=nb.get_flags_exp_frac_bits()
-    );
-}
-#endif
 
 }; // thls
 
