@@ -38,10 +38,11 @@ THLS_INLINE fp_flopoco<wER,wFR> mul(const fp_flopoco<wEX,wFX> &x, const fp_flopo
     fw_uint<sigProdSize> sigProd=full_mul(sigX,sigY);
 
     if(DEBUG){
-    assert(wFX+wFY<53); // Need to go to arbitrary precision to print
-    std::cerr<<"  sigX="<<sigX<<"="<<sigX.to_uint64()<<" = "<<ldexp((double)sigX.to_uint64(),-wFX-1)<<"\n";
-    std::cerr<<"  sigY="<<sigY<<"="<<sigY.to_uint64()<<" = "<<ldexp((double)sigY.to_uint64(),-wFY-1)<<"\n";
-    std::cerr<<"  sigProd="<<sigProd<<"="<<sigProd.to_uint64()<<" = "<<ldexp((double)sigProd.to_uint64(),-wFX-wFY-2)<<"\n";
+    /*assert(wFX+wFY<53); // Need to go to arbitrary precision to print
+    std::cerr<<"  sigX="<<sigX<<"="<<sigX<<" = "<<ldexp((double)sigX.to_uint64(),-wFX-1)<<"\n";
+    std::cerr<<"  sigY="<<sigY<<"="<<sigY<<" = "<<ldexp((double)sigY.to_uint64(),-wFY-1)<<"\n";
+    std::cerr<<"  sigProd="<<sigProd<<"="<<sigProd<<" = "<<ldexp((double)sigProd.to_uint64(),-wFX-wFY-2)<<"\n";
+     */
     }
 
     /* Exception Handling, assumed to be faster than both exponent and significand computations */

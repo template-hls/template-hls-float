@@ -8,6 +8,7 @@
 #include "thls/tops/fp_flopoco_mul_v1.hpp"
 #include "thls/tops/fp_flopoco_add_dual_v1.hpp"
 #include "thls/tops/fp_flopoco_add_single_v1.hpp"
+#include "thls/tops/fp_flopoco_div_v1.hpp"
 #include "thls/tops/fp_flopoco_ordering.hpp"
 
 #include "thls/tops/policy_test.hpp"

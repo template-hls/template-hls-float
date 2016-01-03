@@ -9,6 +9,7 @@
 #include "thls/tops/fp_flopoco_mul_v1.hpp"
 #include "thls/tops/fp_flopoco_add_dual_v1.hpp"
 #include "thls/tops/fp_flopoco_add_single_v1.hpp"
+#include "thls/tops/fp_flopoco_div_v1.hpp"
 #include "thls/tops/fp_flopoco_ordering.hpp"
 
 namespace thls {
@@ -30,7 +31,7 @@ namespace thls {
 
         fp_flopoco_wrapper operator/(
                 const fp_flopoco_wrapper &b) const {
-            return std::numeric_limits<raw_t>::quiet_NaN();
+            return div<wE,wF>(raw,b.raw);
         }
 
 

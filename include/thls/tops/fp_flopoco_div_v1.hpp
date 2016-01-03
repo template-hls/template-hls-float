@@ -59,11 +59,17 @@ THLS_INLINE fp_flopoco<wER,wFR> div(const fp_flopoco<wEX,wFX> &xPre, const fp_fl
  
     //vhdl << tab << declare("expR0", wE+2) << " <= (\"00\" & X(" << wE+wF-1 << " downto " << wF << ")) - (\"00\" & Y(" << wE+wF-1 << " downto " << wF<< "));" << endl;
     auto expR0 = zpad_hi<2>(get_bits<wE+wF-1,wF>(X)) - zpad_hi<2>(get_bits<wE+wF-1,wF>(Y));
+    if(DEBUG){
+        std::cerr<<"  expR0 = "<<expR0<<"\n";
+    }
     //vhdl << tab << declare("sR") << " <= X(" << wE+wF << ") xor Y(" << wE+wF<< ");" << endl;
     auto sR = get_bit<wE+wF>(X) ^ get_bit<wE+wF>(Y);
     //vhdl << tab << "-- early exception handling " <<endl;
     //vhdl << tab << declare("exnXY",4) << " <= X(" << wE+wF+2 << " downto " << wE+wF+1  << ") & Y(" << wE+wF+2 << " downto " << wE+wF+1 << ");" <<endl;
-    auto exnXY = get_bits<wE+wF+2,wE+wF+1>(X) & get_bits<wE+wF+2,wE+wF+1>(Y);
+    auto exnXY = concat(get_bits<wE+wF+2,wE+wF+1>(X) , get_bits<wE+wF+2,wE+wF+1>(Y) );
+    if(DEBUG){
+        std::cerr<<"  exnXY = "<<exnXY<<"\n";
+    }
     /*vhdl << tab << "with exnXY select" <<endl;
     vhdl << tab << tab << declare("exnR0", 2) << " <= " << endl;
     vhdl << tab << tab << tab << "\"01\"  when \"0101\",                   -- normal" <<endl;
@@ -76,6 +82,10 @@ THLS_INLINE fp_flopoco<wER,wFR> div(const fp_flopoco<wEX,wFX> &xPre, const fp_fl
         exnXY==0b0100 || exnXY==0b1000 || exnXY==0b1001,    cg<2>(0b10), // overflow
         /* else */                                          cg<2>(0b11)  // NaN
     );
+    if(DEBUG){
+        std::cerr<<"  exnR0 = "<<exnR0<<"\n";
+    }
+
     //vhdl << tab << " -- compute 3Y" << endl;
     //vhdl << tab << declare("fYTimes3",wF+3) << " <= (\"00\" & fY) + (\"0\" & fY & \"0\");" << endl; // TODO an IntAdder here
     auto fYTimes3 = zpad_hi<2>(fY) + concat(zg1, fY, zg1);
@@ -238,10 +248,18 @@ THLS_INLINE fp_flopoco<wER,wFR> div(const fp_flopoco<wEX,wFX> &xPre, const fp_fl
         zg1
     );
 
+    if(DEBUG){
+        std::cerr<<"  qPcat = "<<qPcat<<"\n";
+        std::cerr<<"  qMcat = "<<qMcat<<"\n";
+    }
+
 
     // TODO an IntAdder here
     //vhdl << tab << declare("fR0", 2*nDigit) << " <= qP - qM;" << endl;
     auto fR0 = qPcat - qMcat;
+    if(DEBUG){
+        std::cerr<<"  fR0 = "<<fR0<<"\n";
+    }
 
     /*vhdl << tab << declare("fR", wF+4) << " <= "; 
     if (1 == (wF & 1) ) // odd wF
@@ -254,6 +272,9 @@ THLS_INLINE fp_flopoco<wER,wFR> div(const fp_flopoco<wEX,wFX> &xPre, const fp_fl
     }else{
         fR=checked_cast<4+wF>( concat( get_bits<2*nDigit-1,3>(fR0) , get_bit<2>(fR0)|get_bit<1>(fR0) ) );
     }
+    if(DEBUG){
+        std::cerr<<"  fR = "<<fR<<"\n";
+    }
 
 
     //vhdl << tab << "-- normalisation" << endl;
@@ -264,23 +285,35 @@ THLS_INLINE fp_flopoco<wER,wFR> div(const fp_flopoco<wEX,wFX> &xPre, const fp_fl
         get_bit<wF+3>(fR),      concat( get_bits<wF+2,2>(fR) , get_bit<1>(fR)|get_bit<0>(fR) ),
         /* else */              get_bits<wF+1,0>(fR)
     );
+    if(DEBUG){
+        std::cerr<<"  fRn1 = "<<fRn1<<"\n";
+    }
 
     /*vhdl << tab << declare("expR1", wE+2) << " <= expR0" 
           << " + (\"000\" & (" << wE-2 << " downto 1 => '1') & fR(" << wF+3 << ")); -- add back bias" << endl;*/
     fw_uint<wE+2> expR1 = expR0 + concat( zg3 , og<wE-2>() , get_bit<wF+3>(fR) );
+    if(DEBUG){
+        std::cerr<<"  expR1 = "<<expR1<<"\n";
+    }
 
 
     //vhdl << tab << declare("round") << " <= fRn1(1) and (fRn1(2) or fRn1(0)); -- fRn1(0) is the sticky bit" << endl;
     auto round = get_bit<1>(fRn1) & (get_bit<2>(fRn1) | get_bit<0>(fRn1));
+    if(DEBUG){
+        std::cerr<<"  round = "<<round<<"\n";
+    }
 
     //vhdl << tab << "-- final rounding" <<endl;
     /*vhdl << tab <<  declare("expfrac", wE+wF+2) << " <= " 
          << "expR1 & fRn1(" << wF+1 << " downto 2) ;" << endl;*/
     auto expfrac = concat(expR1 , get_bits<wF+1,2>(fRn1) );
+    if(DEBUG){
+        std::cerr<<"  expfrac = "<<expfrac<<"\n";
+    }
          
     /*vhdl << tab << declare("expfracR", wE+wF+2) << " <= " 
          << "expfrac + ((" << wE+wF+1 << " downto 1 => '0') & round);" << endl;*/
-    auto expfracR = expfrac + concat( og<wE+wF+1>() , round );
+    auto expfracR = expfrac + concat( zg<wE+wF+1>() , round );
     /*vhdl << tab <<  declare("exnR", 2) << " <=      \"00\"  when expfracR(" << wE+wF+1 << ") = '1'   -- underflow" <<endl;
     vhdl << tab << "        else \"10\"  when  expfracR(" << wE+wF+1 << " downto " << wE+wF << ") =  \"01\" -- overflow" <<endl;
     vhdl << tab << "        else \"01\";      -- 00, normal case" <<endl;*/
@@ -289,6 +322,10 @@ THLS_INLINE fp_flopoco<wER,wFR> div(const fp_flopoco<wEX,wFX> &xPre, const fp_fl
         get_bits<wE+wF+1,wE+wF>(expfracR)==0b01,    cg<2>(0b10),    // overflow
         /* else */                                  cg<2>(0b01)     // normal
     );
+    if(DEBUG){
+        std::cerr<<"  exnR = "<<exnR<<"\n";
+    }
+
 
 
     /*vhdl << tab << "with exnR0 select" <<endl;
@@ -299,6 +336,10 @@ THLS_INLINE fp_flopoco<wER,wFR> div(const fp_flopoco<wEX,wFX> &xPre, const fp_fl
         exnR0==0b01,    exnR,   // normal
         /* else */      exnR0
     );
+    if(DEBUG){
+        std::cerr<<"  exnRfinal = "<<exnRfinal<<"\n";
+    }
+
     /*vhdl << tab << "R <= exnRfinal & sR & " 
          << "expfracR(" << wE+wF-1 << " downto 0);" <<endl;*/
     auto R = concat(exnRfinal, sR , get_bits<wE+wF-1,0>(expfracR));

@@ -47,7 +47,7 @@ void test_impl(TImpl &impl)
 {	
 	std::vector<TType> args;
 	
-	make_input(args, 100);
+	make_input(args, 200);
 	
 	for(unsigned i=0; i<args.size(); i++){
 		std::cerr<<"i = "<<i<<"\n";
@@ -61,22 +61,24 @@ void test_impl(TImpl &impl)
 int main()
 {
 	
-	test_impl<fp_flopoco<8,26>>(div<8,26,8,26,8,26>);
-	/*test_impl<fp_flopoco<8,25>>(mul<8,25,8,25,8,25>);
-	test_impl<fp_flopoco<8,24>>(mul<8,24,8,24,8,24>);
-	test_impl<fp_flopoco<8,23>>(mul<8,23,8,23,8,23>);
-	test_impl<fp_flopoco<8,22>>(mul<8,22,8,22,8,22>);
-	test_impl<fp_flopoco<8,21>>(mul<8,21,8,21,8,21>);
-	test_impl<fp_flopoco<8,20>>(mul<8,20,8,20,8,20>);
-	test_impl<fp_flopoco<8,19>>(mul<8,19,8,19,8,19>);
-	test_impl<fp_flopoco<8,18>>(mul<8,18,8,18,8,18>);
-	test_impl<fp_flopoco<8,17>>(mul<8,17,8,17,8,17>);
-	test_impl<fp_flopoco<8,16>>(mul<8,16,8,16,8,16>);
-	test_impl<fp_flopoco<8,15>>(mul<8,15,8,15,8,15>);
-	test_impl<fp_flopoco<8,14>>(mul<8,14,8,14,8,14>);
-	test_impl<fp_flopoco<8,13>>(mul<8,13,8,13,8,13>);
-	test_impl<fp_flopoco<8,12>>(mul<8,12,8,12,8,12>);
-	test_impl<fp_flopoco<8,11>>(mul<8,11,8,11,8,11>);*/
+	test_impl<fp_flopoco<8,23>>(div<8,23,8,23,8,23>);
+	test_impl<fp_flopoco<8,22>>(div<8,22,8,22,8,22>);
+
+	test_impl<fp_flopoco<8,25>>(div<8,25,8,25,8,25>);
+	test_impl<fp_flopoco<8,24>>(div<8,24,8,24,8,24>);
+	test_impl<fp_flopoco<8,23>>(div<8,23,8,23,8,23>);
+	test_impl<fp_flopoco<8,22>>(div<8,22,8,22,8,22>);
+	test_impl<fp_flopoco<8,21>>(div<8,21,8,21,8,21>);
+	test_impl<fp_flopoco<8,20>>(div<8,20,8,20,8,20>);
+	test_impl<fp_flopoco<8,19>>(div<8,19,8,19,8,19>);
+	test_impl<fp_flopoco<8,18>>(div<8,18,8,18,8,18>);
+	test_impl<fp_flopoco<8,17>>(div<8,17,8,17,8,17>);
+	test_impl<fp_flopoco<8,16>>(div<8,16,8,16,8,16>);
+	test_impl<fp_flopoco<8,15>>(div<8,15,8,15,8,15>);
+	test_impl<fp_flopoco<8,14>>(div<8,14,8,14,8,14>);
+	test_impl<fp_flopoco<8,13>>(div<8,13,8,13,8,13>);
+	test_impl<fp_flopoco<8,12>>(div<8,12,8,12,8,12>);
+	test_impl<fp_flopoco<8,11>>(div<8,11,8,11,8,11>);
 
   
 	fprintf(stderr, "Done\n");
