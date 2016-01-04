@@ -8,13 +8,13 @@
 // TODO : Dispatch propertly to the correct header.
 // I think VHLS is supposed to do it, but it always
 // picks up the simulation one.
-#ifdef THLS_SYNTHESIS
+/*#ifdef THLS_SYNTHESIS
 #include "../common\technology\autopilot\ap_int.h"
 //#include "C:\Usr\Xilinx2015.4\Vivado_HLS\2015.4\common\technology\autopilot\ap_int.h"
-#else
+#else*/
 #include "ap_int.h"
 //#include "C:\Usr\Xilinx2015.4\Vivado_HLS\2015.4\include\ap_int.h"
-#endif
+//#endif
 
 #ifndef THLS_SYNTHESIS
 #include "gmp.h"
@@ -80,7 +80,7 @@ struct fw_uint
         assert(v>=0); // must be non-negative
         assert(v < (ap_uint<SafeW+1>(1)<<SafeW)); // Must be in range
     }
-
+#ifndef THLS_SYNTHESIS
     THLS_INLINE explicit fw_uint(const char *value)
     {
         assert(W>=0);
@@ -119,7 +119,7 @@ struct fw_uint
             bits=ap_uint<SafeW>(value);
         }
     }
-
+#endif
     THLS_INLINE explicit fw_uint(const ap_uint<SafeW> &x)
         : bits(x)
     {
@@ -365,7 +365,7 @@ namespace detail
     template<int WA,int WB>
     struct concat_two
     {
-        static fw_uint<WA+WB> go(const fw_uint<WA> &a, const fw_uint<WB> &b)
+    	THLS_INLINE static fw_uint<WA+WB> go(const fw_uint<WA> &a, const fw_uint<WB> &b)
         {
             assert(WA>0);
             assert(WB>0);
@@ -376,7 +376,7 @@ namespace detail
     template<int WA>
     struct concat_two<WA,0>
     {
-        static fw_uint<WA> go(const fw_uint<WA> &a, const fw_uint<0> &b)
+    	THLS_INLINE static fw_uint<WA> go(const fw_uint<WA> &a, const fw_uint<0> &b)
         {
             assert(WA>0);
             return a;
@@ -386,7 +386,7 @@ namespace detail
     template<int WB>
     struct concat_two<0,WB>
     {
-        static fw_uint<WB> go(const fw_uint<0> &a, const fw_uint<WB> &b)
+    	THLS_INLINE static fw_uint<WB> go(const fw_uint<0> &a, const fw_uint<WB> &b)
         {
             assert(WB>0);
             return b;
@@ -396,7 +396,7 @@ namespace detail
     template<>
     struct concat_two<0,0>
     {
-        static fw_uint<0> go(const fw_uint<0> &a, const fw_uint<0> &b)
+    	THLS_INLINE static fw_uint<0> go(const fw_uint<0> &a, const fw_uint<0> &b)
         {
             return a;
         }
@@ -425,7 +425,7 @@ THLS_INLINE  fw_uint<WA+WB+WC+WD> concat(const fw_uint<WA> &a, const fw_uint<WB>
 }
 
 template<int WD,int WS>
-fw_uint<WD> checked_cast(const fw_uint<WS> &s)
+THLS_INLINE fw_uint<WD> checked_cast(const fw_uint<WS> &s)
 {
     static const int SafeWD=WD<=0 ? 1 : WD;
     if(WD==WS){
@@ -435,6 +435,22 @@ fw_uint<WD> checked_cast(const fw_uint<WS> &s)
         return ~fw_uint<WD>(); // Poison with ones
     }
 }
+
+#ifndef THLS_SYNTHESIS
+template<int W>
+std::ostream &operator<<(std::ostream &dst, const fw_uint<W> &x)
+{
+    dst<<x.to_string();
+    return dst;
+}
+#else
+template<int W>
+std::ostream &operator<<(std::ostream &dst, const fw_uint<W> &x)
+{
+	assert(0);
+    return dst;
+}
+#endif
 
 }; // thls
 

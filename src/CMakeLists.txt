@@ -38,7 +38,9 @@ endfunction(add_executable_test)
 function(add_executable_test_with_fw_uint PREFIX NAME )
 
 #set(VHLS_DIR "/cygdrive/C/Usr/Xilinx2015.4/Vivado_HLS/2015.4")
-set(VHLS_DIR "/cygdrive/c/Usr/Xilinx/Vivado_HLS/2014.1")
+
+    #Sigh: "Xilix"
+set(VHLS_DIR "/cygdrive/c/Usr/Xilix2015.4/Vivado_HLS/2015.4")
 
 add_executable_test(${PREFIX} ${NAME})
 

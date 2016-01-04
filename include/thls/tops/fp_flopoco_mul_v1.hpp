@@ -7,7 +7,7 @@ namespace thls
 {
 
 template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
-THLS_INLINE fp_flopoco<wER,wFR> mul(const fp_flopoco<wEX,wFX> &x, const fp_flopoco<wEY,wFY> &y, int DEBUG=0)
+THLS_INLINE fp_flopoco<wER,wFR> mul(const fp_flopoco<wEX,wFX> &x, const fp_flopoco<wEY,wFY> &y, int DEBUG)
 {
 
     fw_uint<wEX+wFX+3> X=x.bits;

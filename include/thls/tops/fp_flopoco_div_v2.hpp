@@ -16,8 +16,8 @@
 
  */
  
-#ifndef thls_fp_flopoco_div_v1_hpp
-#define thls_fp_flopoco_div_v1_hpp
+#ifndef thls_fp_flopoco_div_v2_hpp
+#define thls_fp_flopoco_div_v2_hpp
 
 #include "thls/tops/fp_flopoco.hpp"
 #include "thls/tops/fp_promote.hpp"
@@ -109,7 +109,6 @@ THLS_INLINE fp_flopoco<wER,wFR> div(const fp_flopoco<wEX,wFX> &xPre, const fp_fl
     fw_uint<3+wF>   w[nDigit];
     fw_uint<5>      sel[nDigit];
     fw_uint<3>      q[nDigit];
-    fw_uint<4+wF>   qTimesD[nDigit];
     fw_uint<4+wF>   wpad[nDigit];
     fw_uint<4+wF>   wfull[nDigit];
 
@@ -119,99 +118,85 @@ THLS_INLINE fp_flopoco<wER,wFR> div(const fp_flopoco<wEX,wFX> &xPre, const fp_fl
     w[nDigit-1] = zpad_hi<2>(fX);
 
     for(int i=nDigit-1; i>=1; i--) {
-        /*
-        wi << "w" << i;
-        qi << "q" << i;
-        wim1 << "w" << i-1;
-        seli << "sel" << i;
-        qiTimesD << "q" << i << "D";
-        wipad << "w" << i << "pad";
-        wim1full << "w" << i-1 << "full";
-        */
-
-        //vhdl << tab << declare(seli.str(),5) << " <= " << wi.str() << range( wF+2, wF-1)<<" & fY"<<of(wF-1)<<";" << endl; 
         sel[i] = concat( get_bits<wF+2,wF-1>(w[i]), get_bit<wF-1>(fY) );
-        /*vhdl << tab << "with " << seli.str() << " select" << endl;
-        vhdl << tab << declare(qi.str(),3) << " <= " << endl;
-        vhdl << tab << tab << "\"001\" when \"00010\" | \"00011\"," << endl;
-        vhdl << tab << tab << "\"010\" when \"00100\" | \"00101\" | \"00111\"," << endl;
-        vhdl << tab << tab << "\"011\" when \"00110\" | \"01000\" | \"01001\" | \"01010\" | \"01011\" | \"01101\" | \"01111\"," << endl;
-        vhdl << tab << tab << "\"101\" when \"11000\" | \"10110\" | \"10111\" | \"10100\" | \"10101\" | \"10011\" | \"10001\"," << endl;
-        vhdl << tab << tab << "\"110\" when \"11010\" | \"11011\" | \"11001\"," << endl;
-        vhdl << tab << tab << "\"111\" when \"11100\" | \"11101\"," << endl;
-        vhdl << tab << tab << "\"000\" when others;" << endl;*/
-        if(0){
-			static const lut<3,5> q_i_lut([](int i) -> int {
-				switch(i){
-					case 0b00010: case 0b00011:
-						return 0b001;
-					case 0b00100: case 0b00101: case 0b00111:
-						return 0b010;
-					case 0b00110: case 0b01000: case 0b01001: case 0b01010: case 0b01011: case 0b01101: case 0b01111:
-						return 0b011;
-					case 0b11000: case 0b10110: case 0b10111: case 0b10100: case 0b10101: case 0b10011: case 0b10001:
-						return 0b101;
-					case 0b11010: case 0b11011: case 0b11001:
-						return 0b110;
-					case 0b11100: case 0b11101:
-						return 0b111;
-					default:
-						return 0b000;
-				}
-			});
-			q[i]=q_i_lut(sel[i]);
-        }else{
-        	int qi_tmp;
-        	switch(sel[i].to_int()){
-				case 0b00010: case 0b00011:
-					qi_tmp=0b001; break;
-				case 0b00100: case 0b00101: case 0b00111:
-					qi_tmp=0b010; break;
-				case 0b00110: case 0b01000: case 0b01001: case 0b01010: case 0b01011: case 0b01101: case 0b01111:
-					qi_tmp=0b011; break;
-				case 0b11000: case 0b10110: case 0b10111: case 0b10100: case 0b10101: case 0b10011: case 0b10001:
-					qi_tmp=0b101; break;
-				case 0b11010: case 0b11011: case 0b11001:
-					qi_tmp=0b110; break;
-				case 0b11100: case 0b11101:
-					qi_tmp=0b111; break;
-				default:
-					qi_tmp=0b000;
-			}
-        	q[i]=fw_uint<3>(qi_tmp);
-        }
-        
-        
-        /*vhdl << tab << "with " << qi.str() << " select" << endl;
-        vhdl << tab << tab << declare(qiTimesD.str(),wF+4) << " <= "<< endl ;
-        vhdl << tab << tab << tab << "\"000\" & fY            when \"001\" | \"111\"," << endl;
-        vhdl << tab << tab << tab << "\"00\" & fY & \"0\"     when \"010\" | \"110\"," << endl;
-        vhdl << tab << tab << tab << "\"0\" & fYTimes3             when \"011\" | \"101\"," << endl;
-        vhdl << tab << tab << tab << "(" << wF+3 << " downto 0 => '0') when others;" << endl;*/
-        qTimesD[i] = select(
-            q[i]==0b001 || q[i]==0b111,   zpad_hi<3>(fY),
-            q[i]==0b010 || q[i]==0b110,   concat(zg2,fY,zg1),
-            q[i]==0b011 || q[i]==0b101,   zpad_hi<1>(fYTimes3),
-            /* else */                    zg<wF+4>()
-        );
-        
-        //vhdl << tab << declare(wipad.str(), wF+4) << " <= " << wi.str() << " & \"0\";" << endl;
         wpad[i] = zpad_lo<1>(w[i]);
-        /*vhdl << tab << "with " << qi.str() << "(2) select" << endl;
-        vhdl << tab << declare(wim1full.str(), wF+4) << "<= " << wipad.str() << " - " << qiTimesD.str() << " when '0'," << endl;
-        vhdl << tab << "      " << wipad.str() << " + " << qiTimesD.str() << " when others;" << endl;*/
-        if(1){
-			wfull[i-1] = select(
-				get_bit<2>(q[i])==0b0,   wpad[i] - qTimesD[i],
-				/* else */               wpad[i] + qTimesD[i]
-			);
-        }else{
-        	auto neg=get_bit<2>(q[i])==0b0;
-        	wfull[i-1] = add_with_cin(wpad[i] , select(neg,~qTimesD[i],qTimesD[i]), neg);
+        
+        if(0){
 
+            switch(sel[i].to_int()){
+                case 0b00010: case 0b00011:
+                    q[i]=cg<3>(0b001);
+                    wfull[i-1] = wpad[i] - zpad_hi<3>(fY);
+                    break;
+                case 0b00100: case 0b00101: case 0b00111:
+                    q[i]=cg<3>(0b010);
+                    wfull[i-1] = wpad[i] - concat(zg2,fY,zg1);
+                    break;
+                case 0b00110: case 0b01000: case 0b01001: case 0b01010: case 0b01011: case 0b01101: case 0b01111:
+                    q[i]=cg<3>(0b011);
+                    wfull[i-1] = wpad[i] - zpad_hi<1>(fYTimes3);
+                    break;
+                case 0b11000: case 0b10110: case 0b10111: case 0b10100: case 0b10101: case 0b10011: case 0b10001:
+                    q[i]=cg<3>(0b101);
+                    wfull[i-1] = wpad[i] + zpad_hi<1>(fYTimes3);
+                    break;
+                case 0b11010: case 0b11011: case 0b11001:
+                    q[i]=cg<3>(0b110);
+                    wfull[i-1] = wpad[i] + concat(zg2,fY,zg1);
+                    break;
+                case 0b11100: case 0b11101:
+                    q[i]=cg<3>(0b111);
+                    wfull[i-1] = wpad[i] + zpad_hi<3>(fY);
+                    break;
+                default:
+                    q[i]=cg<3>(0b000);
+                    wfull[i-1] = wpad[i] - zg<wF+4>();
+                    break;
+            }
+        }else{
+            fw_uint<wF+4> Bin;
+            fw_uint<1> Cin;
+            
+            switch(sel[i].to_int()){
+                case 0b00010: case 0b00011:
+                    q[i]=cg<3>(0b001);
+                    Bin = zpad_hi<3>(fY);
+                    Cin = og1;
+                    break;
+                case 0b00100: case 0b00101: case 0b00111:
+                    q[i]=cg<3>(0b010);
+                    Bin = concat(zg2,fY,zg1);
+                    Cin = og1;
+                    break;
+                case 0b00110: case 0b01000: case 0b01001: case 0b01010: case 0b01011: case 0b01101: case 0b01111:
+                    q[i]=cg<3>(0b011);
+                    Bin = zpad_hi<1>(fYTimes3);
+                    Cin = og1;
+                    break;
+                case 0b11000: case 0b10110: case 0b10111: case 0b10100: case 0b10101: case 0b10011: case 0b10001:
+                    q[i]=cg<3>(0b101);
+                    Bin = zpad_hi<1>(fYTimes3);
+                    Cin = zg1;
+                    break;
+                case 0b11010: case 0b11011: case 0b11001:
+                    q[i]=cg<3>(0b110);
+                    Bin = concat(zg2,fY,zg1);
+                    Cin = zg1;
+                    break;
+                case 0b11100: case 0b11101:
+                    q[i]=cg<3>(0b111);
+                    Bin = zpad_hi<3>(fY);
+                    Cin = zg1;
+                    break;
+                default:
+                    q[i]=cg<3>(0b000);
+                    Bin = zg<wF+4>();
+                    Cin = zg1;
+                    break;
+            }
+            wfull[i-1] = add_sub(Cin, wpad[i], Bin);
         }
 
-        //vhdl << tab << declare(wim1.str(),wF+3) << " <= " << wim1full.str()<<range(wF+1,0)<<" & \"0\";" << endl;
         w[i-1] = zpad_lo<1>( get_bits<wF+1,0>(wfull[i-1]) );
     }
     
@@ -279,6 +264,18 @@ THLS_INLINE fp_flopoco<wER,wFR> div(const fp_flopoco<wEX,wFX> &xPre, const fp_fl
         std::cerr<<"  qPcat = "<<qPcat<<"\n";
         std::cerr<<"  qMcat = "<<qMcat<<"\n";
     }
+    
+    /*std::cerr<<"  fX = "<<fX<<", fY = "<<fY<<"\n";
+    std::cerr<<"  qPcat * fY = "<<qPcat*fY<<"\n";
+    
+    std::cerr<<"  fX = "<<fX.to_uint64()<<", fY = "<<fY.to_uint64()<<"\n";
+    std::cerr<<"  qPcat * fY = "<<( (qPcat*fY)>>(wF+4) ).to_uint64()<<"\n";
+    std::cerr<<"  qPCat = "<<qPcat.to_uint64()<<", fX/fY = "<<(zpad_lo<wF+4>(fX)).to_uint64()/fY.to_uint64()<<"\n";
+    std::cerr<<"  qPCat-qMcat = "<<(qPcat-qMcat).to_uint64()<<"\n";
+    std::cerr<<"  err = "<< (qPcat-qMcat).to_uint64() - (int64_t)(zpad_lo<wF+4>(fX).to_uint64()/fY.to_uint64())<<"\n";
+    
+    std::cerr<<"\n";
+    */
 
 
     // TODO an IntAdder here

@@ -5,7 +5,7 @@ using namespace thls;
 static const int wE = EEE;
 static const int wF = FFF;
 
-extern fw_uint<wE+wF+3> fp_add_dual_EEE_FFF(
+extern fw_uint<wE+wF+3> fp_add_flopoco_dual_EEE_FFF(
     fw_uint<wE+wF+3> a,
     fw_uint<wE+wF+3> b
 )

@@ -77,7 +77,7 @@ void LZOCShifter(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint<WD> &x)
 template<int WD, int WC>
 class LZOCShifterImpl
 {
-    static void stage(fw_uint<WD> &out, fw_uint<1> &bit, const fw_uint<WD> &x)
+    THLS_INLINE static void stage(fw_uint<WD> &out, fw_uint<1> &bit, const fw_uint<WD> &x)
     {
         assert( WD >= (1<<(WC-1)) );
         
@@ -101,7 +101,7 @@ class LZOCShifterImpl
     }
     
 public:
-    static void go(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint<WD> &x)
+    THLS_INLINE static void go(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint<WD> &x)
     {
         // Deal with top 2**(WC-1) bits
         fw_uint<1> hiCount;
@@ -120,14 +120,14 @@ template<int WD>
 class LZOCShifterImpl<WD,0>
 {
 public:
-    static void go(fw_uint<WD> &out, fw_uint<0> &count, const fw_uint<WD> &x)
+    THLS_INLINE static void go(fw_uint<WD> &out, fw_uint<0> &count, const fw_uint<WD> &x)
     {
         out=x;
     }
 };
 
 template<int maxPlaces, int WD, int WC>
-void LZOCShifter(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint<WD> &x)
+THLS_INLINE void LZOCShifter(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint<WD> &x)
 {
     return LZOCShifterImpl<WD,WC>::go(out,count,x);
 }
@@ -498,19 +498,34 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
     //<<tab<<tab<<"\"01\" when \"0001\","<<endl
     //<<tab<<tab<<"\"10\" when \"0010\"|\"0110\"|\"1010\"|\"1110\"|\"0101\","<<endl
     //<<tab<<tab<<"\"11\" when others;"<<endl;
-    static const lut<2,4> excRt2_lut([](int i){
-        switch(i){
-            case 0b0000: case 0b0100: case 0b1000: case 0b1100: case 0b1001: case 0b1101:
-                return 0b00;
-            case 0b0001:
-                return 0b01;
-            case 0b0010: case 0b0110: case 0b1010: case 0b1110: case 0b0101:
-                return 0b10;
-            default:
-                return 0b11;
-        }
-    });
-    auto excRt2 = excRt2_lut(exExpExc);
+    fw_uint<2> excRt2;
+    if(1)
+    {
+		static const lut<2,4> excRt2_lut([](int i) -> int {
+			switch(i){
+				case 0b0000: case 0b0100: case 0b1000: case 0b1100: case 0b1001: case 0b1101:
+					return 0b00;
+				case 0b0001:
+					return 0b01;
+				case 0b0010: case 0b0110: case 0b1010: case 0b1110: case 0b0101:
+					return 0b10;
+				default:
+					return 0b11;
+			}
+		});
+		excRt2 = excRt2_lut(exExpExc);
+    }else{
+    	excRt2 = select(
+			exExpExc==0b0000| exExpExc==0b0100| exExpExc==0b1000| exExpExc==0b1100| exExpExc==0b1001| exExpExc==0b1101,
+				cg<2>(0b00),
+    		exExpExc==0b0001,
+				cg<2>(0b01),
+			exExpExc==0b0010| exExpExc==0b0110| exExpExc==0b1010| exExpExc==0b1110| exExpExc==0b0101,
+				cg<2>(0b10),
+			/* else */
+				cg<2>(0b11)
+		);
+    }
 
     if(DEBUG){
         std::cerr<<"  exExpExc = "<<exExpExc<<"\n";
