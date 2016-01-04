@@ -368,9 +368,9 @@ THLS_INLINE fw_uint<B> extu(const fw_uint<W> &x)
 template<int W>
 THLS_INLINE fw_uint<W> add_with_cin(const fw_uint<W> &x, const fw_uint<W> &y, const fw_uint<1> &cin)
 {
-  //return (x+y+zpad_hi<W-1>(cin));
-  
-  return drop_lsb(concat(x,cin)+concat(y,cin));
+  return (x+y+zpad_hi<W-1>(cin));
+
+  //return drop_lsb(concat(x,cin)+concat(y,cin));
 }
 
 template<int W>
@@ -508,35 +508,114 @@ THLS_INLINE const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, con
 }
 
 
-/*
-template<class T>
-const T &select(const fw_uint<1> &c0, const T &v0,
-  const fw_uint<1> &c1, const T &v1,
-  const fw_uint<1> &c2, const T &v2,
-  const fw_uint<1> &c3, const T &v3,
-  const fw_uint<1> &c4, const T &v4,
-  const T &def)
-{
-  if(c0.to_bool()){
-    return v0;
-  }else if(c1.to_bool()){
-    return v1;
-  }else if(c2.to_bool()){
-    return v2;
-  }else if(c3.to_bool()){
-    return v3;
-  }else if(c4.to_bool()){
-    return v4;
-  }else{
-    return def;
-  }
-}*/
-
 template<int W>
 THLS_INLINE fw_uint<W> copybit(const fw_uint<1> &b)
 {
   return select(b, og<W>(), zg<W>());
 }
+
+/*
+
+#error "Do not use - very poor implementation in VHLS"
+
+template<int W>
+THLS_INLINE fw_uint<W> select_unique(
+  const fw_uint<1> &c0, const fw_uint<W> &v0,
+  const fw_uint<1> &c1, const fw_uint<W> &v1
+)
+{
+  assert((zpad_hi<1>(c0)+zpad_hi<1>(c1) == cg<2>(1)).to_bool());
+
+  return (copybit<W>(c0)&v0) | (copybit<W>(c1)&v1);
+}
+
+template<int W>
+THLS_INLINE fw_uint<W>select_unique(
+  const fw_uint<1> &c0, fw_uint<W>v0,
+  const fw_uint<1> &c1, fw_uint<W>v1,
+  const fw_uint<1> &c2, fw_uint<W>v2
+)
+{
+  assert((zpad_hi<1>(c0)+zpad_hi<1>(c1)+zpad_hi<1>(c2) == cg<2>(1)).to_bool());
+
+  return (copybit<W>(c0)&v0) | (copybit<W>(c1)&v1) | (copybit<W>(c2)&v2);
+}
+
+template<int W>
+THLS_INLINE fw_uint<W>select_unique(
+  const fw_uint<1> &c0, fw_uint<W>v0,
+  const fw_uint<1> &c1, fw_uint<W>v1,
+  const fw_uint<1> &c2, fw_uint<W>v2,
+  const fw_uint<1> &c3, fw_uint<W>v3
+)
+{
+  assert((zpad_hi<2>(c0)+zpad_hi<2>(c1)+zpad_hi<2>(c2)+zpad_hi<2>(c2) == cg<3>(1)).to_bool());
+
+  return (copybit<W>(c0)&v0) | (copybit<W>(c1)&v1) | (copybit<W>(c2)&v2) | (copybit<W>(c3)&v3);
+}
+
+template<int W>
+THLS_INLINE fw_uint<W>select_unique(
+  const fw_uint<1> &c0, fw_uint<W>v0,
+  const fw_uint<1> &c1, fw_uint<W>v1,
+  const fw_uint<1> &c2, fw_uint<W>v2,
+  const fw_uint<1> &c3, fw_uint<W>v3,
+  const fw_uint<1> &c4, fw_uint<W>v4
+)
+{
+  assert((zpad_hi<2>(c0)+zpad_hi<2>(c1)+zpad_hi<2>(c2)+zpad_hi<2>(c3)+zpad_hi<2>(c4) == cg<3>(1)).to_bool());
+
+  return (copybit<W>(c0)&v0) | (copybit<W>(c1)&v1) | (copybit<W>(c2)&v2) | (copybit<W>(c3)&v3) | (copybit<W>(c4)&v4);
+}
+
+template<int W>
+THLS_INLINE fw_uint<W>select_unique(
+  const fw_uint<1> &c0, fw_uint<W>v0,
+  const fw_uint<1> &c1, fw_uint<W>v1,
+  const fw_uint<1> &c2, fw_uint<W>v2,
+  const fw_uint<1> &c3, fw_uint<W>v3,
+  const fw_uint<1> &c4, fw_uint<W>v4,
+  const fw_uint<1> &c5, fw_uint<W>v5
+)
+{
+  assert((zpad_hi<2>(c0)+zpad_hi<2>(c1)+zpad_hi<2>(c2)+zpad_hi<2>(c3)+zpad_hi<2>(c4)+zpad_hi<2>(c5) == cg<3>(1)).to_bool());
+
+  return (copybit<W>(c0)&v0) | (copybit<W>(c1)&v1) | (copybit<W>(c2)&v2) | (copybit<W>(c3)&v3) | (copybit<W>(c4)&v4) | (copybit<W>(c5)&v5);
+}
+
+template<int W>
+THLS_INLINE fw_uint<W>select_unique(
+  const fw_uint<1> &c0, fw_uint<W>v0,
+  const fw_uint<1> &c1, fw_uint<W>v1,
+  const fw_uint<1> &c2, fw_uint<W>v2,
+  const fw_uint<1> &c3, fw_uint<W>v3,
+  const fw_uint<1> &c4, fw_uint<W>v4,
+  const fw_uint<1> &c5, fw_uint<W>v5,
+  const fw_uint<1> &c6, fw_uint<W>v6
+)
+{
+  assert( (zpad_hi<2>(c0)+zpad_hi<2>(c1)+zpad_hi<2>(c2)+zpad_hi<2>(c3)+zpad_hi<2>(c4)+zpad_hi<2>(c5)+zpad_hi<2>(c6) == cg<3>(1)).to_bool() );
+
+  return (copybit<W>(c0)&v0) | (copybit<W>(c1)&v1) | (copybit<W>(c2)&v2) | (copybit<W>(c3)&v3) | (copybit<W>(c4)&v4) | (copybit<W>(c5)&v5) | (copybit<W>(c6)&v6);
+}
+
+template<int W>
+THLS_INLINE fw_uint<W>select_unique(
+  const fw_uint<1> &c0, fw_uint<W>v0,
+  const fw_uint<1> &c1, fw_uint<W>v1,
+  const fw_uint<1> &c2, fw_uint<W>v2,
+  const fw_uint<1> &c3, fw_uint<W>v3,
+  const fw_uint<1> &c4, fw_uint<W>v4,
+  const fw_uint<1> &c5, fw_uint<W>v5,
+  const fw_uint<1> &c6, fw_uint<W>v6,
+  const fw_uint<1> &c7, fw_uint<W>v7
+)
+{
+  assert( (zpad_hi<3>(c0)+zpad_hi<3>(c1)+zpad_hi<3>(c2)+zpad_hi<3>(c3)+zpad_hi<3>(c4)+zpad_hi<3>(c5)+zpad_hi<3>(c7) == cg<4>(1)).to_bool() );
+
+  return (copybit<W>(c0)&v0) | (copybit<W>(c1)&v1) | (copybit<W>(c2)&v2) | (copybit<W>(c3)&v3) | (copybit<W>(c4)&v4) | (copybit<W>(c5)&v5) | (copybit<W>(c6)&v6) | (copybit<W>(c7)&v7);
+}
+*/
 
 
     template<int HI,int LO,int W>
@@ -581,14 +660,17 @@ public:
   }
 };
 
-#ifndef THLS_SYNTHESIS
+
+
 template<int W>
 inline std::ostream &operator<<(std::ostream &dst, const fw_uint<W> &x)
 {
+  #ifndef THLS_SYNTHESIS
     dst<<x.to_string();
+  #endif
     return dst;
 }
-#endif
+
 
 
 }; // thls

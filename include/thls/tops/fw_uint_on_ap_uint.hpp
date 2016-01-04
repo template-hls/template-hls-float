@@ -70,7 +70,7 @@ struct fw_uint
     {
         assert(W>=0);
         assert(v>=0); // must be non-negative
-        assert(v < (ap_uint<SafeW+1>(1)<<SafeW)); // Must be in range
+        assert(uint64_t(v) < (ap_uint<SafeW+1>(1)<<SafeW)); // Must be in range
     }
 
     THLS_INLINE explicit fw_uint(uint64_t v)
@@ -84,13 +84,13 @@ struct fw_uint
     THLS_INLINE explicit fw_uint(const char *value)
     {
         assert(W>=0);
-        
+
         // Special case binary
         if(!strncmp("0b", value, 2)){
             bits=0;
-            
+
             const char *read=value+2;
-            
+
             int done=0;
             while(done<W){
                 switch(*read){
@@ -436,21 +436,7 @@ THLS_INLINE fw_uint<WD> checked_cast(const fw_uint<WS> &s)
     }
 }
 
-#ifndef THLS_SYNTHESIS
-template<int W>
-std::ostream &operator<<(std::ostream &dst, const fw_uint<W> &x)
-{
-    dst<<x.to_string();
-    return dst;
-}
-#else
-template<int W>
-std::ostream &operator<<(std::ostream &dst, const fw_uint<W> &x)
-{
-	assert(0);
-    return dst;
-}
-#endif
+
 
 }; // thls
 

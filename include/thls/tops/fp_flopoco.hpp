@@ -34,11 +34,11 @@ struct fp_flopoco
     // will be flushed to zero or infinity.
     // Number of bits in number must _always_ match FracBits
     fp_flopoco(mpfr_t x, bool allowUnderOrOverflow=false);
-        
-    
+
+
     void get_exponent(int &e) const;
     void get_fraction(mpfr_t &dst) const;
- 
+
     // The destination must have the same fractional width
     void get(mpfr_t dst) const;
 
@@ -60,11 +60,11 @@ struct fp_flopoco
 
     fw_uint<FracBits> get_frac_bits() const
     { return get_bits<FracBits-1,0>(bits); }
-    
+
     //! Gets the concatenation of the exp(high) and frac(lo) bits
     fw_uint<ExpBits+FracBits> get_exp_frac_bits() const
     { return get_bits<ExpBits+FracBits-1,0>(bits); }
-    
+
     //! Gets the concatenation of the flags(high), exp(mid) and frac(lo) bits
     /*! This is useful for getting a total ordering on numbers of the same
         sign, but you need to be careful about the multiple zeros and multiple
@@ -72,7 +72,7 @@ struct fp_flopoco
     */
     fw_uint<2+ExpBits+FracBits> get_flags_exp_frac_bits() const
     { return concat(get_flags(),get_exp_frac_bits()); }
-    
+
     /*! Returns a code such that there is a total ordering on classes (NaN,-Inf,-Norm,Zero,+Norm,+Inf) */
     fw_uint<3> get_equality_class() const
     {
@@ -151,7 +151,7 @@ struct fp_flopoco
                 zg<1>(),
             is_normal(),
                 get_exp_bits()==o.get_exp_bits() && get_frac_bits()==o.get_frac_bits(),
-                og<1>()                
+                og<1>()
         );
     }
 };
@@ -217,7 +217,7 @@ namespace std
         {
             return T(concat(thls::fw_uint<3>(0b010),thls::og<ExpBits>(),thls::og<FracBits>()));
         }
-        
+
         // Not in std
         static THLS_CONSTEXPR T neg_max()
         {
@@ -280,11 +280,11 @@ namespace std
         {
             return T(concat(thls::fw_uint<3>(0b001),thls::zg<ExpBits>() ,thls::zg<FracBits>()));
         }
-        
+
         // Not part of std
         static THLS_CONSTEXPR T zero()
         { return pos_zero(); }
-        
+
         // Not part of std
         static THLS_CONSTEXPR T pos_one()
         {
@@ -296,7 +296,7 @@ namespace std
         {
             return T(concat(thls::fw_uint<3>(0b011),thls::fw_uint<ExpBits>(bias),thls::zg<FracBits>()));
         }
-        
+
         // Not part of std
         static THLS_CONSTEXPR T one()
         { return pos_one(); }
@@ -559,9 +559,21 @@ fp_flopoco<ER,FR> ref_add(const fp_flopoco<EA,FA> &a, const fp_flopoco<EB,FB> &b
 
     mpfr_add(mr,ma,mb,MPFR_RNDN);
 
-    //mpfr_fprintf(stderr, "mpfr : %Rg + %Rg = %Rg\n", ma, mb, mr);
+    //mpfr_fprintf(stderr, "mpfr : %.Re + %.Re = %.Re\n", ma, mb, mr);
 
     fp_flopoco<ER,FR> res(mr,true);
+
+    mpfr_t check;
+    mpfr_init2(check, FR+1);
+    res.get(check);
+    if(!( res.is_inf() || res.is_nan() || res.is_zero() ).to_bool()){
+        if(mpfr_cmp(mr,check)){
+            mpfr_fprintf(stderr, "    : check = %.Re\n", check);
+            std::cerr<<"  mr = "<<res.str()<<"\n";
+            exit(1);
+        }
+    }
+    mpfr_clear(check);
 
     mpfr_clear(ma);
     mpfr_clear(mb);

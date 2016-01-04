@@ -15,10 +15,10 @@ template<int W>
 struct fw_uint
 {
     static const int width=(W<=0) ? 0 : W;
-    
+
     template<unsigned WW>
     using backendv_t = boost::multiprecision::number<boost::multiprecision::cpp_int_backend<WW, WW, boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void> >;
-    
+
     typedef backendv_t<W> backend_t;
 
     backend_t bits;
@@ -63,12 +63,12 @@ struct fw_uint
     explicit fw_uint(const backend_t &x)
         : bits(x)
     {}
-        
+
     static fw_uint from_bits(const backend_t &x)
     {
         return fw_uint(x);
     }
-    
+
     void operator=(const fw_uint &o)
     {
         if(this!=&o){
@@ -227,7 +227,7 @@ struct fw_uint
         assert(0<=dist && dist<W);
         return fw_uint(bits>>dist);
     }
-    
+
     fw_uint operator<<(int dist) const
     {
         assert(0<=dist && dist<W);
@@ -265,14 +265,14 @@ struct fw_uint
     {
         mpz_class res;
         backend_t tmp=bits;
-        
+
         int shift=0;
         while(tmp!=0){
             res=res+(mpz_class((uint64_t)tmp)<<shift);
             shift+=64;
             tmp=tmp>>64;
         }
-        
+
         return res;
     }
     #endif
@@ -292,7 +292,7 @@ fw_uint<1> operator||(const fw_uint<1> &a, const fw_uint<1> &b)
 fw_uint<1> operator&&(const fw_uint<1> &a, const fw_uint<1> &b)
 { return fw_uint<1>(a.bits&&b.bits); }
 
-#ifndef HLS_SYNTHESIS
+#ifndef THLS_SYNTHESIS
 template<int W>
 std::ostream &operator<<(std::ostream &dst, const fw_uint<W> &x)
 {

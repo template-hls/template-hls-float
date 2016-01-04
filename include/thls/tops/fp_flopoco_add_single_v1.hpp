@@ -52,23 +52,23 @@ void LZOCShifter(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint<WD> &x)
     001xx -> 1xx00, 2
     01xxx -> 1xxx0, 1
     1xxxx -> 1xxxx, 0
-    
+
     0000 -> 0000, 7
     0001 -> 1000, 3
     001x -> 1x00, 2
     01xx -> 1xx0, 1
     1xxx -> 1xxx, 0
-    
+
     000 -> 000, 3
     001 -> 100, 2
     01x -> 1x0, 1
     1xx -> 1xx, 0
-    
-    
+
+
     WC==1:
     Pre:  00000000 | 01xxx000 | 1xxx0000
     Post: 00000000 | 1xxx0000
-    
+
     WC==2:
     Pre:  00000000 | (1xxx0000 | 001xxx00) | (01xxx000 | 1xxx0000)
     Post: 00000000 | 01xxx000 | 1xxx0000
@@ -80,10 +80,10 @@ class LZOCShifterImpl
     THLS_INLINE static void stage(fw_uint<WD> &out, fw_uint<1> &bit, const fw_uint<WD> &x)
     {
         assert( WD >= (1<<(WC-1)) );
-        
+
         static const int SHIFT=(1<<(WC-1));
         fw_uint<SHIFT> hi=get_bits<WD-1,WD-SHIFT>(x);
-        
+
         if(SHIFT==WD){
             // We are just a zero detector
             bit= (hi==zg<SHIFT>());
@@ -94,12 +94,12 @@ class LZOCShifterImpl
             auto lo=get_bits<WD-SHIFT-1,BASE>(x);
             assert( ((x==zg<WD>()) || (hi!=zg<SHIFT>()) || (lo!=zg<lo.width>())).to_bool() );
             #endif
-            
+
             bit= (hi==zg<SHIFT>());
             out=select(bit, (x<<SHIFT), x);
         }
     }
-    
+
 public:
     THLS_INLINE static void go(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint<WD> &x)
     {
@@ -107,7 +107,7 @@ public:
         fw_uint<1> hiCount;
         fw_uint<WD> mid;
         stage(mid, hiCount, x);
-        
+
         // Then remaining bits.
         fw_uint<WC-1> loCount;
         LZOCShifterImpl<WD,WC-1>::go(out, loCount, mid);
@@ -132,10 +132,32 @@ THLS_INLINE void LZOCShifter(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint
     return LZOCShifterImpl<WD,WC>::go(out,count,x);
 }
 
+
+/*
+void LZOCShifter(fw_uint<31> &out, fw_uint<5> &count, const fw_uint<WD> &x)
+{
+    auto lz0=clz(get_bits<31,24>(x0));
+    auto nz0=non_zero(get_bits<31,24>(x0));
+    auto lz1=clz(get_bits<23,16>(x0));
+    auto nz1=non_zero(get_bits<23,16>(x0));
+    auto lz2=clz(get_bits<15,8>(x0));
+    auto nz2=non_zero(get_bits<15,8>(x0));
+    auto lz3=clz(get_bits<7,0>(x));
+    auto nz3=non_zero(get_bits<7,0>(x0));
+
+    auto x1=select(nz0,x0, nz1,(x0<<8), nz2,(x0<<16), (x0<<24));
+    auto lzF=select(nz0,lz0, nz1,lz1, nz2,lz2, lz3);
+
+    count=select(nz0,lz0, nz1,lz1+8, nz2,lz2+16, nz2,lz3+24, og<5>());
+    out=x1<<lzF.to_int();
+}
+*/
+
+
 template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
 THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, const fp_flopoco<wEY,wFY> &yPre, int DEBUG=0)
 {
-    
+
     #if 0
     //parameter set up. For now all wEX=wEY=wER and the same holds for fractions
     THLS_STATIC_ASSERT(wEX==wEY && wEY==wER, "All exponent widths must be the same.");
@@ -143,32 +165,32 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
     // DT10 - Could just expand to the largest exponent? TODO
     const int wF = wFX;
     const int wE = wEX;
-    
+
     const fp_flopoco<wE,wF> &x=xPre;
     const fp_flopoco<wE,wF> &y=yPre;
-    
+
     #else
     // Allow wFX!=wFY and wER!=wFR, but require that wER=max(wEX,wEY) and wFR=max(wFX,wFY)
-    
+
     const int wF = thls_ctMax(wFX,wFY);
     const int wE = thls_ctMax(wEX,wEY);
-    
+
     fp_flopoco<wE,wF> x;
     fp_flopoco<wE,wF> y;
     promote(x, xPre);
     promote(y, yPre);
-    
+
     THLS_STATIC_ASSERT(wE==wER, "Result exp must match promotion of args.");
     THLS_STATIC_ASSERT(wF==wFR, "Result frac must match promotion of args.");
-    
+
     #endif
 
     // Copyright : This is heavily based on copyright work of Bogdan Pasca and Florent de Dinechin (2010)
 
-    if(DEBUG){
-        std::cerr<<"  x = "<<x.str()<<"\n";
-        std::cerr<<"  y = "<<y.str()<<"\n";
-    }
+    /*if(DEBUG){
+        std::cerr<<"  x = "<<x<<"\n";
+        std::cerr<<"  y = "<<y<<"\n";
+    }*/
 
     const int sizeRightShift = intlog2<wF+3>::value;
 
@@ -498,34 +520,19 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
     //<<tab<<tab<<"\"01\" when \"0001\","<<endl
     //<<tab<<tab<<"\"10\" when \"0010\"|\"0110\"|\"1010\"|\"1110\"|\"0101\","<<endl
     //<<tab<<tab<<"\"11\" when others;"<<endl;
-    fw_uint<2> excRt2;
-    if(1)
-    {
-		static const lut<2,4> excRt2_lut([](int i) -> int {
-			switch(i){
-				case 0b0000: case 0b0100: case 0b1000: case 0b1100: case 0b1001: case 0b1101:
-					return 0b00;
-				case 0b0001:
-					return 0b01;
-				case 0b0010: case 0b0110: case 0b1010: case 0b1110: case 0b0101:
-					return 0b10;
-				default:
-					return 0b11;
-			}
-		});
-		excRt2 = excRt2_lut(exExpExc);
-    }else{
-    	excRt2 = select(
-			exExpExc==0b0000| exExpExc==0b0100| exExpExc==0b1000| exExpExc==0b1100| exExpExc==0b1001| exExpExc==0b1101,
-				cg<2>(0b00),
-    		exExpExc==0b0001,
-				cg<2>(0b01),
-			exExpExc==0b0010| exExpExc==0b0110| exExpExc==0b1010| exExpExc==0b1110| exExpExc==0b0101,
-				cg<2>(0b10),
-			/* else */
-				cg<2>(0b11)
-		);
-    }
+    static const lut<2,4> excRt2_lut([](int i) -> int {
+        switch(i){
+            case 0b0000: case 0b0100: case 0b1000: case 0b1100: case 0b1001: case 0b1101:
+                return 0b00;
+            case 0b0001:
+                return 0b01;
+            case 0b0010: case 0b0110: case 0b1010: case 0b1110: case 0b0101:
+                return 0b10;
+            default:
+                return 0b11;
+        }
+    });
+    fw_uint<2> excRt2 = excRt2_lut(exExpExc);
 
     if(DEBUG){
         std::cerr<<"  exExpExc = "<<exExpExc<<"\n";
