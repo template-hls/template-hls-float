@@ -95,38 +95,36 @@ add_custom_command(
 
 endfunction(fp_primitive_add_instance)
 
-foreach(E RANGE 8 11)
-    foreach(F RANGE 8 24)
-        fp_primitive_add_instance(${E} ${F})
-    endforeach(F)
+#foreach(E RANGE 8 11)
+foreach(E RANGE 8 8)
+    #foreach(F RANGE 8 24)
+    #    fp_primitive_add_instance(${E} ${F})
+    #endforeach(F)
 
-    foreach(F 28 32 36 40 44 48 52)
+    #foreach(F 28 32 36 40 44 48 52)
+    #    fp_primitive_add_instance(${E} ${F})
+    #endforeach(F)
+    
+    foreach(F 8 16 23)
         fp_primitive_add_instance(${E} ${F})
     endforeach(F)
 endforeach(E)
 
+fp_primitive_add_instance(11 52)
+
 
 add_executable(fp_primitive_build_main build_main.cpp
     fp_mul_native_8_23.cpp
-    fp_mul_native_10_52.cpp
     fp_add_native_8_23.cpp
-    fp_add_native_10_52.cpp
     fp_mul_flopoco_8_23.cpp
     fp_add_flopoco_single_8_23.cpp
     fp_add_flopoco_dual_8_23.cpp
         fp_div_flopoco_8_23.cpp
-    fp_mul_flopoco_10_52.cpp
-    fp_add_flopoco_single_10_52.cpp
-    fp_add_flopoco_dual_10_52.cpp
-        fp_div_flopoco_10_52.cpp
-
+    
         fp_add_ieee_on_flopoco_8_23.cpp
         fp_mul_ieee_on_flopoco_8_23.cpp
         fp_div_ieee_on_flopoco_8_23.cpp
 
-        fp_add_ieee_on_flopoco_10_52.cpp
-        fp_mul_ieee_on_flopoco_10_52.cpp
-        fp_div_ieee_on_flopoco_10_52.cpp
         )
 
 # The vivado top-levels have pragmas on them
