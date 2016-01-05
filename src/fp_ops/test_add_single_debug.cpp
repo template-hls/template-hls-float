@@ -1,4 +1,4 @@
-#include "thls/tops/fp_flopoco_add_dual_v1.hpp"
+#include "thls/tops/fp_flopoco_add_single_v1.hpp"
 
 #include "thls/tops/make_input.hpp"
 
@@ -49,12 +49,6 @@ void test_add(const TImpl &impl, const TType &fa, const TType &fb)
 
 		mpfr_clear(tmp);
 
-		std::stringstream tmp2;
-		tmp2<<fa.bits<<" + "<<fb.bits<<" \n";
-		tmp2<<" = "<<fref.bits<<" \n";
-
-		std::cerr<<tmp2.str()<<"\n";
-
 		exit(1);
 	}
 }
@@ -64,7 +58,7 @@ void test_impl(TImpl &impl)
 {
 	std::vector<TType> args;
 
-	make_input(args, 500);
+	make_input(args, 100);
 
 	for(unsigned i=0; i<args.size(); i++){
 		std::cerr<<"i = "<<i<<"\n";
@@ -77,29 +71,21 @@ void test_impl(TImpl &impl)
 
 int main()
 {
-	test_impl<fp_flopoco<8,23>>(add_dual<8,23,8,23,8,23>);
 
-	test_impl<fp_flopoco<11,60>>(add_dual<11,60,11,60,11,60>);
-	test_impl<fp_flopoco<11,52>>(add_dual<11,52,11,52,11,52>);
-	test_impl<fp_flopoco<11,50>>(add_dual<11,50,11,50,11,50>);
-	test_impl<fp_flopoco<11,40>>(add_dual<11,40,11,40,11,40>);
+	test_impl<fp_flopoco<8,24>>(add_single<8,24,8,24,8,24>);
+/*
+	test_impl<fp_flopoco<8,32>>(add_single<8,32,8,32,8,32>);
+	test_impl<fp_flopoco<11,52>>(add_single<11,52,11,52,11,52>);*/
+/*
+	test_impl<fp_flopoco<6,10>>(add_single<6,10,6,10,6,10>);
+	test_impl<fp_flopoco<6,11>>(add_single<6,11,6,11,6,11>);
+	test_impl<fp_flopoco<6,12>>(add_single<6,12,6,12,6,12>);
+	test_impl<fp_flopoco<6,13>>(add_single<6,13,6,13,6,13>);
+	test_impl<fp_flopoco<6,14>>(add_single<6,14,6,14,6,14>);
+	test_impl<fp_flopoco<6,15>>(add_single<6,15,6,15,6,15>);
 
-	test_impl<fp_flopoco<10,40>>(add_dual<10,40,10,40,10,40>);
-	test_impl<fp_flopoco<10,30>>(add_dual<10,30,10,30,10,30>);
-
-	test_impl<fp_flopoco<9,37>>(add_dual<9,37,9,37,9,37>);
-	test_impl<fp_flopoco<9,30>>(add_dual<9,30,9,30,9,30>);
-	test_impl<fp_flopoco<9,23>>(add_dual<9,23,9,23,9,23>);
-
-
-	test_impl<fp_flopoco<8,32>>(add_dual<8,32,8,32,8,32>);
-
-	test_impl<fp_flopoco<6,23>>(add_dual<6,23,6,23,6,23>);
-	test_impl<fp_flopoco<6,12>>(add_dual<6,12,6,12,6,12>);
-
-	test_impl<fp_flopoco<5,12>>(add_dual<5,12,5,12,5,12>);
-	test_impl<fp_flopoco<5,11>>(add_dual<5,11,5,11,5,11>);
-	test_impl<fp_flopoco<5,10>>(add_dual<5,10,5,10,5,10>);
+	test_impl<fp_flopoco<8,12>>(add_single<8,12,8,12,8,12>);
+	test_impl<fp_flopoco<8,11>>(add_single<8,11,8,11,8,11>);*/
 
 
 	fprintf(stderr, "Done\n");

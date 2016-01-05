@@ -645,8 +645,6 @@ std::string fp_flopoco<ExpBits,FracBits>::str() const
         fw_uint<ExpBits> expnt=get_bits<ExpBits+FracBits-1,FracBits>(bits);
         fw_uint<FracBits> frac=get_bits<FracBits-1,0>(bits);
         acc<<" e="<<expnt<<"="<<(expnt.to_int()- (1<<(ExpBits-1))+1);
-
-        acc<<" f="<<frac<<"= (approx)"<<(ldexp(frac.to_int()+ldexp(1,FracBits),-FracBits));
     }else if( (flags==0b10).to_bool() ){
         acc<<select(negative==1, "-inf" , "+inf");
     }else{

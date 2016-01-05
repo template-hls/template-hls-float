@@ -1,8 +1,3 @@
-set(VIVADO_HLS /cygdrive/C/Usr/Xilinx2015.4/Vivado_HLS/2015.4
-        CACHE FILEPATH "Location of Vivado HLS root")
-
-set(VIVADO_ROOT /cygdrive/C/Usr/Xilinx2015.4/Vivado/2015.4
-        CACHE FILEPATH "Location of Vivado root")
 
 file(RELATIVE_PATH THLS_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 

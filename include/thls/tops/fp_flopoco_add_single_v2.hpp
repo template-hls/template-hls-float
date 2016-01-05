@@ -1,5 +1,5 @@
-#ifndef thls_fp_flopoco_add_v1_hpp
-#define thls_fp_flopoco_add_v1_hpp
+#ifndef thls_fp_flopoco_add_v2_hpp
+#define thls_fp_flopoco_add_v2_hpp
 
 #include "thls/tops/fp_flopoco.hpp"
 #include "thls/tops/fp_promote.hpp"
@@ -19,30 +19,6 @@ struct intlog2<0>
     enum{ value = 0 };
 };
 
-/*
-template<int maxPlaces, int WD, int WC>
-void LZOCShifter(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint<WD> &x)
-{
-    static_assert(maxPlaces <= (1<<WC), "Not enough bits in count.");
-
-    fw_uint<WC> nZerosNew=zg<WC>();
-    fw_uint<WD> shifted = x;
-
-    if( (x==0).to_bool() ){
-        nZerosNew=og<WC>();
-    }else{
-        for(int i=0; i<WD-1; i++){
-            if( (get_bit<WD-1>(shifted)==1).to_bool() )
-                break;
-            shifted=shifted<<1;
-            nZerosNew=nZerosNew+1;
-        }
-    }
-
-    count=nZerosNew;
-    out=shifted;
-}
-*/
 
 
 /*
@@ -480,10 +456,7 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
 
     //decide what to add to the guard bit
     //vhdl<<tab<<declare("addToRoundBit")<<"<= '0' when (lsb='0' and grd='1' and rnd='0' and stk='0')  else '1';"<<endl;
-    auto addToRoundBit = select(
-       // expDiff==cg<9>(0b000011010) && shiftedFrac == concat( og<wF+3>(), zg2), zg1,
-        lsb==0 && grd==1 && rnd==0 && stk==0, zg<1>(),
-        og<1>());
+    auto addToRoundBit = select(lsb==0 && grd==1 && rnd==0 && stk==0, zg<1>(), og<1>());
     //round
 
     //IntAdder *ra = new IntAdder(target, wE+2+wF+1, inDelayMap("X", getCriticalPath() ) );

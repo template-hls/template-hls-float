@@ -37,10 +37,14 @@ endfunction(add_executable_test)
 # Creates an executable, and also adds it with each fw_uint implementation
 function(add_executable_test_with_fw_uint PREFIX NAME )
 
-set(VHLS_DIR "/cygdrive/C/Usr/Xilinx2015.4/Vivado_HLS/2015.4")
+set(VIVADO_HLS /cygdrive/C/Usr/Xilinx2015.4/Vivado_HLS/2015.4
+        CACHE FILEPATH "Location of Vivado HLS root")
 
-    #Sigh: "Xilix"
-#set(VHLS_DIR "/cygdrive/c/Usr/Xilix2015.4/Vivado_HLS/2015.4")
+set(VIVADO_ROOT /cygdrive/C/Usr/Xilinx2015.4/Vivado/2015.4
+        CACHE FILEPATH "Location of Vivado root")
+
+set(VHLS_DIR ${VIVADO_HLS})
+
 
 add_executable_test(${PREFIX} ${NAME})
 
