@@ -8,9 +8,9 @@
 
 echo "create_project -force ${1}_${2}_${3}_impl ${1}_${2}_${3}_impl -part xc7z020clg484-1"
 
-echo "add_files ../synth/${1}_${2}/sim/syn/vhdl"
+echo "add_files ../s/${1}_${2}/sim/syn/vhdl"
 
-echo "foreach f [glob -nocomplain \"../synth/${1}_${2}/sim/syn/vhdl/*.tcl\"] { source \$f }"
+echo "foreach f [glob -nocomplain \"../s/${1}_${2}/sim/syn/vhdl/*.tcl\"] { source \$f }"
 
 echo "update_compile_order -fileset sources_1"
 echo "update_compile_order -fileset sim_1"

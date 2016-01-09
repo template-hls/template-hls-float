@@ -1,11 +1,11 @@
-#include "thls/tops/fp_flopoco_div_v3.hpp"
+#include "thls/tops/fp_flopoco_div_v2.hpp"
 
 using namespace thls;
 
-static const int wE = EEE;
-static const int wF = FFF;
+static const int wE = ${EEE};
+static const int wF = ${FFF};
 
-extern fw_uint<wE+wF+3> fp_div_flopoco_v3_EEE_FFF(
+extern fw_uint<wE+wF+3> fp_div_flopoco_v2_${EEE}_${FFF}(
     fw_uint<wE+wF+3> a,
     fw_uint<wE+wF+3> b
 )

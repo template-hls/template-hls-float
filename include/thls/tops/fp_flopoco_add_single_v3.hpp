@@ -1,5 +1,5 @@
-#ifndef thls_fp_flopoco_add_v2_hpp
-#define thls_fp_flopoco_add_v2_hpp
+#ifndef thls_fp_flopoco_add_v3_hpp
+#define thls_fp_flopoco_add_v3_hpp
 
 #include "thls/tops/fp_flopoco.hpp"
 #include "thls/tops/fp_promote.hpp"
@@ -49,7 +49,7 @@ struct intlog2<0>
     Pre:  00000000 | (1xxx0000 | 001xxx00) | (01xxx000 | 1xxx0000)
     Post: 00000000 | 01xxx000 | 1xxx0000
 */
-
+/*
 template<int WD, int WC>
 class LZOCShifterImpl
 {
@@ -107,10 +107,23 @@ THLS_INLINE void LZOCShifter(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint
 {
     return LZOCShifterImpl<WD,WC>::go(out,count,x);
 }
+*/
+
+THLS_INLINE fw_uint<3> clz(const fw_uint<8> &x)
+{
+    return fw_uint<3>(0x7&__builtin_clz(0xFF & x.to_int()));
+}
+
+THLS_INLINE fw_uint<1> non_zero(const fw_uint<8> &x)
+{
+    return x!=zg<8>();
+}
 
 
-/*
-void LZOCShifter(fw_uint<31> &out, fw_uint<5> &count, const fw_uint<WD> &x)
+
+
+
+void LZOCShifterCLZ(fw_uint<32> &out, fw_uint<5> &count, fw_uint<1> &isZero, const fw_uint<32> &x0)
 {
     auto lz0=clz(get_bits<31,24>(x0));
     auto nz0=non_zero(get_bits<31,24>(x0));
@@ -118,16 +131,35 @@ void LZOCShifter(fw_uint<31> &out, fw_uint<5> &count, const fw_uint<WD> &x)
     auto nz1=non_zero(get_bits<23,16>(x0));
     auto lz2=clz(get_bits<15,8>(x0));
     auto nz2=non_zero(get_bits<15,8>(x0));
-    auto lz3=clz(get_bits<7,0>(x));
+    auto lz3=clz(get_bits<7,0>(x0));
     auto nz3=non_zero(get_bits<7,0>(x0));
 
-    auto x1=select(nz0,x0, nz1,(x0<<8), nz2,(x0<<16), (x0<<24));
-    auto lzF=select(nz0,lz0, nz1,lz1, nz2,lz2, lz3);
-
-    count=select(nz0,lz0, nz1,lz1+8, nz2,lz2+16, nz2,lz3+24, og<5>());
-    out=x1<<lzF.to_int();
+    fw_uint<32> x1;
+    fw_uint<3> lzF;
+    if(nz0.to_bool()){
+        x1=x0;
+        lzF=lz0;
+        count=concat(cg<2>(0b00),lz0);
+    }else if(nz1.to_bool()){
+        x1=(x0<<8);
+        lzF=lz1;
+        count=concat(cg<2>(0b01),lz1);
+    }else if(nz2.to_bool()){
+        x1=(x0<<16);
+        lzF=lz2;
+        count=concat(cg<2>(0b10),lz2);
+    }else if(nz3.to_bool()){
+        x1=(x0<<24);
+        lzF=lz3;
+        count=concat(cg<2>(0b11),lz3);
+    }else{
+        count=og<5>();
+    }
+    isZero = ~(nz0|nz1|nz2|nz3);
+    
+    out=x1<<(lzF.to_int()&0x1F);
 }
-*/
+
 
 
 template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
@@ -216,16 +248,19 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
     }
 
     //exception bits: need to be updated but for not FIXME
-    auto excRt = select(
-            sXsYExnXY== 0b000000 || sXsYExnXY==0b010000 || sXsYExnXY==0b100000 || sXsYExnXY==0b110000,
-                cg<2>(0b00),
-            sXsYExnXY== 0b000101 || sXsYExnXY==0b010101 || sXsYExnXY==0b100101 || sXsYExnXY==0b110101 || sXsYExnXY==0b000100 || sXsYExnXY==0b010100 || sXsYExnXY==0b100100 || sXsYExnXY==0b110100 || sXsYExnXY==0b000001 || sXsYExnXY==0b010001 || sXsYExnXY==0b100001 || sXsYExnXY==0b110001,
-                cg<2>(0b01),
-            sXsYExnXY== 0b111010 || sXsYExnXY==0b001010 || sXsYExnXY==0b001000 || sXsYExnXY==0b011000 || sXsYExnXY==0b101000 || sXsYExnXY==0b111000 || sXsYExnXY==0b000010 || sXsYExnXY==0b010010 || sXsYExnXY==0b100010 || sXsYExnXY==0b110010 || sXsYExnXY==0b001001 || sXsYExnXY==0b011001 || sXsYExnXY==0b101001 || sXsYExnXY==0b111001 || sXsYExnXY==0b000110 || sXsYExnXY==0b010110 || sXsYExnXY==0b100110 || sXsYExnXY==0b110110,
-                cg<2>(0b10),
-            /* else */
-                cg<2>(0b11)
-    );
+    static const lut<2,6> excRt_lut([](int i) -> int {
+        switch(i){
+            case 0b000000: case 0b010000: case 0b100000: case 0b110000:
+                return 0b00;
+            case 0b000101: case 0b010101: case 0b100101: case 0b110101: case 0b000100: case 0b010100: case 0b100100: case 0b110100: case 0b000001: case 0b010001: case 0b100001: case 0b110001:
+                return 0b01;
+            case 0b111010: case 0b001010: case 0b001000: case 0b011000: case 0b101000: case 0b111000: case 0b000010: case 0b010010: case 0b100010: case 0b110010: case 0b001001: case 0b011001: case 0b101001: case 0b111001: case 0b000110: case 0b010110: case 0b100110: case 0b110110:
+                return 0b10;
+            default:
+                return 0b11;
+        }
+    });
+    auto excRt=excRt_lut(sXsYExnXY);
 
     if(DEBUG){
         std::cerr<<"   sXsYExnXY = "<<sXsYExnXY<<"\n";
@@ -304,6 +339,9 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
 
     //shift in place
     fw_uint<wF+5> fracGRS = concat(fracAddResult, sticky);
+    if(DEBUG){
+        std::cerr<<"  fracGRS = "<<fracGRS<<"\n";
+    }
 
     //incremented exponent.
     fw_uint<wE+2> extendedExpInc = zpad_hi<2>(expX)+1;
@@ -322,7 +360,12 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
 
     fw_uint<lzocCountWidth> nZerosNew;
     fw_uint<wF+5> shiftedFrac;
-    LZOCShifter<wF+5>(shiftedFrac, nZerosNew, fracGRS);
+    //LZOCShifter<wF+5>(shiftedFrac, nZerosNew, fracGRS);
+    fw_uint<32> shiftedFracExt;
+    fw_uint<32> fracGRSExt=zpad_lo<32-wF-5>(fracGRS);
+    fw_uint<1> fracExtIsZero;
+    LZOCShifterCLZ(shiftedFracExt, nZerosNew, fracExtIsZero, fracGRSExt);
+    shiftedFrac=take_msbs<wF+5>(shiftedFracExt);
 
     if(DEBUG){
         std::cerr<<"  shiftedFrac = "<<shiftedFrac<<"\n";
@@ -375,16 +418,19 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
 
     auto exExpExc = concat(upExc, excRt);
 
-    fw_uint<2> excRt2 = select(
-            exExpExc== 0b0000|| exExpExc==0b0100|| exExpExc==0b1000|| exExpExc==0b1100|| exExpExc==0b1001|| exExpExc==0b1101,
-                cg<2>(0b00),
-            exExpExc== 0b0001,
-                cg<2>(0b01),
-            exExpExc== 0b0010|| exExpExc==0b0110|| exExpExc==0b1010|| exExpExc==0b1110|| exExpExc==0b0101,
-                cg<2>(0b10),
-            /* else */
-                cg<2>(0b11)
-    );
+    static const lut<2,4> excRt2_lut([](int i) -> int {
+        switch(i){
+            case 0b0000: case 0b0100: case 0b1000: case 0b1100: case 0b1001: case 0b1101:
+                return 0b00;
+            case 0b0001:
+                return 0b01;
+            case 0b0010: case 0b0110: case 0b1010: case 0b1110: case 0b0101:
+                return 0b10;
+            default:
+                return 0b11;
+        }
+    });
+    fw_uint<2> excRt2 = excRt2_lut(exExpExc);
 
     if(DEBUG){
         std::cerr<<"  exExpExc = "<<exExpExc<<"\n";

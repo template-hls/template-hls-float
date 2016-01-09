@@ -1,11 +1,11 @@
-#include "thls/tops/fp_flopoco_add_dual_v1.hpp"
+#include "thls/tops/fp_flopoco_add_single_v2.hpp"
 
 using namespace thls;
 
-static const int wE = EEE;
-static const int wF = FFF;
+static const int wE = ${EEE};
+static const int wF = ${FFF};
 
-extern fw_uint<wE+wF+3> fp_add_flopoco_single_EEE_FFF(
+extern fw_uint<wE+wF+3> fp_add_flopoco_single_v2_${EEE}_${FFF}(
     fw_uint<wE+wF+3> a,
     fw_uint<wE+wF+3> b
 )
