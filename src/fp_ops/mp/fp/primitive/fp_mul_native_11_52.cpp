@@ -1,4 +1,4 @@
-extern double fp_mul_native_10_52(
+extern double fp_mul_native_11_52(
     double a,
     double b
 )

@@ -37,11 +37,11 @@ add_custom_target(eval_vhls_${DESIGN_NAME}_${RATE}_synth
         )
 
 add_dependencies(eval_vhls_synth eval_vhls_${DESIGN_NAME}_${RATE}_synth)
-        
+
 endfunction(add_vivado_hls_core_synth)
 
 
-        
+
 function(add_vivado_hls_core_impl DESIGN_NAME RATE TOPLEVEL_NAME DESIGN_SRC_PATH MULT ROW_EXTRA)
 
 
@@ -51,7 +51,7 @@ else( TARGET eval_vhls_${DESIGN_NAME}_${RATE}_synth)
 add_vivado_hls_core_synth( ${DESIGN_NAME} ${RATE} ${TOPLEVEL_NAME} ${DESIGN_SRC_PATH} ${ROW_EXTRA})
 endif( TARGET eval_vhls_${DESIGN_NAME}_${RATE}_synth)
 
-        
+
 add_custom_command(OUTPUT b/i/${DESIGN_NAME}_${RATE}_${MULT}_implement.tcl
         DEPENDS gen_implement_tcl.sh
         COMMAND mkdir -p b/i/
@@ -105,6 +105,13 @@ set(MULTIPLIERS 1.0 1.1 1.2 1.3 1.4 1.5)
 
 ### Synth
 
+function(add_all_native_half_core_synth  RATE)
+add_vivado_hls_core_synth(fp_add_native_5_10 ${RATE} fp_add_native_5_10 ../fp/primitive/fp_add_native_5_10.cpp   ,add,native,default,5,10)
+add_vivado_hls_core_synth(fp_mul_native_5_10 ${RATE} fp_mul_native_5_10 ../fp/primitive/fp_mul_native_5_10.cpp   ,mul,native,default,5,10)
+add_vivado_hls_core_synth(fp_div_native_5_10 ${RATE} fp_div_native_5_10 ../fp/primitive/fp_div_native_5_10.cpp   ,div,native,default,5,10)
+endfunction(add_all_native_half_core_synth)
+
+
 function(add_all_native_single_core_synth  RATE)
 add_vivado_hls_core_synth(fp_add_native_8_23 ${RATE} fp_add_native_8_23 ../fp/primitive/fp_add_native_8_23.cpp   ,add,native,default,8,23)
 add_vivado_hls_core_synth(fp_add_native_nodsp_8_23 ${RATE} fp_add_native_nodsp_8_23 ../fp/primitive/fp_add_native_nodsp_8_23.cpp   ,add,native,nodsp,8,23)
@@ -127,6 +134,12 @@ add_vivado_hls_core_synth(fp_div_native_11_52 ${RATE} fp_div_native_11_52 ../fp/
 endfunction(add_all_native_double_core_synth)
 
 ### Impl
+
+function(add_all_native_half_core_impl  RATE MULT)
+add_vivado_hls_core_impl(fp_add_native_5_10 ${RATE} fp_add_native_5_10 ../fp/primitive/fp_add_native_5_10.cpp  ${MULT} ,add,native,default,5,10)
+add_vivado_hls_core_impl(fp_mul_native_5_10 ${RATE} fp_mul_native_5_10 ../fp/primitive/fp_mul_native_5_10.cpp  ${MULT} ,mul,native,default,5,10)
+add_vivado_hls_core_impl(fp_div_native_5_10 ${RATE} fp_div_native_5_10 ../fp/primitive/fp_div_native_5_10.cpp  ${MULT} ,div,native,default,5,10)
+endfunction(add_all_native_half_core_impl)
 
 function(add_all_native_single_core_impl  RATE MULT)
 add_vivado_hls_core_impl(fp_add_native_8_23 ${RATE} fp_add_native_8_23 ../fp/primitive/fp_add_native_8_23.cpp  ${MULT} ,add,native,default,8,23)
@@ -171,8 +184,8 @@ add_vivado_hls_core_impl(fp_add_flopoco_dual_${E}_${F} ${RATE} fp_add_flopoco_du
 
 add_vivado_hls_core_impl(fp_add_flopoco_single_${E}_${F} ${RATE} fp_add_flopoco_single_${E}_${F} ../fp/primitive/fp_add_flopoco_single_${E}_${F}.cpp  ${MULT}  ,add,flopoco_single,v1,${E},${F})
 add_vivado_hls_core_impl(fp_add_flopoco_single_v2_${E}_${F} ${RATE} fp_add_flopoco_single_v2_${E}_${F} ../fp/primitive/fp_add_flopoco_single_v2_${E}_${F}.cpp  ${MULT}  ,add,flopoco_single,v2,${E},${F})
-add_vivado_hls_core_impl(fp_add_flopoco_single_v3_${E}_${F} ${RATE} fp_add_flopoco_single_v3_${E}_${F} ../fp/primitive/fp_add_flopoco_single_v3_${E}_${F}.cpp  ${MULT}  ,add,flopoco_single,v3,${E},${F})
-add_vivado_hls_core_impl(fp_add_flopoco_single_v4_${E}_${F} ${RATE} fp_add_flopoco_single_v4_${E}_${F} ../fp/primitive/fp_add_flopoco_single_v4_${E}_${F}.cpp  ${MULT}  ,add,flopoco_single,v4,${E},${F})
+#add_vivado_hls_core_impl(fp_add_flopoco_single_v3_${E}_${F} ${RATE} fp_add_flopoco_single_v3_${E}_${F} ../fp/primitive/fp_add_flopoco_single_v3_${E}_${F}.cpp  ${MULT}  ,add,flopoco_single,v3,${E},${F})
+#add_vivado_hls_core_impl(fp_add_flopoco_single_v4_${E}_${F} ${RATE} fp_add_flopoco_single_v4_${E}_${F} ../fp/primitive/fp_add_flopoco_single_v4_${E}_${F}.cpp  ${MULT}  ,add,flopoco_single,v4,${E},${F})
 
 add_vivado_hls_core_impl(fp_mul_flopoco_${E}_${F} ${RATE} fp_mul_flopoco_${E}_${F} ../fp/primitive/fp_mul_flopoco_${E}_${F}.cpp ${MULT} ,mul,flopoco,v1,${E},${F})
 
@@ -184,21 +197,39 @@ endfunction(add_all_flopoco_core_impl)
 
 
 foreach(M 100MHz 200MHz)
+        add_all_native_half_core_impl(${M} 1.0)
+        #add_all_native_half_core_impl(${M} 1.1)
+        add_all_native_half_core_impl(${M} 1.2)
+
         add_all_native_single_core_impl(${M} 1.0)
         #add_all_native_single_core_impl(${M} 1.1)
         add_all_native_single_core_impl(${M} 1.2)
-        
+
         add_all_flopoco_core_impl(5 10 ${M} 1.0)
         #add_all_flopoco_core_impl(5 10 ${M} 1.1)
         add_all_flopoco_core_impl(5 10 ${M} 1.2)
-        
+
         add_all_flopoco_core_impl(7 15 ${M} 1.0)
         #add_all_flopoco_core_impl(7 15 ${M} 1.1)
         add_all_flopoco_core_impl(7 15 ${M} 1.2)
-        
+
         add_all_flopoco_core_impl(8 23 ${M} 1.0)
         #add_all_flopoco_core_impl(8 23 ${M} 1.1)
         add_all_flopoco_core_impl(8 23 ${M} 1.2)
+endforeach(M)
+
+foreach(M 100MHz 200MHz)
+        add_all_native_double_core_impl(${M} 1.0)
+
+        add_all_flopoco_core_impl(9 35 ${M} 1.0)
+
+        add_all_flopoco_core_impl(11 52 ${M} 1.0)
+endforeach(M)
+
+foreach(M 100MHz)
+        add_all_flopoco_core_impl(12 78 ${M} 1.0)
+
+        add_all_flopoco_core_impl(15 112 ${M} 1.0)
 endforeach(M)
 
 

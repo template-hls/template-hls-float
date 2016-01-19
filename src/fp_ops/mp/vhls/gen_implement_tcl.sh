@@ -53,4 +53,4 @@ echo "report_utilization -file ../../${1}_${2}_${3}_impl_utilisation.txt -name u
 echo "report_timing_summary -delay_type min_max -report_unconstrained -check_timing_verbose -max_paths 10 -nworst 3 -input_pins -name timing_1 -file ../../${1}_${2}_${3}_impl_timing.txt"
 
 echo "write_checkpoint -force ../../${1}_${2}_${3}_impl_checkpoint.dcp"
-        
+

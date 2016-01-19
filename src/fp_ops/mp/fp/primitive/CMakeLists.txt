@@ -1,4 +1,7 @@
 
+configure_file(fp_add_native_5_10.cpp fp_add_native_5_10.cpp COPYONLY)
+configure_file(fp_mul_native_5_10.cpp fp_mul_native_5_10.cpp COPYONLY)
+configure_file(fp_div_native_5_10.cpp fp_div_native_5_10.cpp COPYONLY)
 
 configure_file(fp_add_native_8_23.cpp fp_add_native_8_23.cpp COPYONLY)
 configure_file(fp_add_native_nodsp_8_23.cpp fp_add_native_nodsp_8_23.cpp COPYONLY)
@@ -57,16 +60,16 @@ add_executable(fp_primitive_build_main build_main.cpp
     fp_mul_native_8_23.cpp
     fp_add_native_8_23.cpp
     fp_div_native_8_23.cpp
-    
+
     fp_mul_native_11_52.cpp
     fp_add_native_11_52.cpp
     fp_div_native_11_52.cpp
-    
+
     fp_mul_flopoco_8_23.cpp
     fp_add_flopoco_single_8_23.cpp
     fp_add_flopoco_dual_8_23.cpp
         fp_div_flopoco_8_23.cpp
-    
+
         fp_add_ieee_on_flopoco_8_23.cpp
         fp_mul_ieee_on_flopoco_8_23.cpp
         fp_div_ieee_on_flopoco_8_23.cpp
