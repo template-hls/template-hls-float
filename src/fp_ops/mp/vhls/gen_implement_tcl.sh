@@ -6,7 +6,8 @@
 
 # The actual project name will be ${1}_${2}_${3}
 
-echo "create_project -force ${1}_${2}_${3}_impl ${1}_${2}_${3}_impl -part xc7z020clg484-1"
+#echo "create_project -force ${1}_${2}_${3}_impl ${1}_${2}_${3}_impl -part xc7z020clg484-1"
+echo "create_project -force ${1}_${2}_${3}_impl ${1}_${2}_${3}_impl -part xc7vx330tffg1157-3"
 
 echo "add_files ../s/${1}_${2}/sim/syn/vhdl"
 
@@ -25,7 +26,11 @@ echo "}"
 echo "set period [expr [mhz2ns $2] / $3 ]"
 
 echo "synth_design -name synth_1"
-echo "create_clock -period \${period} -name ap_clk [get_ports ap_clk]"
+echo "if {[string match \"*flopnat*\" \"${1}\"]} {"
+echo "     create_clock -period \${period} -name ap_clk [get_ports clk]"
+echo "} else {"
+echo "     create_clock -period \${period} -name ap_clk [get_ports ap_clk]"
+echo "}"
 # -waveform {0.000 [expr \${period} / 2.0 ] } [get_ports ap_clk]
 
 echo "set constr_dir $1_$2_$3/constr"
@@ -42,15 +47,15 @@ echo "set_property IOB FALSE [all_outputs]"
 echo "set_property IOB FALSE [all_inputs]"
 
 echo "synth_design -name synth_1"
-echo "report_utilization -file ../../${1}_${2}_${3}_synth_utilisation.txt -name utilization_1"
+echo "report_utilization -file ${1}_${2}_${3}_synth_utilisation.txt -name utilization_1"
 
 echo "opt_design"
-echo "report_utilization -file ../../${1}_${2}_${3}_opt_utilisation.txt -name utilization_1"
+echo "report_utilization -file ${1}_${2}_${3}_opt_utilisation.txt -name utilization_1"
 
 echo "place_design"
 echo "route_design"
-echo "report_utilization -file ../../${1}_${2}_${3}_impl_utilisation.txt -name utilization_1"
-echo "report_timing_summary -delay_type min_max -report_unconstrained -check_timing_verbose -max_paths 10 -nworst 3 -input_pins -name timing_1 -file ../../${1}_${2}_${3}_impl_timing.txt"
+echo "report_utilization -file ${1}_${2}_${3}_impl_utilisation.txt -name utilization_1"
+echo "report_timing_summary -delay_type min_max -report_unconstrained -check_timing_verbose -max_paths 10 -nworst 3 -input_pins -name timing_1 -file ${1}_${2}_${3}_impl_timing.txt"
 
-echo "write_checkpoint -force ../../${1}_${2}_${3}_impl_checkpoint.dcp"
+#echo "write_checkpoint -force ../../${1}_${2}_${3}_impl_checkpoint.dcp"
 

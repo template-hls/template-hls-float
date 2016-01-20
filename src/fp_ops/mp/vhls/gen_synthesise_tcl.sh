@@ -15,7 +15,7 @@ echo "puts \"${CPPFLAGS}\""
 
 echo "open_project -reset $1_$2"
 echo "open_solution -reset sim"
-echo "set_part zynq"
+echo "set_part {xc7vx330tffg1157-3}"
 echo "create_clock -period $2"
 echo "config_schedule -verbose -effort high"
 echo "config_interface -register_io scalar_all"
