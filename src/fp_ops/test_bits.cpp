@@ -57,7 +57,7 @@ void test_bits()
         mpz_set_ui(tmp1, 1);
         mpz_mul_2exp(tmp1, tmp1, i);
         
-        mpfr_fprintf(stderr, "ref=%Zd, got=%Zd\n", tmp1, tmp2);
+        mpfr_fprintf(stderr, "i=%d, ref=%Zd, got=%Zd\n", i, tmp1, tmp2);
         
         assert_bool(!mpz_cmp(tmp1, tmp2));
         
@@ -74,6 +74,42 @@ void test_bits()
         assert_fw_uint( x == one70 );
         var70=var70+var70;
     }
+    
+    
+    
+        fw_uint<120> one120(1);
+    auto var120=one120;
+    for(int i=0; i<120; i++){
+        auto x=(var120>>i);
+        assert_fw_uint( x == one120 );
+        
+        var120.to_mpz_t(tmp2);
+        mpz_set_ui(tmp1, 1);
+        mpz_mul_2exp(tmp1, tmp1, i);
+        
+        mpfr_fprintf(stderr, "i=%d, ref=%Zd, got=%Zd\n", i, tmp1, tmp2);
+        
+        assert_bool(!mpz_cmp(tmp1, tmp2));
+        
+        fw_uint<120> y(tmp1);
+        assert_bool(!mpz_cmp(tmp1,tmp2));
+        
+        var120=var120<<1;
+    }
+    
+    one120=fw_uint<120>(1);
+    var120=one120;
+    for(int i=0; i<120; i++){
+        auto x=(var120>>i);
+        assert_fw_uint( x == one120 );
+        var120=var120+var120;
+    }
+    
+    assert_fw_uint( concat(og<16>(),og<16>()) == og<32>() );
+    assert_fw_uint( concat(og<32>(),og<32>()) == og<64>() );
+    assert_fw_uint( concat(og<64>(),og<64>()) == og<128>() );
+
+    std::cerr<< concat(thls::fw_uint<3>(0b010),thls::og<11>(),thls::og<52>())<<"\n";
     
     mpz_clear(tmp1);
     mpz_clear(tmp2);

@@ -6,6 +6,8 @@
 #include "thls/tops/policy_test.hpp"
 #include "thls/tops/fp_flopoco.hpp"
 
+#include "thls/tops/fp_convert.hpp"
+
 #include "thls/tops/fp_flopoco_mul_v1.hpp"
 #include "thls/tops/fp_flopoco_add_dual_v1.hpp"
 #include "thls/tops/fp_flopoco_add_single_v1.hpp"
@@ -20,32 +22,59 @@ namespace thls {
 
         raw_t raw;
 
-        fp_flopoco_wrapper() { }
+        THLS_INLINE fp_flopoco_wrapper() { }
 
-        fp_flopoco_wrapper(const raw_t &x)
+        THLS_INLINE fp_flopoco_wrapper(const raw_t &x)
                 : raw(x) { }
+        
+/*                
+        fp_flopoco_wrapper(float x, typename std::enable_if<wE==8&&wF==23>::type* = 0)
+            : raw( *(uint32_t*)&x ) 
+        {}
+        
+        fp_flopoco_wrapper(double x, typename std::enable_if<wE==11&&wF==52>::type* = 0)
+            : raw( *(uint64_t*)&x ) 
+        {}
+        
+        operator float(typename std::enable_if<wE==8&&wF==23>::type* = 0) const
+        {
+            uint32_t x=raw.to_uint64();
+            return *(float*)&x;
+        }
+        
+        operator double(typename std::enable_if<wE==11&&wF==52>::type* = 0) const
+        {
+            uint64_t x=raw.to_uint64();
+            return *(double*)&x;
+        }
+        */
+            
+        THLS_INLINE fp_flopoco_wrapper operator*(const fp_flopoco_wrapper &b) const { return mul<wE, wF>(raw, b.raw); }
 
-        fp_flopoco_wrapper operator*(const fp_flopoco_wrapper &b) const { return mul<wE, wF>(raw, b.raw); }
+        THLS_INLINE fp_flopoco_wrapper operator+(const fp_flopoco_wrapper &b) const { return add_dual<wE, wF>(raw, b.raw); }
 
-        fp_flopoco_wrapper operator+(const fp_flopoco_wrapper &b) const { return add_dual<wE, wF>(raw, b.raw); }
-
-        fp_flopoco_wrapper operator/(
+        THLS_INLINE fp_flopoco_wrapper operator/(
                 const fp_flopoco_wrapper &b) const {
             return div<wE,wF>(raw,b.raw);
         }
+        
+        THLS_INLINE fp_flopoco_wrapper operator*=(const fp_flopoco_wrapper &b)
+        { raw = mul<wE,wF>(raw, b.raw); return *this; }
 
+        THLS_INLINE fp_flopoco_wrapper operator+=(const fp_flopoco_wrapper &b)
+        { raw = add_dual<wE,wF>(raw, b.raw); return *this; }
 
-        bool operator<(const fp_flopoco_wrapper &b) const { return less_than(raw, b.raw).to_bool(); }
+        THLS_INLINE bool operator<(const fp_flopoco_wrapper &b) const { return less_than(raw, b.raw).to_bool(); }
 
-        bool operator<=(const fp_flopoco_wrapper &b) const { return less_than_equal(raw, b.raw).to_bool(); }
+        THLS_INLINE bool operator<=(const fp_flopoco_wrapper &b) const { return less_than_equal(raw, b.raw).to_bool(); }
 
-        bool operator==(const fp_flopoco_wrapper &b) const { return equal(raw, b.raw).to_bool(); }
+        THLS_INLINE bool operator==(const fp_flopoco_wrapper &b) const { return equal(raw, b.raw).to_bool(); }
 
-        bool operator>=(const fp_flopoco_wrapper &b) const { return greater_than_equal(raw, b.raw).to_bool(); }
+        THLS_INLINE bool operator>=(const fp_flopoco_wrapper &b) const { return greater_than_equal(raw, b.raw).to_bool(); }
 
-        bool operator>(const fp_flopoco_wrapper &b) const { return greater_than(raw, b.raw).to_bool(); }
+        THLS_INLINE bool operator>(const fp_flopoco_wrapper &b) const { return greater_than(raw, b.raw).to_bool(); }
 
-        bool operator!=(const fp_flopoco_wrapper &b) const { return not_equal(raw, b.raw).to_bool(); }
+        THLS_INLINE bool operator!=(const fp_flopoco_wrapper &b) const { return not_equal(raw, b.raw).to_bool(); }
     };
 
 }; // thls
@@ -143,7 +172,20 @@ struct policy_flopoco {
 
     static void to_mpfr(mpfr_t dst, value_t x)
     { x.raw.get(dst); }
-
+    /*
+    static value_t from_float(float x, typename std::enable_if<wE==8&&wF==23>::type* = 0)
+    {
+        uint32_t v=*(uint32_t*)&x;
+        return value_t(fw_uint<32>(v));
+    }
+    
+    static float to_float(const value_t &x, typename std::enable_if<wE==8&&wF==23>::type* = 0)
+    {
+        uint32_t v=x.raw.bits.to_uint64();
+        return *(float*)&v;
+    }
+    */
+    
     static void ref_add(mpfr_t dst, mpfr_t a, mpfr_t b)
     {
         auto emin=mpfr_get_emin(), emax=mpfr_get_emax();
@@ -183,6 +225,46 @@ struct policy_flopoco {
         mpfr_set_emax(emax);
     }
 };
+
+
+
+template<int wE, int wF, convert_policy TPolicy>
+struct to_impl<fp_flopoco_wrapper <wE, wF>,TPolicy,float>
+{
+    static THLS_INLINE fp_flopoco_wrapper <wE, wF> go(const float &src)
+    {
+        // TODO : Is there a bug here todo with IEEE denormals?
+        static_assert( (TPolicy&(allow_overflow|allow_underflow)) || (wE>=8), "Conversion could cause under/over-flow" );
+        static_assert( (TPolicy&(allow_precision_loss)) || (wF>=23), "Conversion could cause precision loss" );
+        
+        fw_uint<32> bits( *(uint32_t*)&src );
+        
+        fp_ieee<8,23> ieee(bits);
+        fp_flopoco<wE,wF> res;
+        convert(res,ieee);
+        
+        return res;
+    }
+};
+
+template<int wE, int wF, convert_policy TPolicy>
+struct to_impl<float,TPolicy,fp_flopoco_wrapper <wE, wF>>
+{
+    static THLS_INLINE float go(const fp_flopoco_wrapper <wE, wF>  &src)
+    {
+        // TODO : Is there a bug here todo with IEEE denormals?
+        static_assert( (TPolicy&(allow_overflow|allow_underflow)) || (wE<=8), "Conversion could cause under/over-flow" );
+        static_assert( (TPolicy&(allow_precision_loss)) || (wF<=23), "Conversion could cause precision loss." );
+                
+        fp_ieee<8,23> res;
+        convert(res,src.raw);
+        
+        uint32_t bits=res.bits.to_uint64();
+        
+        return *(float*)&bits;
+    }
+};
+
 
 }; // thls
 

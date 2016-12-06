@@ -13,10 +13,32 @@
 
 namespace thls
 {
+    
+enum convert_policy
+{
+    allow_overflow = 0x1,
+    allow_underflow = 0x2,
+    allow_precision_loss = 0x4,
+    allow_total_loss = 0x8
+};
+
+template<class TDst,convert_policy TPolicy,class TSrc>
+struct to_impl
+{
+    static TDst go(const TSrc &src);
+};
+
+template<class TDst,convert_policy TPolicy = (convert_policy)0,class TSrc>
+TDst to(const TSrc &src)
+{
+    return to_impl<TDst,TPolicy,TSrc>::go(src);
+}
+
 
 struct policy_concept {
     typedef double value_t;
-
+       
+    
     static value_t from_mpfr(mpfr_t x, bool allowOverUnderFlow = false) {
         double v = mpfr_get_d(x, MPFR_RNDN);
         if (mpfr_cmp_d(x, v)) {
@@ -95,6 +117,33 @@ struct policy_concept {
         return i;
     }
 };
+
+template<class T, convert_policy TPolicy>
+struct to_impl<T,TPolicy,T>
+{
+    static T go(const T &src, convert_policy rtPolicy=TPolicy)
+    { return src; }
+};
+
+template<convert_policy TPolicy>
+struct to_impl<float,TPolicy,double>
+{
+    static float go(const double &src, convert_policy rtPolicy=TPolicy)
+    {
+        static_assert(TPolicy&(allow_overflow|allow_underflow|allow_precision_loss), "Conversion could violate constraints");
+        return src;
+    }
+};
+
+template<convert_policy TPolicy>
+struct to_impl<double,TPolicy,float>
+{
+    static double go(const float &src, convert_policy rtPolicy=TPolicy)
+    {
+        return src;
+    }
+};
+
 
 
 template<class TPolicy>

@@ -21,12 +21,16 @@ struct fp_flopoco
     enum{ exp_bits = ExpBits };
     enum{ frac_bits = FracBits };
 
-    THLS_CONSTEXPR fp_flopoco()
+    THLS_INLINE THLS_CONSTEXPR fp_flopoco()
         : bits()
     {}
 
-    THLS_CONSTEXPR fp_flopoco(const fw_uint<3+ExpBits+FracBits> &_bits)
+    THLS_INLINE THLS_CONSTEXPR fp_flopoco(const fw_uint<3+ExpBits+FracBits> &_bits)
         : bits(_bits)
+    {}
+    
+    THLS_INLINE THLS_CONSTEXPR fp_flopoco(const fw_uint<2> _flags, const fw_uint<1> &_sign, const fw_uint<ExpBits> _exp, const fw_uint<FracBits> &_frac)
+        : bits(concat(_flags, _sign, _exp, _frac) )
     {}
 
 #ifndef THLS_SYNTHESIS
@@ -49,20 +53,20 @@ struct fp_flopoco
 
     fw_uint<3+ExpBits+FracBits> bits;
 
-    fw_uint<2> get_flags() const
+    THLS_INLINE fw_uint<2> get_flags() const
     { return get_bits<ExpBits+FracBits+2,ExpBits+FracBits+1>(bits); }
 
-    fw_uint<1> get_sign() const
+    THLS_INLINE fw_uint<1> get_sign() const
     { return get_bit<ExpBits+FracBits>(bits); }
 
-    fw_uint<ExpBits> get_exp_bits() const
+    THLS_INLINE fw_uint<ExpBits> get_exp_bits() const
     { return get_bits<ExpBits+FracBits-1,FracBits>(bits); }
 
-    fw_uint<FracBits> get_frac_bits() const
+    THLS_INLINE fw_uint<FracBits> get_frac_bits() const
     { return get_bits<FracBits-1,0>(bits); }
 
     //! Gets the concatenation of the exp(high) and frac(lo) bits
-    fw_uint<ExpBits+FracBits> get_exp_frac_bits() const
+    THLS_INLINE fw_uint<ExpBits+FracBits> get_exp_frac_bits() const
     { return get_bits<ExpBits+FracBits-1,0>(bits); }
 
     //! Gets the concatenation of the flags(high), exp(mid) and frac(lo) bits
@@ -70,11 +74,11 @@ struct fp_flopoco
         sign, but you need to be careful about the multiple zeros and multiple
         infinities.
     */
-    fw_uint<2+ExpBits+FracBits> get_flags_exp_frac_bits() const
+    THLS_INLINE fw_uint<2+ExpBits+FracBits> get_flags_exp_frac_bits() const
     { return concat(get_flags(),get_exp_frac_bits()); }
 
     /*! Returns a code such that there is a total ordering on classes (NaN,-Inf,-Norm,Zero,+Norm,+Inf) */
-    fw_uint<3> get_equality_class() const
+    THLS_INLINE fw_uint<3> get_equality_class() const
     {
         auto sf=get_bits<ExpBits+FracBits+2,ExpBits+FracBits>(bits);
         return select(
@@ -93,41 +97,41 @@ struct fp_flopoco
         );
     }
 
-    fw_uint<1> is_zero() const
+    THLS_INLINE fw_uint<1> is_zero() const
     { return get_flags()==fw_uint<2>(0b00); }
 
-    fw_uint<1> is_normal() const
+    THLS_INLINE fw_uint<1> is_normal() const
     { return get_flags()==fw_uint<2>(0b01); }
 
-    fw_uint<1> is_inf() const
+    THLS_INLINE fw_uint<1> is_inf() const
     { return get_flags()==fw_uint<2>(0b10); }
 
-    fw_uint<1> is_nan() const
+    THLS_INLINE fw_uint<1> is_nan() const
     { return get_flags()==fw_uint<2>(0b11); }
 
-    fw_uint<1> is_positive() const
+    THLS_INLINE fw_uint<1> is_positive() const
     { return get_sign()==fw_uint<1>(0b0); }
 
-    fw_uint<1> is_negative() const
+    THLS_INLINE fw_uint<1> is_negative() const
     { return get_sign()==fw_uint<1>(0b1); }
 
 
-    fw_uint<1> is_pos_normal() const
+    THLS_INLINE fw_uint<1> is_pos_normal() const
     { return is_positive() && is_normal(); }
 
-    fw_uint<1> is_neg_normal() const
+    THLS_INLINE fw_uint<1> is_neg_normal() const
     { return is_negative() && is_normal(); }
 
-    fw_uint<1> is_pos_zero() const
+    THLS_INLINE fw_uint<1> is_pos_zero() const
     { return is_positive() && is_zero(); }
 
-    fw_uint<1> is_neg_zero() const
+    THLS_INLINE fw_uint<1> is_neg_zero() const
     { return is_negative() && is_zero(); }
 
-    fw_uint<1> is_pos_inf() const
+    THLS_INLINE fw_uint<1> is_pos_inf() const
     { return is_positive() && is_inf(); }
 
-    fw_uint<1> is_neg_inf() const
+    THLS_INLINE fw_uint<1> is_neg_inf() const
     { return is_negative() && is_inf(); }
 
 
@@ -140,7 +144,7 @@ struct fp_flopoco
     /*! \note This considers all nans to be equal, and considers -0 and
         +0 to be non-equal. It is intended to check
         that two numbers represent the same thing, not for use in maths. */
-    fw_uint<1> equals(const fp_flopoco &o) const
+    THLS_INLINE fw_uint<1> equals(const fp_flopoco &o) const
     {
         return select(
             get_flags()!=o.get_flags(),
@@ -306,7 +310,7 @@ namespace std
 namespace thls{
 
 template<int ExpBits,int FracBits>
-fp_flopoco<ExpBits,FracBits> nextup(const fp_flopoco<ExpBits,FracBits> &x)
+THLS_INLINE fp_flopoco<ExpBits,FracBits> nextup(const fp_flopoco<ExpBits,FracBits> &x)
 {
     typedef std::numeric_limits<fp_flopoco<ExpBits,FracBits>> traits;
     typedef fp_flopoco<ExpBits,FracBits> fp_t;
@@ -342,7 +346,7 @@ fp_flopoco<ExpBits,FracBits> nextup(const fp_flopoco<ExpBits,FracBits> &x)
 }
 
 template<int ExpBits,int FracBits>
-fp_flopoco<ExpBits,FracBits> nextdown(const fp_flopoco<ExpBits,FracBits> &x)
+THLS_INLINE fp_flopoco<ExpBits,FracBits> nextdown(const fp_flopoco<ExpBits,FracBits> &x)
 {
     typedef std::numeric_limits<fp_flopoco<ExpBits,FracBits>> traits;
     typedef fp_flopoco<ExpBits,FracBits> fp_t;
@@ -380,7 +384,7 @@ fp_flopoco<ExpBits,FracBits> nextdown(const fp_flopoco<ExpBits,FracBits> &x)
 
 
 template<int ExpBits,int FracBits>
-fp_flopoco<ExpBits,FracBits> nextafter(const fp_flopoco<ExpBits,FracBits> &x, double y)
+THLS_INLINE fp_flopoco<ExpBits,FracBits> nextafter(const fp_flopoco<ExpBits,FracBits> &x, double y)
 {
     if(y==INFINITY){
         return nextup(x);
@@ -428,24 +432,24 @@ fp_flopoco<ExpBits,FracBits>::fp_flopoco(mpfr_t x, bool allowUnderOrOverflow)
 			mpz_mul_si(fracBits, fracBits, -1);
         }
 
-        //mpfr_fprintf(stderr, "x=%Rg, e=%d, frac=0x%Zx\n", x, e, fracBits);
+        mpfr_fprintf(stderr, "x=%Rg, e=%d, frac=0x%Zx\n", x, e, fracBits);
 
         // Check for explicit bit
         assert(mpz_tstbit(fracBits, FracBits));
         // Clear the explicit bit
         mpz_clrbit(fracBits,FracBits);
 
-        //mpfr_fprintf(stderr, "           frac=0x%Zx\n",fracBits);
+        mpfr_fprintf(stderr, "           frac=0x%Zx\n",fracBits);
 
         e=e+FracBits; // Actual exponent
 
-        //mpfr_fprintf(stderr, "   2^%d * (2^%d + %Zd) / 2^(%d)\n", e, FracBits, fracBits, FracBits);
+        mpfr_fprintf(stderr, "   2^%d * (2^%d + %Zd) / 2^(%d)\n", e, FracBits, fracBits, FracBits);
 
         fw_uint<2> flags(0b01);
         fw_uint<1> sign(negative);
         fw_uint<ExpBits> expnt;
         fw_uint<FracBits> frac( fracBits );
-        //std::cerr<<"frac.bits = "<<frac.bits<<", mask="<<frac.MASK<<"\n";
+        std::cerr<<"frac.bits = "<<frac.bits<<", mask="<<frac.MASK()<<"\n";
 
 		mpz_clear(fracBits);
 
@@ -644,7 +648,7 @@ std::string fp_flopoco<ExpBits,FracBits>::str() const
 
         fw_uint<ExpBits> expnt=get_bits<ExpBits+FracBits-1,FracBits>(bits);
         fw_uint<FracBits> frac=get_bits<FracBits-1,0>(bits);
-        acc<<" e="<<expnt<<"="<<(expnt.to_int()- (1<<(ExpBits-1))+1);
+        acc<<" e="<<expnt<<"="<<(expnt.to_int()- (1<<(ExpBits-1))+1)<<", f="<<frac;
     }else if( (flags==0b10).to_bool() ){
         acc<<select(negative==1, "-inf" , "+inf");
     }else{

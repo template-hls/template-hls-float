@@ -75,6 +75,8 @@ add_executable(fp_primitive_build_main build_main.cpp
         fp_div_ieee_on_flopoco_8_23.cpp
 
         )
+        
+target_link_libraries(fp_primitive_build_main stdc++)
 
 # The vivado top-levels have pragmas on them
 target_compile_options(fp_primitive_build_main PUBLIC "-Wno-unknown-pragmas" )

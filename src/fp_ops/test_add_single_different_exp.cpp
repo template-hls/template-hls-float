@@ -23,8 +23,8 @@ void test_add(const TImpl &impl, const TTypeA &fa, const TTypeB &fb)
 	
 	if(!fref.equals(fgot).to_bool()){
 		mpfr_t refV, gotV;
-		mpfr_init2(refV, TType::frac_bits+1);
-		mpfr_init2(gotV, TType::frac_bits+1);
+		mpfr_init2(refV, TTypeR::frac_bits+1);
+		mpfr_init2(gotV, TTypeR::frac_bits+1);
 		
 		fref.get(refV);
 		fgot.get(gotV);

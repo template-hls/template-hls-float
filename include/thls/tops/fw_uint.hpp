@@ -122,8 +122,6 @@ namespace std{
 
 	#define THLS_CONSTEXPR
 
-	#define HLS_INLINE inline __attribute__((always_inline))
-
 	namespace thls
 	{
 		template<bool b>

@@ -25,19 +25,26 @@ void test1()
     mpfr_set_inf(in, -1);
     traits::neg_infinity().get(out);
     std::cerr<<traits::neg_infinity().str()<<"\n";
-    mpfr_fprintf(stderr, "%Rg\n", out);
+    mpfr_fprintf(stderr, "-inf = %Rg\n", out);
     CHECK(mpfr_equal_p(in,out));
 
     traits::quiet_NaN().get(out);
+    mpfr_fprintf(stderr, "nan = %Rg\n", out);
     CHECK(mpfr_nan_p(out));
 
     // lowest -> -inf
     nextdown(traits::lowest()).get(out);
+    mpfr_fprintf(stderr, "-inf = %Rg\n", out);
     CHECK(mpfr_inf_p(out));
     CHECK(mpfr_sgn(out)<0);
 
     // highest -> +inf
+    traits::max().get(out);
+    std::cerr<<traits::max().str()<<"\n";
+    mpfr_fprintf(stderr, "%Rg\n", out);
     nextup(traits::max()).get(out);
+    std::cerr<<nextup(traits::max()).str()<<"\n";
+    mpfr_fprintf(stderr, "%Rg\n", out);
     CHECK(mpfr_inf_p(out));
     CHECK(mpfr_sgn(out)>0);
 
@@ -46,6 +53,8 @@ void test1()
         mpfr_set_d(in, i, MPFR_RNDN);
 
         thls::fp_flopoco<ExpBits,FracBits> one(in);
+        
+        std::cerr<<"  "<<one.str()<<"\n";
 
         one.get(out);
 
@@ -213,6 +222,15 @@ int main()
         test_single();
         
         test<8,23>();
+        test<8,24>();
+        test<8,25>();
+        test<8,26>();
+        test<8,29>();
+        test<8,30>();
+        test<8,31>();
+        test<8,32>();
+        test<8,33>();
+        test<9,40>();
         test<11,52>();
         test<6,4>();
         

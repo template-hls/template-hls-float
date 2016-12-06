@@ -44,13 +44,143 @@ namespace detail
         static const int bits_w = 64;
     };
     
-    // TODO : How do we detect support for 128 bit?
+    #if defined(__SIZEOF_INT128__) && __SIZEOF_INT128__==16    
+    // Detect support for 128 bit
     template<>
     struct bits_holder<65>
     {
         typedef unsigned __int128 bits_t;
         static const int bits_w = 128;
     };
+    #else
+    #warning "Falling back on composite 128-bit number (pair of 64-bit). Strongly suggest finding a compiler with native 128-bit support."
+
+    template<>
+    struct bits_holder<65>
+    {
+        struct bits_t{
+            uint64_t hi, lo;
+    
+            THLS_INLINE constexpr bits_t()
+                : hi(0)
+                , lo(0)
+            {}
+    
+            THLS_INLINE constexpr bits_t(const bits_t &o)
+                : hi(o.hi)
+                , lo(o.lo)
+            {}
+    
+            THLS_INLINE explicit constexpr bits_t(int x)
+                : hi(0)
+                , lo(x)
+            {}
+    
+            THLS_INLINE constexpr bits_t(uint64_t _lo)
+                : hi(0)
+                , lo(_lo)
+            {}
+        
+            THLS_INLINE constexpr bits_t(uint32_t _lo)
+                : hi(0)
+                , lo(_lo)
+            {}
+            
+            THLS_INLINE constexpr bits_t(uint64_t _lo, uint64_t _hi)
+                : hi(_hi)
+                , lo(_lo)
+            {}
+            
+            THLS_INLINE bits_t &operator=(const bits_t &o)
+            { hi=o.hi; lo=o.lo; return *this; }
+            
+            THLS_INLINE bits_t &operator=(uint32_t lo)
+            { hi=0; lo=lo; return *this; }
+            
+            THLS_INLINE bits_t &operator=(uint64_t lo)
+            { hi=0; lo=lo; return *this; }
+
+    
+            THLS_INLINE constexpr operator uint64_t() const
+            {
+                return lo;
+            }
+    
+            THLS_INLINE constexpr operator uint32_t() const
+            {
+                return lo;
+            }
+           
+            THLS_INLINE constexpr bits_t operator+(const bits_t &o) const
+            { return bits_t(
+                lo+o.lo,
+                hi+o.hi + (lo+o.lo < lo)
+            ); }
+            
+            THLS_INLINE constexpr bits_t operator-(const bits_t &o) const
+            { return bits_t(
+                lo-o.lo,
+                hi-o.hi - (lo-o.lo > lo)
+            ); }
+            
+            private:
+            
+            THLS_INLINE constexpr bits_t m32(uint32_t a, uint32_t b)
+            { return bits_t(a*b, 0); }
+            
+            THLS_INLINE constexpr bits_t m64(uint64_t a, uint64_t b)
+            { return m32(a,b) + (m32(a>>32,b)<<32) + (m32(a,b>>32)<<32) + (m32(a>>32,b>>32)<<64); }
+            
+            public:
+            
+            THLS_INLINE constexpr bits_t operator*(const bits_t &o) const
+            {
+                return m64(lo,o.lo) + (m64(lo,o.hi)<<64) + (m64(hi,o.lo)<<64);
+            }
+                    
+            THLS_INLINE constexpr bits_t operator|(const bits_t &o) const
+            { return bits_t(lo|o.lo, hi|o.hi);  }
+
+            THLS_INLINE constexpr bits_t operator&(const bits_t &o) const
+            { return bits_t(lo&o.lo, hi&o.hi);  }
+            
+            THLS_INLINE constexpr bits_t operator^(const bits_t &o) const
+            { return bits_t(lo^o.lo, hi^o.hi);  }
+
+            THLS_INLINE constexpr bits_t operator>>(int s) const
+            { return
+                s==0 ? *this :
+                s<64 ? bits_t( (lo>>s) | (hi<<(64-s)) , hi>>s)
+                     : bits_t( (hi>>(s-64)), 0 );
+            }
+            
+            THLS_INLINE constexpr bits_t operator<<(int s) const
+            { return
+                s==0 ? *this :
+                s<64 ? bits_t( (lo<<s) , (hi<<s) | (lo>>(64-s)) )
+                     : bits_t( 0, (lo<<(s-64)) );
+            }
+            
+            THLS_INLINE constexpr bool operator==(const bits_t &o) const
+            { return lo==o.lo && hi==o.hi; }
+            
+            THLS_INLINE constexpr bool operator<=(const bits_t &o) const
+            { return hi<o.hi ? true : (hi>o.hi ? false : lo<=o.lo); }
+
+            THLS_INLINE constexpr bool operator>=(const bits_t &o) const
+            { return hi>o.hi ? true : (hi<o.hi ? false : lo>=o.lo); }
+
+            THLS_INLINE constexpr bool operator>(const bits_t &o) const
+            { return hi>o.hi ? true : (hi<o.hi ? false : lo>o.lo); }
+
+            THLS_INLINE constexpr bool operator<(const bits_t &o) const
+            { return hi<o.hi ? true : (hi>o.hi ? false : lo<o.lo); }
+
+        };
+        
+        static const int bits_w = 128;
+    };
+    #endif
     
     template<>
     struct bits_holder<129>
@@ -70,10 +200,10 @@ struct fw_uint
     static const int width=W;
     
     typedef typename detail::bits_holder<width>::bits_t bits_t;
-    static const int bits_w = detail::bits_holder<width>::bits_w;
+    static constexpr int bits_w = detail::bits_holder<width>::bits_w;
 
-    static const bits_t ALL_ONES =  bits_t(0)-bits_t(1);
-	static const bits_t MASK = (W <= 0) ? 0ull : (ALL_ONES >> (W < 0 ? 0 : (bits_w - W)));
+    static constexpr bits_t ALL_ONES() { return bits_t(0)-bits_t(1); }
+	static constexpr bits_t MASK() { return (W <= 0) ? bits_t(0) : (ALL_ONES() >> (W < 0 ? 0 : (bits_w - W))); }
 
     bits_t bits;
 
@@ -100,16 +230,16 @@ struct fw_uint
         assert(W>=0);
 
         assert(v>=0); // must be non-negative
-        assert(bits_t(v) <= MASK); // Must be in range
+        assert(bits_t(v) <= MASK()); // Must be in range
     }
     
     THLS_INLINE explicit fw_uint(bits_t v)
-        : bits(v & MASK)
+        : bits(v & MASK())
     {   
         assert(W>=0);
 
-        assert(v>=0); // must be non-negative
-        assert(v <= MASK); // Must be in range
+        assert(v>=bits_t(0)); // must be non-negative
+        assert(v <= MASK()); // Must be in range
     }
 #ifndef THLS_SYNTHESIS
     explicit fw_uint(const char *value)
@@ -149,8 +279,8 @@ struct fw_uint
             std::stringstream tmp;
             tmp<<std::string(value);
             tmp>>bits;
-            assert( bits<= MASK);
-            bits=bits&MASK;
+            assert( bits<= MASK());
+            bits=bits&MASK();
         }
     }
 #endif
@@ -163,6 +293,7 @@ struct fw_uint
 
 #ifndef THLS_SYNTHESIS
     explicit fw_uint(mpz_t x)
+        : bits(0)
     {
         assert(W>=0);
 
@@ -171,45 +302,42 @@ struct fw_uint
         }
         mpz_t tmp;
         mpz_init_set(tmp, x);
-        if(sizeof(unsigned int)*8 <= W){
-            bits=mpz_get_ui(x);
-        }else{
-            bits=0;
-            int offset=0;
-            while(offset<W){
-                mpz_set(tmp,x);
-                mpz_tdiv_q_2exp(tmp, tmp, offset);
-                mpz_tdiv_r_2exp(tmp, tmp, 32);
-                uint32_t limb=mpz_get_ui(tmp);
-                bits=bits | (bits_t(limb)<<offset);
-                offset+=32;
-            }
+
+        int offset=0;
+        while(offset<W){
+            mpz_set(tmp,x);
+            mpz_tdiv_q_2exp(tmp, tmp, offset);
+            mpz_tdiv_r_2exp(tmp, tmp, 32);
+            uint32_t limb=mpz_get_ui(tmp);
+            bits=bits | (bits_t(limb)<<offset);
+            offset+=32;
         }
+
         mpz_clear(tmp);
 
-        assert(bits<=MASK);
-        bits=bits&MASK;
+        assert(bits<=MASK());
+        bits=bits&MASK();
     }
 #endif
 
     THLS_INLINE fw_uint<W> operator+(const fw_uint<W> &o) const
     {
-        return fw_uint<W>( (bits+o.bits) & MASK );
+        return fw_uint<W>( (bits+o.bits) & MASK() );
     }
 
     THLS_INLINE fw_uint operator+(int b) const
     {
-        return fw_uint( bits_t(bits+b) & MASK);
+        return fw_uint( bits_t(bits+b) & MASK());
     }
 
     THLS_INLINE fw_uint<W> operator-(const fw_uint<W> &o) const
     {
-        return fw_uint<W>( (bits-o.bits) & MASK);
+        return fw_uint<W>( (bits-o.bits) & MASK());
     }
 
     THLS_INLINE fw_uint operator-(int b) const
     {
-        return fw_uint( bits_t(bits-b) & MASK);
+        return fw_uint( bits_t(bits-b) & MASK());
     }
 
     template<int O>
@@ -278,7 +406,7 @@ struct fw_uint
     // numeric_std says result width is size of the LHS
 
     THLS_INLINE fw_uint operator~() const
-    { return fw_uint( bits ^ MASK ); }
+    { return fw_uint( bits ^ MASK() ); }
 
     THLS_INLINE fw_uint operator&(const fw_uint<W> &o) const
     {
@@ -293,24 +421,24 @@ struct fw_uint
 
     THLS_INLINE fw_uint operator|(const fw_uint<W> &o) const
     {
-        return fw_uint<W>( (bits|o.bits) & MASK );
+        return fw_uint<W>( (bits|o.bits) & MASK() );
     }
 
     THLS_INLINE fw_uint operator|(int b) const
     {
         assert(b>=0);
-        return fw_uint( bits_t(bits|b) & MASK);
+        return fw_uint( bits_t(bits|b) & MASK());
     }
 
     THLS_INLINE fw_uint operator^(const fw_uint<W> &o) const
     {
-        return fw_uint<W>( (bits^o.bits) & MASK );
+        return fw_uint<W>( (bits^o.bits) & MASK() );
     }
 
     THLS_INLINE fw_uint operator^(int b) const
     {
         assert(b>=0);
-        return fw_uint( bits_t(bits^b) & MASK);
+        return fw_uint( bits_t(bits^b) & MASK());
     }
 
 
@@ -324,7 +452,7 @@ struct fw_uint
     THLS_INLINE fw_uint operator<<(int dist) const
     {
         assert(0<=dist && dist<W);
-        return fw_uint( (bits<<dist) & MASK);
+        return fw_uint( (bits<<dist) & MASK());
     }
 
 #ifndef THLS_SYNTHESIS
@@ -335,7 +463,7 @@ struct fw_uint
             if((0==(i%8))&&(i!=0)){
                 acc="_"+acc;
             }
-            acc=(((bits>>i)&1)?"1":"0")+acc;
+            acc=( ((bits>>i)& bits_t(1))==bits_t(1) ?"1":"0")+acc;
         }
         return "0b"+acc;
     }
@@ -370,7 +498,7 @@ struct fw_uint
         static_assert(sizeof(unsigned long)>=4, "Must have 32-bit or bigger longs");
         int offset=0;
         while(offset<W){
-            uint32_t limb=uint32_t( (bits>>offset)&0xFFFFFFFFull );
+            uint32_t limb=uint32_t( (bits>>offset)&bits_t(0xFFFFFFFFull) );
             mpz_set_ui(tmp, limb);
             mpz_mul_2exp(tmp, tmp, offset);
             mpz_add(res, res, tmp);
@@ -393,7 +521,7 @@ template<int HI,int LO,int W>
 THLS_INLINE fw_uint<HI-LO+1> get_bits(const fw_uint<W> &x)
 {
     typedef typename fw_uint<HI-LO+1>::bits_t bits_t;
-    static const bits_t MASK=fw_uint<HI-LO+1>::MASK;
+    static const bits_t MASK=fw_uint<HI-LO+1>::MASK();
     
     assert( W>HI );
     assert( LO>=0 );

@@ -12,7 +12,7 @@ namespace thls
 /*! \note This considers nans to be uncomparable
 */
 template<int wEA,int wFA,int wEB,int wFB>
-fw_uint<1> equal(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wFB> &b)
+THLS_INLINE fw_uint<1> equal(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wFB> &b)
 {
     static const int wE=thls_ctMax(wEA,wEB);
     static const int wF=thls_ctMax(wFA,wFB);
@@ -34,7 +34,7 @@ fw_uint<1> equal(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wFB> &b)
 }
 
 template<int wEA,int wFA,int wEB,int wFB>
-fw_uint<1> not_equal(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wFB> &b)
+THLS_INLINE fw_uint<1> not_equal(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wFB> &b)
 {
     static const int wE=thls_ctMax(wEA,wEB);
     static const int wF=thls_ctMax(wFA,wFB);
@@ -61,7 +61,7 @@ fw_uint<1> not_equal(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wFB> &b)
 /*! \note This considers nans to be uncomparable
 */
 template<int wEA,int wFA,int wEB,int wFB>
-fw_uint<1> less_than(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wFB> &b)
+THLS_INLINE fw_uint<1> less_than(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wFB> &b)
 {
     static const int wE=thls_ctMax(wEA,wEB);
     static const int wF=thls_ctMax(wFA,wFB);
@@ -90,7 +90,7 @@ fw_uint<1> less_than(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wFB> &b)
 /*! \note This considers nans to be uncomparable
 */
 template<int wEA,int wFA,int wEB,int wFB>
-fw_uint<1> less_than_equal(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wFB> &b)
+THLS_INLINE fw_uint<1> less_than_equal(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wFB> &b)
 {
     static const int wE=thls_ctMax(wEA,wEB);
     static const int wF=thls_ctMax(wFA,wFB);
@@ -116,7 +116,7 @@ fw_uint<1> less_than_equal(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wF
 }
 
 template<int wEA,int wFA,int wEB,int wFB>
-fw_uint<1> greater_than(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wFB> &b)
+THLS_INLINE fw_uint<1> greater_than(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wFB> &b)
 {
     static const int wE=thls_ctMax(wEA,wEB);
     static const int wF=thls_ctMax(wFA,wFB);
@@ -142,7 +142,7 @@ fw_uint<1> greater_than(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wFB> 
 }
 
 template<int wEA,int wFA,int wEB,int wFB>
-fw_uint<1> greater_than_equal(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wFB> &b)
+THLS_INLINE fw_uint<1> greater_than_equal(const fp_flopoco<wEA,wFA> &a, const fp_flopoco<wEB,wFB> &b)
 {
     static const int wE=thls_ctMax(wEA,wEB);
     static const int wF=thls_ctMax(wFA,wFB);

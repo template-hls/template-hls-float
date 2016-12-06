@@ -2,3 +2,4 @@
 /build_*
 *.exe
 *.stackdump
+build_*
