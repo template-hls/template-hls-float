@@ -15,10 +15,11 @@ add_executable_test_with_fw_uint(base test_add_single_different_frac)
 add_executable_test_with_fw_uint(base test_add_single_different_exp)
 add_executable_test_with_fw_uint(base test_add_single_debug)
 
-
 add_executable_test_with_fw_uint(base test_add_single_v2)
 add_executable_test_with_fw_uint(base test_add_single_v3)
 add_executable_test_with_fw_uint(base test_add_single_v4)
+
+add_executable_test_with_fw_uint(base test_fp2fix)
 
 add_executable_test_with_fw_uint(base test_div)
 add_executable_test_with_fw_uint(base test_div_v2)
