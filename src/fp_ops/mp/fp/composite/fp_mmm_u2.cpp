@@ -1,5 +1,5 @@
 template<class T>
-extern T mmm(
+extern void mmm(
     int n,
     const T *a,
     const T *b,
@@ -17,6 +17,4 @@ extern T mmm(
             res[r*n+c]=acc;
         }
     }
-    
-    return acc;
 }

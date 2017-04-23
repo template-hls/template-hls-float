@@ -252,7 +252,16 @@ struct fw_uint
     }
 
     uint64_t to_uint64() const
-    { return (uint64_t)bits; }
+    {   
+        assert(W<=64);
+        return (uint64_t)bits;
+    }
+
+    uint32_t to_uint32() const
+    {
+        assert(W<=32);
+        return (uint32_t)bits;
+    }
 
     bool to_bool() const
     {

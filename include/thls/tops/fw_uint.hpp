@@ -73,8 +73,8 @@
 
 */
 
-#define THLS_INLINE inline __attribute__((always_inline))
-//#define THLS_INLINE
+//#define THLS_INLINE inline __attribute__((always_inline))
+#define THLS_INLINE
 
 /* Error:
  *

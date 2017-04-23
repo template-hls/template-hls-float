@@ -109,7 +109,7 @@ THLS_INLINE fp_flopoco<wER,wFR> mul(const fp_flopoco<wEX,wFX> &x, const fp_flopo
         fw_uint<sigProdSize> sigProdExt = select(norm==1 , concat(get_bits<sigProdSize-2,0>(sigProd) , zg<1>())
                                                          , concat(get_bits<sigProdSize-3,0>(sigProd) , zg<2>()) );
 
-        fw_uint<2+wER+wFR> expSig = concat(expPostNorm , get_bits<sigProdSize-1,sigProdSize-wFR>(sigProdExt));
+        fw_uint<2+wER+wFR> expSig = checked_cast<2+wER+wFR>(concat(expPostNorm , get_bits<sigProdSize-1,sigProdSize-wFR>(sigProdExt)));
 
         fw_uint<1> sticky = get_bit<wFX+wFY+1-wFR>(sigProdExt);
 

@@ -158,6 +158,41 @@ struct fp_flopoco
                 og<1>()
         );
     }
+
+    THLS_INLINE fw_uint<1> within_1ulp(const fp_flopoco &o) const {
+        if (o.is_nan().to_bool()) {
+            return is_nan();
+        }
+        if (is_nan().to_bool()) {
+            return o.is_nan();
+        }
+
+        if (is_zero().to_bool()) {
+            return o.is_zero() || (o.is_normal() && o.get_exp_bits() == 0 && o.get_frac_bits() == 0);
+        }
+        if (o.is_zero().to_bool()) {
+            return is_zero() || (is_normal() && get_exp_bits() == 0 && get_frac_bits() == 0);
+        }
+
+        if ((get_sign() != o.get_sign()).to_bool()){
+            return fw_uint<1>(0);
+        }
+
+        if (is_inf().to_bool()) {
+            return o.is_inf() || (o.is_normal() && o.get_exp_bits() == og<ExpBits>() && o.get_frac_bits() == og<FracBits>());
+        }
+        if (o.is_inf().to_bool()) {
+            return is_inf() || (is_normal() && get_exp_bits() == og<ExpBits>() && get_frac_bits() == og<FracBits>());
+        }
+
+        fw_uint<ExpBits+FracBits> ua=concat(get_exp_bits(),get_frac_bits());
+        fw_uint<ExpBits+FracBits> ub=concat(o.get_exp_bits(),o.get_frac_bits());
+
+        if((ua>ub).to_bool()){
+            std::swap(ua,ub);
+        }
+        return ua+1==ub || ua==ub;
+    }
 };
 
 }; // thls
@@ -432,24 +467,26 @@ fp_flopoco<ExpBits,FracBits>::fp_flopoco(mpfr_t x, bool allowUnderOrOverflow)
 			mpz_mul_si(fracBits, fracBits, -1);
         }
 
-        mpfr_fprintf(stderr, "x=%Rg, e=%d, frac=0x%Zx\n", x, e, fracBits);
+       // mpfr_fprintf(stderr, "x=%Rg, e=%d, frac=0x%Zx\n", x, e, fracBits);
 
         // Check for explicit bit
         assert(mpz_tstbit(fracBits, FracBits));
         // Clear the explicit bit
         mpz_clrbit(fracBits,FracBits);
 
-        mpfr_fprintf(stderr, "           frac=0x%Zx\n",fracBits);
+        //mpfr_fprintf(stderr, "           frac=0x%Zx\n",fracBits);
 
         e=e+FracBits; // Actual exponent
 
-        mpfr_fprintf(stderr, "   2^%d * (2^%d + %Zd) / 2^(%d)\n", e, FracBits, fracBits, FracBits);
+        //mpfr_fprintf(stderr, "   2^%d * (2^%d + %Zd) / 2^(%d)\n", e, FracBits, fracBits, FracBits);
 
         fw_uint<2> flags(0b01);
         fw_uint<1> sign(negative);
         fw_uint<ExpBits> expnt;
         fw_uint<FracBits> frac( fracBits );
-        std::cerr<<"frac.bits = "<<frac.bits<<", mask="<<frac.MASK()<<"\n";
+        //std::cerr<<"frac.bits = "<<frac.bits<<", mask="<<frac.MASK()<<"\n";
+
+        //std::cerr<<"minexpnt = "<<traits::min_exponent<<"\n";
 
 		mpz_clear(fracBits);
 
@@ -620,6 +657,40 @@ template<int ER,int FR,int EA,int FA,int EB,int FB>
 void ref_div(fp_flopoco<ER,FR> &dst, const fp_flopoco<EA,FA> &a, const fp_flopoco<EB,FB> &b)
 {
     dst=ref_div<ER,FR>(a,b);
+}
+
+
+template<int ER,int FR,int EA,int FA,int EB,int FB,int EC,int FC>
+fp_flopoco<ER,FR> ref_fma(const fp_flopoco<EA,FA> &a, const fp_flopoco<EB,FB> &b, const fp_flopoco<EC,FC> &c)
+{
+    mpfr_t ma, mb, mr,mc;
+    mpfr_init2(ma,FA+1);
+    mpfr_init2(mb,FB+1);
+    mpfr_init2(mc,FC+1);
+    mpfr_init2(mr,FR+1);
+
+    a.get(ma);
+    b.get(mb);
+    c.get(mc);
+
+    mpfr_fma(mr,ma,mb,mc,MPFR_RNDN);
+
+    //mpfr_fprintf(stderr, "mpfr : %Rg + %Rg = %Rg\n", ma, mb, mr);
+
+    fp_flopoco<ER,FR> res(mr,true);
+
+    mpfr_clear(ma);
+    mpfr_clear(mb);
+    mpfr_clear(mc);
+    mpfr_clear(mr);
+
+    return res;
+}
+
+template<int ER,int FR,int EA,int FA,int EB,int FB,int EC,int FC>
+void ref_fma(fp_flopoco<ER,FR> &dst, const fp_flopoco<EA,FA> &a, const fp_flopoco<EB,FB> &b, const fp_flopoco<EC,FC> &c)
+{
+    dst=ref_fma<ER,FR>(a,b,c);
 }
 
 

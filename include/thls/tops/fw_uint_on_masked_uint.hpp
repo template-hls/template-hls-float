@@ -23,22 +23,25 @@ namespace thls
 
 namespace detail
 {
-    template<int W>
+    struct init_from_bits
+    {};
+
+    template<int W,int SW=W>
     struct bits_holder
     {
-        typedef typename bits_holder< (W<=0) ? 1 : W-1 >::bits_t bits_t;
-        static const int bits_w = bits_holder< (W<=0) ? 1 : W-1 >::bits_w;
+        typedef typename bits_holder< (W<=0) ? 1 : W-1, SW >::bits_t bits_t;
+        static const int bits_w = bits_holder< (W<=0) ? 1 : W-1, SW >::bits_w;
     };
     
-    template<>
-    struct bits_holder<1>
+    template<int SW>
+    struct bits_holder<1,SW>
     {
         typedef uint32_t bits_t;
         static const int bits_w = 32;
     };
     
-    template<>
-    struct bits_holder<33>
+    template<int SW>
+    struct bits_holder<33,SW>
     {
         typedef uint64_t bits_t;
         static const int bits_w = 64;
@@ -46,8 +49,8 @@ namespace detail
     
     #if defined(__SIZEOF_INT128__) && __SIZEOF_INT128__==16    
     // Detect support for 128 bit
-    template<>
-    struct bits_holder<65>
+    template<int SW>
+    struct bits_holder<65,SW>
     {
         typedef unsigned __int128 bits_t;
         static const int bits_w = 128;
@@ -55,8 +58,8 @@ namespace detail
     #else
     #warning "Falling back on composite 128-bit number (pair of 64-bit). Strongly suggest finding a compiler with native 128-bit support."
 
-    template<>
-    struct bits_holder<65>
+    template<int SW>
+    struct bits_holder<65,SW>
     {
         struct bits_t{
             uint64_t hi, lo;
@@ -94,11 +97,11 @@ namespace detail
             THLS_INLINE bits_t &operator=(const bits_t &o)
             { hi=o.hi; lo=o.lo; return *this; }
             
-            THLS_INLINE bits_t &operator=(uint32_t lo)
-            { hi=0; lo=lo; return *this; }
+            THLS_INLINE bits_t &operator=(uint32_t _lo)
+            { hi=0; lo=_lo; return *this; }
             
-            THLS_INLINE bits_t &operator=(uint64_t lo)
-            { hi=0; lo=lo; return *this; }
+            THLS_INLINE bits_t &operator=(uint64_t _lo)
+            { hi=0; lo=_lo; return *this; }
 
     
             THLS_INLINE constexpr operator uint64_t() const
@@ -181,7 +184,166 @@ namespace detail
         static const int bits_w = 128;
     };
     #endif
-    
+
+#if 0
+        /* Handle everything over 128 bits */
+        template<int SW>
+        struct bits_holder<129,SW>
+        {
+            typedef unsigned __int128 uint128_t;
+
+            enum { N = (SW+63)/64 };
+
+            struct bits_t{
+                uint64_t v[N];
+
+                THLS_INLINE constexpr bits_t()
+                {
+                    std::fill(v,v+N,0);
+                }
+
+                THLS_INLINE constexpr bits_t(const bits_t &o)
+                {
+                    std::copy(o.v,o.v+N,v);
+                }
+
+                THLS_INLINE explicit constexpr bits_t(int x)
+                {
+                    assert(x>0);
+                    v[0]=x;
+                    std::fill(v+1,v+N,0);
+                }
+
+                THLS_INLINE constexpr bits_t(uint64_t x)
+                {
+                    v[0]=x;
+                    std::fill(v+1,v+N,0);
+                }
+
+                THLS_INLINE constexpr bits_t(uint32_t x)
+                {
+                    v[0]=x;
+                    std::fill(v+1,v+N,0);
+                }
+
+                THLS_INLINE bits_t &operator=(const bits_t &o)
+                { std::copy(o.v,o.v+N,v); return *this; }
+
+                THLS_INLINE bits_t &operator=(uint32_t _lo)
+                { v[0]=_lo; std::fill(v+1,v+N,0); return *this; }
+
+                THLS_INLINE bits_t &operator=(uint64_t _lo)
+                { v[0]=_lo; std::fill(v+1,v+N,0); return *this; }
+
+                THLS_INLINE constexpr operator uint64_t() const
+                { return uint64_t(v[0]); }
+
+                THLS_INLINE constexpr operator uint32_t() const
+                { return uint32_t(v[0]); }
+
+                THLS_INLINE constexpr bits_t operator+(const bits_t &o) const
+                {
+                    bits_t res;
+                    uint128_t c=0;
+                    for(unsigned i=0;i<N;i++){
+                        c += v[i]+o.v[i];
+                        res.v[i] = uint64_t(c);
+                        c=c>>64;
+                    }
+                    return res;
+                }
+
+                THLS_INLINE constexpr bits_t operator-(const bits_t &o) const
+                {
+                    bits_t res;
+                    uint128_t c=0;
+                    for(unsigned i=0;i<N;i++){
+                        c += v[i]-o.v[i];
+                        res.v[i] = uint64_t(c);
+                        c=c>>64;
+                    }
+                    return res;
+                }
+
+                THLS_INLINE constexpr bits_t operator*(const bits_t &y) const {
+                    bits_t res;
+                    uint128_t curr=0, next=0;
+                    for (unsigned o = 0; o < N; o++) {
+                        for(int i=0; i<=N; i++){
+                            uint64_t xv=v[i], yv=y.v[i-o];
+                            uint128_t xyv=uint128_t(xv)*uint128_t(yv);
+                            curr+=lo(xyv);
+                            next+=hi(xyv);
+                        }
+                        res.v[o]=lo(curr);
+                        curr=(curr>>64) | (next<<64);
+                        next=next>>64;
+                    }
+                }
+
+                THLS_INLINE constexpr bits_t operator|(const bits_t &o) const
+                {
+                    bits_t res;
+                    for(unsigned i=0; i<N; i++){
+                        res.v[i]=v[i]|o.v[i];
+                    }
+                    return res;
+                }
+
+                THLS_INLINE constexpr bits_t operator&(const bits_t &o) const {
+                    bits_t res;
+                    for (unsigned i = 0; i < N; i++) {
+                        res.v[i] = v[i] & o.v[i];
+                    }
+                    return res;
+                }
+
+                THLS_INLINE constexpr bits_t operator^(const bits_t &o) const {
+                    bits_t res;
+                    for (unsigned i = 0; i < N; i++) {
+                        res.v[i] = v[i] ^ o.v[i];
+                    }
+                    return res;
+                }
+
+                THLS_INLINE constexpr bits_t operator>>(int s) const
+                {
+                    bits_t res;
+                    if(s <= 64*N ){
+
+                    }
+                }
+
+                THLS_INLINE constexpr bits_t operator<<(int s) const
+                { return
+                            s==0 ? *this :
+                            s<64 ? bits_t( (lo<<s) , (hi<<s) | (lo>>(64-s)) )
+                                 : bits_t( 0, (lo<<(s-64)) );
+                }
+
+                THLS_INLINE constexpr bool operator==(const bits_t &o) const
+                { return lo==o.lo && hi==o.hi; }
+
+                THLS_INLINE constexpr bool operator<=(const bits_t &o) const
+                { return hi<o.hi ? true : (hi>o.hi ? false : lo<=o.lo); }
+
+                THLS_INLINE constexpr bool operator>=(const bits_t &o) const
+                { return hi>o.hi ? true : (hi<o.hi ? false : lo>=o.lo); }
+
+                THLS_INLINE constexpr bool operator>(const bits_t &o) const
+                { return hi>o.hi ? true : (hi<o.hi ? false : lo>o.lo); }
+
+                THLS_INLINE constexpr bool operator<(const bits_t &o) const
+                { return hi<o.hi ? true : (hi>o.hi ? false : lo<o.lo); }
+
+            };
+
+            static const int bits_w = 128;
+        };
+
+#endif
+
+
     template<>
     struct bits_holder<129>
     {
@@ -232,8 +394,9 @@ struct fw_uint
         assert(v>=0); // must be non-negative
         assert(bits_t(v) <= MASK()); // Must be in range
     }
+
     
-    THLS_INLINE explicit fw_uint(bits_t v)
+    THLS_INLINE explicit fw_uint(bits_t v, detail::init_from_bits )
         : bits(v & MASK())
     {   
         assert(W>=0);
@@ -322,29 +485,29 @@ struct fw_uint
 
     THLS_INLINE fw_uint<W> operator+(const fw_uint<W> &o) const
     {
-        return fw_uint<W>( (bits+o.bits) & MASK() );
+        return fw_uint<W>( (bits+o.bits) & MASK(), detail::init_from_bits() );
     }
 
     THLS_INLINE fw_uint operator+(int b) const
     {
-        return fw_uint( bits_t(bits+b) & MASK());
+        return fw_uint( bits_t(bits+b) & MASK(), detail::init_from_bits());
     }
 
     THLS_INLINE fw_uint<W> operator-(const fw_uint<W> &o) const
     {
-        return fw_uint<W>( (bits-o.bits) & MASK());
+        return fw_uint<W>( (bits-o.bits) & MASK(), detail::init_from_bits());
     }
 
     THLS_INLINE fw_uint operator-(int b) const
     {
-        return fw_uint( bits_t(bits-b) & MASK());
+        return fw_uint( bits_t(bits-b) & MASK(), detail::init_from_bits());
     }
 
     template<int O>
     THLS_INLINE fw_uint<O+W> operator*(const fw_uint<O> &o) const
     {
         typedef typename fw_uint<O+W>::bits_t res_bits_t;
-        return fw_uint<O+W>(res_bits_t(bits)*res_bits_t(o.bits));
+        return fw_uint<O+W>(res_bits_t(bits)*res_bits_t(o.bits), detail::init_from_bits());
     }
 
     THLS_INLINE fw_uint<1> operator<(const fw_uint &o) const
@@ -406,53 +569,53 @@ struct fw_uint
     // numeric_std says result width is size of the LHS
 
     THLS_INLINE fw_uint operator~() const
-    { return fw_uint( bits ^ MASK() ); }
+    { return fw_uint( bits ^ MASK(), detail::init_from_bits() ); }
 
     THLS_INLINE fw_uint operator&(const fw_uint<W> &o) const
     {
-        return fw_uint<W>(bits&o.bits);
+        return fw_uint<W>(bits&o.bits, detail::init_from_bits());
     }
 
     THLS_INLINE fw_uint operator&(int b) const
     {
         assert(b>=0);
-        return fw_uint(bits&b);
+        return fw_uint(bits&b, detail::init_from_bits());
     }
 
     THLS_INLINE fw_uint operator|(const fw_uint<W> &o) const
     {
-        return fw_uint<W>( (bits|o.bits) & MASK() );
+        return fw_uint<W>( (bits|o.bits) & MASK(), detail::init_from_bits() );
     }
 
     THLS_INLINE fw_uint operator|(int b) const
     {
-        assert(b>=0);
-        return fw_uint( bits_t(bits|b) & MASK());
+        assert(b>=0 && b< MASK());
+        return fw_uint( bits_t(bits|b) & MASK(), detail::init_from_bits());
     }
 
     THLS_INLINE fw_uint operator^(const fw_uint<W> &o) const
     {
-        return fw_uint<W>( (bits^o.bits) & MASK() );
+        return fw_uint<W>( (bits^o.bits) & MASK(), detail::init_from_bits() );
     }
 
     THLS_INLINE fw_uint operator^(int b) const
     {
         assert(b>=0);
-        return fw_uint( bits_t(bits^b) & MASK());
+        return fw_uint( bits_t(bits^b) & MASK(), detail::init_from_bits());
     }
 
 
     THLS_INLINE fw_uint operator>>(int dist) const
     {
         assert(0<=dist && dist<W);
-        return fw_uint(bits>>dist);
+        return fw_uint(bits>>dist, detail::init_from_bits());
     }
 
 
     THLS_INLINE fw_uint operator<<(int dist) const
     {
         assert(0<=dist && dist<W);
-        return fw_uint( (bits<<dist) & MASK());
+        return fw_uint( (bits<<dist) & MASK(), detail::init_from_bits());
     }
 
 #ifndef THLS_SYNTHESIS
@@ -479,6 +642,12 @@ struct fw_uint
     {
         assert( bits == uint64_t(bits_t(bits)) );
         return uint64_t(bits);
+    }
+
+    THLS_INLINE uint32_t to_uint32() const
+    {
+        assert(W<=32);
+        return uint32_t(bits);
     }
 
     THLS_INLINE bool to_bool() const
@@ -528,7 +697,7 @@ THLS_INLINE fw_uint<HI-LO+1> get_bits(const fw_uint<W> &x)
     
     static const int SAFE_LO = LO<0 ? 0 : LO;
     
-    return fw_uint<HI-LO+1>( bits_t(x.bits>>SAFE_LO) & MASK );
+    return fw_uint<HI-LO+1>( bits_t(x.bits>>SAFE_LO) & MASK, detail::init_from_bits{} );
 }
 
 template<int WA>
@@ -545,7 +714,7 @@ THLS_INLINE fw_uint<WA+WB> concat(const fw_uint<WA> &a, const fw_uint<WB> &b)
     
     typedef typename fw_uint<WA+WB>::bits_t bits_t;
 
-    return fw_uint<WA+WB>( (bits_t(a.bits)<<S) | bits_t(b.bits) );
+    return fw_uint<WA+WB>( (bits_t(a.bits)<<S) | bits_t(b.bits) , detail::init_from_bits() );
 }
 
 template<int WA,int WB,int WC>
@@ -561,7 +730,7 @@ template<int WD,int WS>
 THLS_INLINE fw_uint<WD> checked_cast(const fw_uint<WS> &s)
 {
     if(WD==WS){
-        return fw_uint<WD>(s.bits);
+        return fw_uint<WD>(s.bits, detail::init_from_bits{});
     }else{
         assert(0);
         return ~fw_uint<WD>(); // Poison with ones

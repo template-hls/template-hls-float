@@ -393,6 +393,40 @@ THLS_INLINE ipair<fw_uint<1>,fw_uint<1> > compress_3_2(const fw_uint<3> &x)
     );
 }
 
+/*
+THLS_INLINE fw_uint<3> compress_4_3(const fw_uint<3> &x)
+{
+    const static unsigned table={
+        0,  // 0000
+        1,  // 0001
+        1,  // 0010
+        2,  // 0011
+        1,  // 0100
+        2,  // 0101
+        2,  // 0110
+        3,  // 0111
+        1,  // 1000
+        2,  // 1001
+        2,  // 1010
+        3,  // 1011
+        2,  // 1100
+        3,  // 1101
+        2,  // 1110
+        4,  // 1111
+    }
+
+    auto x0=get_bit<0>(x), x1=get_bit<1>(x), x2=get_bit<2>(x), x3=get_bit<2>(x);
+
+
+
+    auto tmp=zpad_hi<1>(get_bit<0>(x))+zpad_hi<1>(get_bit<1>(x))+zpad_hi<1>(get_bit<2>(x));
+    return make_ipair(
+        get_bit<1>(tmp),
+        get_bit<0>(tmp)
+    );
+}
+*/
+
 template<int W>
 struct compress_column_impl
 {

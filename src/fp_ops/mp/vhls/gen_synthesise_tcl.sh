@@ -3,26 +3,35 @@
 # $1 = design name
 # $2 = clock rate (e.g. 50MHz)
 # $3 = top-level function name
-# $4 = source file path
-# $5 = relative path to headers
-# $6 = extra C compiler flags (if any)
+# $4 = Project name
+# $5 = source file path
+# $6 = relative path to headers
+# $7 = extra C compiler flags (if any)
 
-# The actual project name will be ${1}_${2}
+DESIGNNAME="$1"
+CLOCKRATE="$2"
+TOPLEVEL="$3"
 
-CPPFLAGS="-D__SYNTHESIS__=1 -DTHLS_SYNTHESIS=1 -DTHLS_FW_UINT_ON_AP_UINT=1 -std=c++11 -O3 -I ../../$5/../../../../include $6"
+PROJNAME="$4"
+
+SRCFILEPATH="$5"
+HEADERRELPATH="$6"
+EXTRACOMPILERFLAGS="$7"
+
+CPPFLAGS="-D__SYNTHESIS__=1 -DTHLS_SYNTHESIS=1 -DTHLS_FW_UINT_ON_AP_UINT=1 -std=c++11 -O3 -I ../../${HEADERELPATH}/../../../../include ${EXTRACOMPILERFLAGS}"
 
 echo "puts \"${CPPFLAGS}\""
 
-echo "open_project -reset $1_$2"
+echo "open_project -reset ${PROJNAME}"
 echo "open_solution -reset sim"
 echo "set_part {xc7vx330tffg1157-3}"
-echo "create_clock -period $2"
+echo "create_clock -period ${CLOCKRATE}"
 echo "config_schedule -verbose -effort high"
 echo "config_interface -register_io scalar_all"
 echo "puts [pwd]"
 #echo "puts [glob ""[pwd]/../../../*""]"
-echo "add_files -cflags \"${CPPFLAGS}\" ../../$4"
-echo "set_top $3"
+echo "add_files -cflags \"${CPPFLAGS}\" ../../${SRCFILEPATH}"
+echo "set_top ${TOPLEVEL}"
 echo "csynth_design"
 #echo "export_design -evaluate vhdl -format ip_catalog"
 echo "close_solution"

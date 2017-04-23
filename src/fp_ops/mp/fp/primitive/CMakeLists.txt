@@ -65,6 +65,10 @@ add_executable(fp_primitive_build_main build_main.cpp
     fp_add_native_11_52.cpp
     fp_div_native_11_52.cpp
 
+    fp_add_softfloat_8_23.cpp
+    fp_mul_softfloat_8_23.cpp
+    fp_div_softfloat_8_23.cpp
+
     fp_mul_flopoco_8_23.cpp
     fp_add_flopoco_single_8_23.cpp
     fp_add_flopoco_dual_8_23.cpp

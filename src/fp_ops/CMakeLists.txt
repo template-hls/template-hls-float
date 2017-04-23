@@ -19,7 +19,7 @@ add_executable_test_with_fw_uint(base test_add_single_v2)
 add_executable_test_with_fw_uint(base test_add_single_v3)
 add_executable_test_with_fw_uint(base test_add_single_v4)
 
-add_executable_test_with_fw_uint(base test_fp2fix)
+#add_executable_test_with_fw_uint(base test_fp2fix)
 
 add_executable_test_with_fw_uint(base test_div)
 add_executable_test_with_fw_uint(base test_div_v2)
@@ -30,11 +30,17 @@ add_executable_test_with_fw_uint(base test_policy)
 add_executable_test_with_fw_uint(base test_policy_native)
 add_executable_test_with_fw_uint(base test_policy_flopoco)
 add_executable_test_with_fw_uint(base test_policy_ieee_on_flopoco)
+add_executable_test_with_fw_uint(base test_policy_softfloat)
 
 add_executable_test_with_fw_uint(base test_add_dual)
 add_executable_test_with_fw_uint(base test_add_dual_debug)
 
 add_executable_test_with_fw_uint(base test_lut_opt)
+
+
+add_executable_test_with_fw_uint(base test_fp_convert)
+add_executable_test_with_fw_uint(base test_fma)
+
 
 add_custom_target(test_add_param_run)
 

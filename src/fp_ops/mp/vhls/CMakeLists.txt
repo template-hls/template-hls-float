@@ -3,22 +3,28 @@
 
 file(RELATIVE_PATH THLS_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
-find_program(FLOPOCO flopoco HINTS /cygdrive/e/external/flopoco/trunk/gcc)
+find_program(FLOPOCO flopoco HINTS /cygdrive/e/external/flopoco/trunk/gcc ${CMAKE_SOURCE_DIR}/bin)
 
 add_custom_target(eval_vhls_synth)
+add_custom_target(eval_flopnat_synth)
 add_custom_target(eval_vhls_impl)
+add_custom_target(eval_flopnat_impl)
 
-function(add_vivado_hls_core_synth DESIGN_NAME RATE TOPLEVEL_NAME DESIGN_SRC_PATH ROW_EXTRA)
+
+function(add_vivado_hls_core_synth DESIGN_NAME RATE TOPLEVEL_NAME  DESIGN_SRC_PATH ROW_EXTRA)
+
+string(MD5 SYNTH_PROJ_NAME "${DESIGN_NAME}_${RATE}")
+string(SUBSTRING ${SYNTH_PROJ_NAME} 0 12 SYNTH_PROJ_NAME)
 
 add_custom_command(OUTPUT b/s/${DESIGN_NAME}_${RATE}_synthesise.tcl
         DEPENDS gen_synthesise_tcl.sh
         COMMAND mkdir -p b/s
         COMMAND echo $$(pwd)
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/gen_synthesise_tcl.sh ${DESIGN_NAME} ${RATE} ${TOPLEVEL_NAME} ${DESIGN_SRC_PATH} ${THLS_SOURCE_DIR} "" > b/s/${DESIGN_NAME}_${RATE}_synthesise.tcl
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/gen_synthesise_tcl.sh ${DESIGN_NAME} ${RATE} ${TOPLEVEL_NAME} ${SYNTH_PROJ_NAME} ${DESIGN_SRC_PATH} ${THLS_SOURCE_DIR} "" > b/s/${DESIGN_NAME}_${RATE}_synthesise.tcl
         WORKING_DIRECTORY .
         )
 
-add_custom_command(OUTPUT b/s/${DESIGN_NAME}_${RATE}/sim/syn/vhdl/${DESIGN_NAME}.vhd
+add_custom_command(OUTPUT b/s/${SYNTH_PROJ_NAME}/sim/syn/vhdl/${DESIGN_NAME}.vhd
         DEPENDS all_generated_primitive_cpp
         DEPENDS b/s/${DESIGN_NAME}_${RATE}_synthesise.tcl
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${DESIGN_SRC_PATH}
@@ -28,14 +34,14 @@ add_custom_command(OUTPUT b/s/${DESIGN_NAME}_${RATE}/sim/syn/vhdl/${DESIGN_NAME}
         )
 
 add_custom_command(OUTPUT b/s/${DESIGN_NAME}_${RATE}.syn.row
-        DEPENDS b/s/${DESIGN_NAME}_${RATE}/sim/syn/vhdl/${DESIGN_NAME}.vhd
+        DEPENDS b/s/${SYNTH_PROJ_NAME}/sim/syn/vhdl/${DESIGN_NAME}.vhd
         DEPENDS parse_rpt.py
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/parse_rpt.py ${ROW_EXTRA}  < b/s/${DESIGN_NAME}_${RATE}/sim/syn/report/${DESIGN_NAME}_csynth.xml > b/s/${DESIGN_NAME}_${RATE}.syn.row
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/parse_rpt.py ${ROW_EXTRA}  < b/s/${SYNTH_PROJ_NAME}/sim/syn/report/${DESIGN_NAME}_csynth.xml > b/s/${DESIGN_NAME}_${RATE}.syn.row
 )
 
 add_custom_target(eval_vhls_${DESIGN_NAME}_${RATE}_synth
         DEPENDS b/s/${DESIGN_NAME}_${RATE}_synthesise.tcl
-        DEPENDS b/s/${DESIGN_NAME}_${RATE}/sim/syn/vhdl/${DESIGN_NAME}.vhd
+        DEPENDS b/s/${SYNTH_PROJ_NAME}/sim/syn/vhdl/${DESIGN_NAME}.vhd
         DEPENDS b/s/${DESIGN_NAME}_${RATE}.syn.row
         )
 
@@ -46,6 +52,13 @@ endfunction(add_vivado_hls_core_synth)
 
 
 function(add_vivado_hls_core_impl DESIGN_NAME RATE TOPLEVEL_NAME DESIGN_SRC_PATH MULT ROW_EXTRA)
+
+
+string(MD5 SYNTH_PROJ_NAME "${DESIGN_NAME}_${RATE}")
+string(SUBSTRING ${SYNTH_PROJ_NAME} 0 12 SYNTH_PROJ_NAME)
+
+string(MD5 IMPL_PROJ_NAME "${DESIGN_NAME}_${RATE}_${MULT}")
+string(SUBSTRING ${IMPL_PROJ_NAME} 0 12 IMPL_PROJ_NAME)
 
 
 if( TARGET eval_vhls_${DESIGN_NAME}_${RATE}_synth)
@@ -59,7 +72,7 @@ add_custom_command(OUTPUT b/i/${DESIGN_NAME}_${RATE}_${MULT}_implement.tcl
         DEPENDS gen_implement_tcl.sh
         COMMAND mkdir -p b/i/
         COMMAND echo $$(pwd)
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/gen_implement_tcl.sh ${DESIGN_NAME} ${RATE} ${MULT}  > b/i/${DESIGN_NAME}_${RATE}_${MULT}_implement.tcl
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/gen_implement_tcl.sh ${DESIGN_NAME} ${SYNTH_PROJ_NAME} ${IMPL_PROJ_NAME} ${RATE} ${MULT}  > b/i/${DESIGN_NAME}_${RATE}_${MULT}_implement.tcl
         WORKING_DIRECTORY .
         )
 
@@ -73,10 +86,9 @@ add_custom_command(
     DEPENDS b/i/${DESIGN_NAME}_${RATE}_${MULT}_implement.tcl
     DEPENDS eval_vhls_${DESIGN_NAME}_${RATE}_synth
     WORKING_DIRECTORY b/i/
-    COMMAND ls .
-    COMMAND mkdir -p ${DESIGN_NAME}_${RATE}_${MULT}_impl/log || true
-    COMMAND mkdir -p ${DESIGN_NAME}_${RATE}_${MULT}_impl/journal || true
-    COMMAND ${VIVADO_ROOT}/bin/vivado -mode batch -log ${DESIGN_NAME}_${RATE}_${MULT}_impl/log/log.txt -journal ${DESIGN_NAME}_${RATE}_${MULT}_impl/journal/journal.txt -source ${DESIGN_NAME}_${RATE}_${MULT}_implement.tcl | tee ${DESIGN_NAME}_${RATE}_${MULT}_implement.log
+    COMMAND mkdir -p ${IMPL_PROJ_NAME}_impl/log || true
+    COMMAND mkdir -p ${IMPL_PROJ_NAME}_impl/journal || true
+    COMMAND ${VIVADO_ROOT}/bin/vivado -mode batch -log ${IMPL_PROJ_NAME}_impl/log/log.txt -journal ${IMPL_PROJ_NAME}_impl/journal/journal.txt -source ${DESIGN_NAME}_${RATE}_${MULT}_implement.tcl | tee ${DESIGN_NAME}_${RATE}_${MULT}_implement.log
 )
 
 add_custom_target(eval_vhls_${DESIGN_NAME}_${RATE}_${MULT}_impl
@@ -94,8 +106,7 @@ endfunction(add_vivado_hls_core_impl)
 
 add_custom_command(OUTPUT b/synth_all.row
         DEPENDS eval_vhls_synth
-        WORKING_DIRECTORY build
-        COMMAND cat synth/*.row > synth_all.row
+        COMMAND cat b/s/*.row > b/synth_all.row
 )
 add_custom_target(build_synth_all_row
         DEPENDS b/synth_all.row
@@ -201,32 +212,45 @@ endfunction(add_all_flopoco_core_impl)
 #######################################################################
 ## FloPoCoNative
 
+
 function(add_flopnat_core_synth DESIGN_NAME RATE TOPLEVEL_NAME OPERATOR_AND_ARGS ROW_EXTRA)
+
+string(MD5 SYNTH_PROJ_NAME "${DESIGN_NAME}_${RATE}")
+string(SUBSTRING ${SYNTH_PROJ_NAME} 0 12 SYNTH_PROJ_NAME)
 
 string(REPLACE "MHz" "" RAW_RATE ${RATE})
 
-add_custom_command(OUTPUT b/s/${DESIGN_NAME}_${RATE}/sim/syn/vhdl/${DESIGN_NAME}.vhd
+add_custom_command(OUTPUT b/s/${SYNTH_PROJ_NAME}/sim/syn/vhdl/${DESIGN_NAME}.vhd
         WORKING_DIRECTORY .
-        COMMAND mkdir -p b/s/${DESIGN_NAME}_${RATE}/sim/syn/vhdl
-        COMMAND echo ${${OPERATOR_AND_ARGS}}
-        COMMAND ${FLOPOCO} -outputfile=b/s/${DESIGN_NAME}_${RATE}/sim/syn/vhdl/${DESIGN_NAME}.vhd -name=${TOPLEVEL_NAME} -frequency=${RAW_RATE} -target=Virtex6 ${${OPERATOR_AND_ARGS}} Wrapper
+        COMMAND mkdir -p b/s/${SYNTH_PROJ_NAME}/sim/syn/vhdl
+        COMMAND ${FLOPOCO} outputfile=b/s/${SYNTH_PROJ_NAME}/sim/syn/vhdl/${DESIGN_NAME}.vhd name=${TOPLEVEL_NAME} frequency=${RAW_RATE} target=Virtex6 ${${OPERATOR_AND_ARGS}} Wrapper
 
         )
 
 add_custom_target(eval_vhls_${DESIGN_NAME}_${RATE}_synth
-        DEPENDS b/s/${DESIGN_NAME}_${RATE}/sim/syn/vhdl/${DESIGN_NAME}.vhd
+        DEPENDS b/s/${SYNTH_PROJ_NAME}/sim/syn/vhdl/${DESIGN_NAME}.vhd
         )
+
+add_dependencies(eval_flopnat_synth
+    eval_vhls_${DESIGN_NAME}_${RATE}_synth
+)
 
 endfunction(add_flopnat_core_synth)
 
 
-function(add_flopnat_core_impl DESIGN_NAME RATE TOPLEVEL_NAME OP_AND_ARGS MULT ROW_EXTRA)
+function(add_flopnat_core_impl DESIGN_NAME RATE TOPLEVEL_NAME OP_AND_ARGS2 MULT ROW_EXTRA)
+
+string(MD5 SYNTH_PROJ_NAME "${DESIGN_NAME}_${RATE}")
+string(SUBSTRING ${SYNTH_PROJ_NAME} 0 12 SYNTH_PROJ_NAME)
+
+string(MD5 IMPL_PROJ_NAME "${DESIGN_NAME}_${RATE}_${MULT}")
+string(SUBSTRING ${IMPL_PROJ_NAME} 0 12 IMPL_PROJ_NAME)
 
 
 if( TARGET eval_vhls_${DESIGN_NAME}_${RATE}_synth)
 
 else( TARGET eval_vhls_${DESIGN_NAME}_${RATE}_synth)
-add_flopnat_core_synth( ${DESIGN_NAME} ${RATE} ${TOPLEVEL_NAME} OP_AND_ARGS ${ROW_EXTRA})
+add_flopnat_core_synth( ${DESIGN_NAME} ${RATE} ${TOPLEVEL_NAME} ${OP_AND_ARGS2} ${ROW_EXTRA})
 endif( TARGET eval_vhls_${DESIGN_NAME}_${RATE}_synth)
 
 
@@ -234,7 +258,7 @@ add_custom_command(OUTPUT b/i/${DESIGN_NAME}_${RATE}_${MULT}_implement.tcl
         DEPENDS gen_implement_tcl.sh
         COMMAND mkdir -p b/i/
         COMMAND echo $$(pwd)
-        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/gen_implement_tcl.sh ${DESIGN_NAME} ${RATE} ${MULT}  > b/i/${DESIGN_NAME}_${RATE}_${MULT}_implement.tcl
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/gen_implement_tcl.sh ${DESIGN_NAME} ${SYNTH_PROJ_NAME} ${IMPL_PROJ_NAME} ${RATE} ${MULT}  > b/i/${DESIGN_NAME}_${RATE}_${MULT}_implement.tcl
         WORKING_DIRECTORY .
         )
 
@@ -244,14 +268,14 @@ add_custom_command(
     OUTPUT b/i/${DESIGN_NAME}_${RATE}_${MULT}_opt_utilisation.txt
     OUTPUT b/i/${DESIGN_NAME}_${RATE}_${MULT}_impl_utilisation.txt
     OUTPUT b/i/${DESIGN_NAME}_${RATE}_${MULT}_impl_timing.txt
-    OUTPUT b/i/${DESIGN_NAME}_${RATE}_${MULT}_impl_checkpoint.dcp
+    #OUTPUT b/i/${DESIGN_NAME}_${RATE}_${MULT}_impl_checkpoint.dcp
     DEPENDS b/i/${DESIGN_NAME}_${RATE}_${MULT}_implement.tcl
     DEPENDS eval_vhls_${DESIGN_NAME}_${RATE}_synth
     WORKING_DIRECTORY b/i/
     COMMAND ls .
-    COMMAND mkdir -p ${DESIGN_NAME}_${RATE}_${MULT}_impl/log || true
-    COMMAND mkdir -p ${DESIGN_NAME}_${RATE}_${MULT}_impl/journal || true
-    COMMAND ${VIVADO_ROOT}/bin/vivado -mode batch -log ${DESIGN_NAME}_${RATE}_${MULT}_impl/log/log.txt -journal ${DESIGN_NAME}_${RATE}_${MULT}_impl/journal/journal.txt -source ${DESIGN_NAME}_${RATE}_${MULT}_implement.tcl | tee ${DESIGN_NAME}_${RATE}_${MULT}_implement.log
+    COMMAND mkdir -p ${IMPL_PROJ_NAME}_impl/log || true
+    COMMAND mkdir -p ${IMPL_PROJ_NAME}_impl/journal || true
+    COMMAND ${VIVADO_ROOT}/bin/vivado -mode batch -log ${IMPL_PROJ_NAME}_impl/log/log.txt -journal ${IMPL_PROJ_NAME}_impl/journal/journal.txt -source ${DESIGN_NAME}_${RATE}_${MULT}_implement.tcl | tee ${DESIGN_NAME}_${RATE}_${MULT}_implement.log
 )
 
 add_custom_target(eval_vhls_${DESIGN_NAME}_${RATE}_${MULT}_impl
@@ -263,6 +287,9 @@ add_dependencies(eval_vhls_impl
     eval_vhls_${DESIGN_NAME}_${RATE}_${MULT}_impl
 )
 
+add_dependencies(eval_flopnat_impl
+    eval_vhls_${DESIGN_NAME}_${RATE}_${MULT}_impl
+)
 
 endfunction(add_flopnat_core_impl)
 
@@ -271,35 +298,38 @@ endfunction(add_flopnat_core_impl)
 
 function(add_all_flopnat_core_synth E F RATE)
 
-set(OP_AND_ARGS FPAdderDualPath ${E} ${F})
+set(OP_AND_ARGS FPAddDualPath wE=${E} wF=${F})
 add_flopnat_core_synth(fp_add_flopnat_dual_${E}_${F} ${RATE} fp_add_flopnat_dual_${E}_${F} OP_AND_ARGS ,add,flopnat_dual,v1,${E},${F})
 
-set(OP_AND_ARGS FPAdder ${E} ${F})
+set(OP_AND_ARGS FPAddSinglePath wE=${E} wF=${F})
 add_flopnat_core_synth(fp_add_flopnat_single_${E}_${F} ${RATE} fp_add_flopnat_single_${E}_${F} OP_AND_ARGS ,add,flopnat_single,v1,${E},${F})
 
-set(OP_AND_ARGS FPMultiplier ${E} ${F} ${F})
+set(OP_AND_ARGS FPMult wE=${E} wF=${F})
 add_flopnat_core_synth(fp_mul_flopnat_${E}_${F} ${RATE} fp_mul_flopnat_${E}_${F} OP_AND_ARGS ,mul,flopnat,v1,${E},${F})
 
-set(OP_AND_ARGS FPDiv ${E} ${F})
+set(OP_AND_ARGS FPDiv wE=${E} wF=${F})
 add_flopnat_core_synth(fp_div_flopnat_${E}_${F} ${RATE} fp_div_flopnat_${E}_${F} OP_AND_ARGS ,div,flopnat,v1,${E},${F})
 
 endfunction(add_all_flopnat_core_synth)
 
+
+
 function(add_all_flopnat_core_impl E F RATE MULT)
 
-set(OP_AND_ARGS FPAdderDualPath ${E} ${F})
+set(OP_AND_ARGS FPAddDualPath wE=${E} wF=${F})
 add_vivado_hls_core_impl(fp_add_flopnat_dual_${E}_${F} ${RATE} fp_add_flopoco_dual_${E}_${F} OP_AND_ARGS  ${MULT}  ,add,flopnat_dual,v1,${E},${F})
 
-set(OP_AND_ARGS FPAdder ${E} ${F})
-add_vivado_hls_core_impl(fp_add_flopnat_single_${E}_${F} ${RATE} fp_add_flopoco_single_${E}_${F} OP_AND_ARGS  ${MULT}  ,add,flopnat_single,v1,${E},${F})
+set(OP_AND_ARGS FPAddSinglePath wE=${E} wF=${F})
+add_flopnat_core_impl(fp_add_flopnat_single_${E}_${F} ${RATE} fp_add_flopoco_single_${E}_${F} OP_AND_ARGS  ${MULT}  ,add,flopnat_single,v1,${E},${F})
 
-set(OP_AND_ARGS FPMultiplier ${E} ${F} ${F})
-add_vivado_hls_core_impl(fp_mul_flopnat_${E}_${F} ${RATE} fp_mul_flopoco_${E}_${F} OP_AND_ARGS  ${MULT}  ,mul,flopnat,v1,${E},${F})
+set(OP_AND_ARGS FPMult wE=${E} wF=${F})
+add_flopnat_core_impl(fp_mul_flopnat_${E}_${F} ${RATE} fp_mul_flopoco_${E}_${F} OP_AND_ARGS  ${MULT}  ,mul,flopnat,v1,${E},${F})
 
-set(OP_AND_ARGS FPDiv ${E} ${F})
-add_vivado_hls_core_impl(fp_div_flopnat_${E}_${F} ${RATE} fp_div_flopoco_${E}_${F} OP_AND_ARGS  ${MULT}  ,div,flopnat,v1,${E},${F})
+set(OP_AND_ARGS FPDiv wE=${E} wF=${F})
+add_flopnat_core_impl(fp_div_flopnat_${E}_${F} ${RATE} fp_div_flopoco_${E}_${F} OP_AND_ARGS  ${MULT}  ,div,flopnat,v1,${E},${F})
 
 endfunction()
+
 
 
 foreach(M 100MHz 200MHz)
@@ -350,6 +380,7 @@ endforeach(M)
 
 foreach(M 100MHz)
         add_all_flopoco_core_impl(12 78 ${M} 1.0)
+        add_all_flopnat_core_synth(12 78 ${M})
         add_all_flopnat_core_impl(12 78 ${M} 1.0)
 
         add_all_flopoco_core_impl(15 112 ${M} 1.0)

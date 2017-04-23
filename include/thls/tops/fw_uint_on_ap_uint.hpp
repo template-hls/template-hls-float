@@ -73,6 +73,14 @@ struct fw_uint
         assert(uint64_t(v) < (ap_uint<SafeW+1>(1)<<SafeW)); // Must be in range
     }
 
+    THLS_INLINE explicit fw_uint(uint32_t v)
+        : bits(v)
+    {
+        assert(W>=0);
+        assert(v>=0); // must be non-negative
+        assert(v < (ap_uint<SafeW+1>(1)<<SafeW)); // Must be in range
+    }
+
     THLS_INLINE explicit fw_uint(uint64_t v)
         : bits(v)
     {
@@ -334,7 +342,16 @@ struct fw_uint
     }
 
     THLS_INLINE uint64_t to_uint64() const
-    { return (uint64_t)bits; }
+    {
+        assert(W<=64);
+        return (uint64_t)bits;
+    }
+
+    THLS_INLINE uint32_t to_uint32() const
+    {
+        assert(W<=32);
+        return (uint32_t)bits;
+    }
 
     THLS_INLINE bool to_bool() const
     {
