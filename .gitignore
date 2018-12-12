@@ -3,3 +3,8 @@
 *.exe
 *.stackdump
 build_*
+/buil2
+/build
+/cmake-*
+/src/cmake-*
+/src/cmake_*
