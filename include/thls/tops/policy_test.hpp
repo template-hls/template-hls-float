@@ -10,6 +10,8 @@
 
 #include <mpfr.h>
 
+#include <signal.h>
+
 
 namespace thls
 {
@@ -294,7 +296,7 @@ struct test_policy
 
         if(got!=ref){
             elt.first++;
-            if(elt.first==1){
+            if(elt.first<10){
                 mpfr_fprintf(stderr, "Fail: %s, a=%Rg, b=%Rg, ref=%d, got=%d\n", op.c_str(), inA, inB, ref?1:0, got?1:0);
             }
         }
@@ -318,7 +320,7 @@ struct test_policy
 
         if(mpfr_cmp(gotM,ref) || (mpfr_nan_p(gotM)!=mpfr_nan_p(ref))){
             elt.first++;
-            if(elt.first==1){
+            if(elt.first<10){
                 mpfr_t tmp,tmp2;
                 mpfr_init2(tmp,limits_t::digits);
                 mpfr_init2(tmp2,limits_t::digits);

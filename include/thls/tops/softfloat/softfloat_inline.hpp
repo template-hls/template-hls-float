@@ -21,7 +21,7 @@ INLINE uint_fast8_t softfloat_countLeadingZeros64( uint64_t a )
     if(a==0){
         return 64;
     }else{
-        return __builtin_clz (a);
+        return __builtin_clzl (a);
     }
 }
 #define softfloat_countLeadingZeros64 softfloat_countLeadingZeros64

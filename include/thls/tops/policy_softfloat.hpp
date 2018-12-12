@@ -7,6 +7,174 @@
 #include "thls/tops/softfloat/src/softfloat.h"
 #include "thls/tops/softfloat/softfloat_inline.hpp"
 
+#include "thls/tops/fw_uint.hpp"
+
+namespace std
+{
+
+
+    template<>
+    class numeric_limits<float32_t>
+    {
+    private:
+        typedef float32_t T;
+        typedef std::numeric_limits<float> ft;
+
+        static float32_t to_T(float x)
+        {
+            float32_t res;
+            memcpy(&res, &x, 4);
+            return res;
+        }
+    public:
+        static const bool is_specialized = true;
+        static const bool is_signed = true;
+        static const bool is_integer = false;
+        static const bool is_exact = false;
+        static const bool has_infinity = true;
+        static const bool has_quiet_NaN = true;
+        static const bool has_signaling_NaN = false;
+        static const bool has_denorm = std::denorm_present;
+        static const bool has_denorm_loss = true; // ?
+        static const bool round_style = std::round_to_nearest;
+        static const bool is_iec559 = true;
+        static const bool is_bounded = true;
+        static const bool is_modulo = false;
+        static const int digits = ft::digits;
+
+        static const int digits10 = ft::digits10;
+        static const int max_digits10 = ft::max_digits10;
+
+        static const int radix = 2;
+
+        //static const int bias = ft::bias;
+
+        static const int min_exponent = ft::min_exponent;
+        static const int max_exponent = ft::max_exponent;
+
+        static const int min_exponent10 = ft::min_exponent10;
+        static const int max_exponent10 = ft::max_exponent10;
+        
+        static const bool traps = false;
+
+        static const bool tinyness_before = ft::tinyness_before;
+
+        static  T min()
+        {
+            return to_T(ft::min());
+        }
+
+        static  T max()
+        {
+            return to_T(ft::max());
+        }
+
+        static  T lowest()
+        { // == -max()
+            return to_T(ft::lowest());
+        }
+
+        static  T epsilon()
+        { return to_T(ft::epsilon());}
+
+        static  T round_error()
+        { return to_T(ft::round_error()); }
+
+        static  T infinity()
+        { return to_T(ft::infinity()); }
+
+        static  T quiet_NaN()
+        { return to_T(ft::quiet_NaN()); }
+
+        /*static  T signalling_NaN()
+        { return to_T(ft::signalling_NaN()); }*/
+
+        static  T denorm_min()
+        { return to_T(ft::denorm_min()); }
+    };
+
+    
+    template<>
+    class numeric_limits<float64_t>
+    {
+    private:
+        typedef float64_t T;
+        typedef std::numeric_limits<double> ft;
+
+        static float64_t to_T(double x)
+        {
+            float64_t res;
+            memcpy(&res, &x, 8);
+            return res;
+        }
+    public:
+        static const bool is_specialized = true;
+        static const bool is_signed = true;
+        static const bool is_integer = false;
+        static const bool is_exact = false;
+        static const bool has_infinity = true;
+        static const bool has_quiet_NaN = true;
+        static const bool has_signaling_NaN = false;
+        static const bool has_denorm = std::denorm_present;
+        static const bool has_denorm_loss = true; // ?
+        static const bool round_style = std::round_to_nearest;
+        static const bool is_iec559 = true;
+        static const bool is_bounded = true;
+        static const bool is_modulo = false;
+        static const int digits = ft::digits;
+
+        static const int digits10 = ft::digits10;
+        static const int max_digits10 = ft::max_digits10;
+
+        static const int radix = 2;
+
+        //static const int bias = ft::bias;
+
+        static const int min_exponent = ft::min_exponent;
+        static const int max_exponent = ft::max_exponent;
+
+        static const int min_exponent10 = ft::min_exponent10;
+        static const int max_exponent10 = ft::max_exponent10;
+        
+        static const bool traps = false;
+
+        static const bool tinyness_before = ft::tinyness_before;
+
+        static  T min()
+        {
+            return to_T(ft::min());
+        }
+
+        static  T max()
+        {
+            return to_T(ft::max());
+        }
+
+        static  T lowest()
+        { // == -max()
+            return to_T(ft::lowest());
+        }
+
+        static  T epsilon()
+        { return to_T(ft::epsilon());}
+
+        static  T round_error()
+        { return to_T(ft::round_error()); }
+
+        static  T infinity()
+        { return to_T(ft::infinity()); }
+
+        static  T quiet_NaN()
+        { return to_T(ft::quiet_NaN()); }
+
+        /*static  T signalling_NaN()
+        { return to_T(ft::signalling_NaN()); }*/
+
+        static  T denorm_min()
+        { return to_T(ft::denorm_min()); }
+    };
+};
+
 inline float32_t operator *(float32_t a, float32_t b)
 { return f32_mul(a,b); }
 
@@ -51,10 +219,10 @@ inline bool operator !=(float64_t a, float64_t b)
 { return !f64_eq(a,b); }
 
 inline bool operator <(float64_t a, float64_t b)
-{ return f64_le(a,b); }
+{ return f64_lt(a,b); }
 
 inline bool operator >(float64_t a, float64_t b)
-{ return f64_le(b,a); }
+{ return f64_lt(b,a); }
 
 inline bool operator <=(float64_t a, float64_t b)
 { return f64_le(a,b); }

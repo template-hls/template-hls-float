@@ -189,8 +189,9 @@ struct fw_uint
     THLS_INLINE fw_uint<O+W> operator*(const fw_uint<O> &o) const
     {
     	static const int SafeRW = (O+W <= 0) ? 1 : (O+W);
-        ap_uint<SafeRW> a(bits), b(o.bits);
-        return fw_uint<O+W>(ap_uint<SafeRW>(a*b));
+        /*ap_uint<SafeRW> a(bits), b(o.bits);
+        return fw_uint<O+W>(ap_uint<SafeRW>(a*b));*/
+        return fw_uint<O+W>(ap_uint<SafeRW>(bits*o.bits));
     }
 
     THLS_INLINE fw_uint<1> operator<(const fw_uint &o) const
