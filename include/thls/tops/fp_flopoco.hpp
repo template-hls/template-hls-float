@@ -48,6 +48,32 @@ struct fp_flopoco
 
     // Allows for rounding while extracting
     void get(mpfr_t dst, mpfr_rnd_t mode) const;
+
+    /*
+    template<class TRng>
+    void randomise(TRng &rng)
+    {
+        fw_uint<2> flags=0;
+        fw_uint<1> sign=0;
+        fw_uint<ExpBits> exp=0;
+        fw_uint<FracBits> frac=0;
+
+        unsigned area=rng() % 32;
+        switch(area){
+        case 0: flags=0b11; break; // NaN
+        case 1: flags=0b10; break; // positive inf
+        case 2: flags=0b10; sign=1; break; // negative inf
+        case 3: flags=0b00; break; // positive zero
+        case 4: flags=0b00; sign=1; break; // negative zero 
+        default:
+            flags=0b01;
+            sign=area<16;
+            exp.randomise(rng);
+            frac.randomise(rng);
+            break;
+        }
+    }
+    */
 #endif
 
 
@@ -134,6 +160,7 @@ struct fp_flopoco
     THLS_INLINE fw_uint<1> is_neg_inf() const
     { return is_negative() && is_inf(); }
 
+    double to_double() const;
 
     #ifndef THLS_SYNTHESIS
     double to_double_approx() const;
@@ -693,6 +720,35 @@ void ref_fma(fp_flopoco<ER,FR> &dst, const fp_flopoco<EA,FA> &a, const fp_flopoc
     dst=ref_fma<ER,FR>(a,b,c);
 }
 
+template<int ExpBits,int FracBits>
+double fp_flopoco<ExpBits,FracBits>::to_double() const
+{
+    // This is intended for types smaller that double
+    static_assert(FracBits <= 52, "to_double requires the fraction is at most double sized." );
+    static_assert(ExpBits <= 11, "to_double requires the fraction is at most double sized.");
+
+    static const double pos_zero=0.0;
+    static const double neg_zero=1.0/-INFINITY;
+    static const double pos_inf=INFINITY;
+    static const double neg_inf=-INFINITY;
+    static const double qnan=NAN;
+
+    static const int bias = (1<<(ExpBits-1))-1;
+
+    if(is_zero().to_bool()){
+        return is_negative().to_bool() ? neg_zero : pos_zero;
+    }else if(is_normal().to_bool()){
+        uint64_t frac=concat(og<1>(), get_frac_bits()).to_uint64();
+        if(is_negative().to_bool()){
+            frac=-frac;
+        }
+        return ldexp(frac, get_exp_bits().to_int() - bias - FracBits );
+    }else if(is_inf().to_bool()){
+        return is_negative().to_bool() ? neg_inf : pos_inf;
+    }else{
+        return qnan;
+    }
+}
 
 template<int ExpBits,int FracBits>
 double fp_flopoco<ExpBits,FracBits>::to_double_approx() const
