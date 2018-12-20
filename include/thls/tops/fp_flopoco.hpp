@@ -37,7 +37,7 @@ struct fp_flopoco
     // If allowUnderOrOverflow is on, then exponents out of range
     // will be flushed to zero or infinity.
     // Number of bits in number must _always_ match FracBits
-    fp_flopoco(mpfr_t x, bool allowUnderOrOverflow=false);
+    explicit fp_flopoco(mpfr_t x, bool allowUnderOrOverflow=false);
 
 
     void get_exponent(int &e) const;
@@ -783,6 +783,13 @@ std::string fp_flopoco<ExpBits,FracBits>::str() const
     }
     return acc.str();
 }
+
+template<int ExpBits, int FracBits>
+std::ostream &operator<<(std::ostream &dst, const fp_flopoco<ExpBits,FracBits> &x)
+{
+    return dst<<x.str();
+}
+
 #endif
 
 template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
