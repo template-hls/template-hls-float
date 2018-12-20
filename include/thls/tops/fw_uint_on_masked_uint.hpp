@@ -657,6 +657,7 @@ struct fw_uint
     }
 
     #ifndef THLS_SYNTHESIS
+
     void to_mpz_t(mpz_t res) const
     {
         mpz_t tmp;

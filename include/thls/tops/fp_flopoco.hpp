@@ -11,6 +11,8 @@
 #endif
 
 #include <limits>
+#include <array>
+#include <random>
 
 namespace thls
 {
@@ -49,31 +51,6 @@ struct fp_flopoco
     // Allows for rounding while extracting
     void get(mpfr_t dst, mpfr_rnd_t mode) const;
 
-    /*
-    template<class TRng>
-    void randomise(TRng &rng)
-    {
-        fw_uint<2> flags=0;
-        fw_uint<1> sign=0;
-        fw_uint<ExpBits> exp=0;
-        fw_uint<FracBits> frac=0;
-
-        unsigned area=rng() % 32;
-        switch(area){
-        case 0: flags=0b11; break; // NaN
-        case 1: flags=0b10; break; // positive inf
-        case 2: flags=0b10; sign=1; break; // negative inf
-        case 3: flags=0b00; break; // positive zero
-        case 4: flags=0b00; sign=1; break; // negative zero 
-        default:
-            flags=0b01;
-            sign=area<16;
-            exp.randomise(rng);
-            frac.randomise(rng);
-            break;
-        }
-    }
-    */
 #endif
 
 
@@ -781,6 +758,8 @@ std::string fp_flopoco<ExpBits,FracBits>::str() const
     }else{
         acc<<" nan";
     }
+
+    acc<<" ~="<<to_double_approx();
     return acc.str();
 }
 
@@ -802,6 +781,100 @@ template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
 THLS_INLINE fp_flopoco<wER,wFR> div(const fp_flopoco<wEX,wFX> &x, const fp_flopoco<wEY,wFY> &y, int DEBUG=0);
 
 
+template<int ExpBits, int FracBits>
+class fp_flopoco_random_test_source
+{
+public:
+    enum Class{
+        PosZero     = 0b000,
+        NegZero     = 0b001,
+        PosNormal   = 0b010,
+        NegNormal   = 0b011,
+        PosInf      = 0b100,
+        NegInf      = 0b101,
+        NaN         = 0b110,
+    };
+
+private:
+
+    // Probability of generating each class. Each entry maps to
+    // a combination of flags@sign
+    std::array<double,7> class_pdf; 
+    std::array<double,7> class_cdf; 
+
+    void update_cdf()
+    {
+        double cdf=0.0;
+        for(unsigned i=0; i<class_pdf.size(); i++){
+            cdf += class_pdf[i];
+            class_cdf[i]=cdf;
+        }
+    }
+
+    std::uniform_real_distribution<> m_udist;
+public:
+    fp_flopoco_random_test_source()
+    {
+        class_pdf.at(PosZero)=1.0;
+        class_pdf.at(NegZero)=1.0;
+        class_pdf.at(PosNormal)=64.0;
+        class_pdf.at(NegNormal)=64.0;
+        class_pdf.at(PosInf)=1.0;
+        class_pdf.at(NegInf)=1.0;
+        class_pdf.at(NaN)=1.0;
+
+        update_cdf();
+    }
+
+    void disable_class(Class c)
+    {
+        class_pdf.at(c)=0.0;
+        update_cdf();
+    }
+
+    template<class TRng>
+    fp_flopoco<ExpBits,FracBits> operator()(TRng &rng)
+    {
+        fw_uint<2> flags(0);
+        fw_uint<1> sign(0);
+
+        fw_uint<ExpBits> exp=random_fw_uint<ExpBits>(rng);
+        fw_uint<FracBits> frac=random_fw_uint<FracBits>(rng);
+
+        double u=m_udist(rng) * class_cdf.back();
+        unsigned sel;
+        for(sel=0; sel<class_cdf.size(); sel++){
+            if( u <= class_cdf[sel] ){
+                break;
+            }
+        }
+
+        switch(sel){
+        case NegZero:
+            sign=og<1>();
+        case PosZero:
+            flags=fw_uint<2>(0b00);
+            break;
+        case NegInf:
+            sign=og<1>();
+        case PosInf:
+            flags=fw_uint<2>(0b10);
+            break;
+        case NaN:
+            flags=fw_uint<2>(0b11);
+            randomise(sign, rng);
+            break;
+        case NegNormal:
+            sign=og<1>();
+        case PosNormal:
+            flags=fw_uint<2>(0b01);
+            break;
+        }
+
+        return fp_flopoco<ExpBits,FracBits>(flags,sign,exp,frac);
+    }
+
+};
 
 
 }; // thls

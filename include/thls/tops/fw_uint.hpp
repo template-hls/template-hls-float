@@ -658,7 +658,44 @@ public:
   }
 };
 
+template<int W, int NWords>
+struct random_fw_uint_impl
+{
+  template<class TRng>
+  static fw_uint<W> go(TRng &rng)
+  {
+    const int LW= W>=32 ? 32 : W;
+    const int RW = W-LW;
 
+    uint32_t bits=rng();
+    if(LW < 32){
+      bits=bits>>(32-LW);
+    }
+    return concat( fw_uint<LW>(bits), random_fw_uint_impl<RW, (RW+31)/32>::go(rng) );
+  }
+};
+
+template<int W>
+struct random_fw_uint_impl<W,0>
+{
+  template<class TRng>
+  static fw_uint<0> go(TRng &)
+  {
+    return fw_uint<0>();
+  }
+};
+
+template<int W, class TRng>
+fw_uint<W> random_fw_uint(TRng &rng)
+{
+  return random_fw_uint_impl<W,(W+31)/32>::go(rng);
+}
+
+template<int W, class TRng>
+void randomise(fw_uint<W> &x, TRng &rng)
+{
+  x=random_fw_uint<W>(rng);
+}
 
 template<int W>
 inline std::ostream &operator<<(std::ostream &dst, const fw_uint<W> &x)
@@ -669,6 +706,22 @@ inline std::ostream &operator<<(std::ostream &dst, const fw_uint<W> &x)
     return dst;
 }
 
+template<int W>
+double to_double_approx(fw_uint<W> x)
+{
+    if(W<=52){
+        return double(x.to_uint64());
+    }else{
+        double res=0;
+        int e=0;
+        while((x!=zg<W>()).to_bool()){
+            res = res + ldexp( get_bits<31,0>(x).to_uint32(), e );
+            x=x>>32;
+            e+=32;
+        }
+        return res;
+    }
+}
 
 
 }; // thls

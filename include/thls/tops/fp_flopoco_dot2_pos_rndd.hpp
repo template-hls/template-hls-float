@@ -65,8 +65,6 @@ namespace thls
      01.ffffffff
       +
                 ??.ffffffff
-      +         
-                1
       =
      ??.ffffffff
 
