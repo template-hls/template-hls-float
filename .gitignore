@@ -9,3 +9,5 @@ build_*
 /src/cmake-*
 /src/cmake_*
 /build-2018
+/src/cmake_*
+/build-release

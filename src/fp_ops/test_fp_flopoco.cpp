@@ -1,6 +1,7 @@
 #include "thls/tops/fp_flopoco.hpp"
 
 #include <random>
+#include <cmath>
 
 #define CHECK(x) if(!(x)){ fprintf(stderr, "Fail : %s, %d - %s\n", __FILE__, __LINE__, #x); exit(1); }
 
@@ -22,15 +23,21 @@ void test1()
     traits::infinity().get(out);
     CHECK(mpfr_equal_p(in,out));
 
+    CHECK(traits::infinity().to_double() == +INFINITY );
+
     mpfr_set_inf(in, -1);
     traits::neg_infinity().get(out);
     std::cerr<<traits::neg_infinity().str()<<"\n";
     mpfr_fprintf(stderr, "-inf = %Rg\n", out);
     CHECK(mpfr_equal_p(in,out));
 
+    CHECK(traits::neg_infinity().to_double() == -INFINITY );
+
     traits::quiet_NaN().get(out);
     mpfr_fprintf(stderr, "nan = %Rg\n", out);
     CHECK(mpfr_nan_p(out));
+
+    CHECK( std::isnan(traits::quiet_NaN().to_double()) );
 
     // lowest -> -inf
     nextdown(traits::lowest()).get(out);
@@ -61,6 +68,10 @@ void test1()
         mpfr_fprintf(stderr, "%Rf = %Rf\n", in, out);
 
         CHECK(mpfr_equal_p(in,out));
+
+        mpfr_fprintf(stderr, "%Rf = %d (to_double)\n", in, one.to_double());
+
+        CHECK( !mpfr_cmp_d(in, one.to_double() ) );
     }
 
     std::mt19937 rng;
@@ -74,6 +85,8 @@ void test1()
         one.get(out);
 
         mpfr_fprintf(stderr, "%Rf = %Rf\n", in, out);
+
+        CHECK( !mpfr_cmp_d(in, one.to_double() ) );
     }
 
     mpfr_clear(in);

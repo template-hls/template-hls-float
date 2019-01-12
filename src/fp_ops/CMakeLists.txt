@@ -40,6 +40,9 @@ add_executable_test_with_fw_uint(base test_lut_opt)
 
 add_executable_test_with_fw_uint(base test_fp_convert)
 add_executable_test_with_fw_uint(base test_fma)
+add_executable_test_with_fw_uint(base test_dot2_pos_rndd)
+add_executable_test_with_fw_uint(base test_dot2_pos_rndn)
+add_executable_test_with_fw_uint(base test_dot4_pos_rndd)
 
 
 add_custom_target(test_add_param_run)

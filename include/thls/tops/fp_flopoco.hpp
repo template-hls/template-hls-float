@@ -11,6 +11,8 @@
 #endif
 
 #include <limits>
+#include <array>
+#include <random>
 
 namespace thls
 {
@@ -37,7 +39,7 @@ struct fp_flopoco
     // If allowUnderOrOverflow is on, then exponents out of range
     // will be flushed to zero or infinity.
     // Number of bits in number must _always_ match FracBits
-    fp_flopoco(mpfr_t x, bool allowUnderOrOverflow=false);
+    explicit fp_flopoco(mpfr_t x, bool allowUnderOrOverflow=false);
 
 
     void get_exponent(int &e) const;
@@ -48,6 +50,7 @@ struct fp_flopoco
 
     // Allows for rounding while extracting
     void get(mpfr_t dst, mpfr_rnd_t mode) const;
+
 #endif
 
 
@@ -134,6 +137,7 @@ struct fp_flopoco
     THLS_INLINE fw_uint<1> is_neg_inf() const
     { return is_negative() && is_inf(); }
 
+    double to_double() const;
 
     #ifndef THLS_SYNTHESIS
     double to_double_approx() const;
@@ -693,6 +697,35 @@ void ref_fma(fp_flopoco<ER,FR> &dst, const fp_flopoco<EA,FA> &a, const fp_flopoc
     dst=ref_fma<ER,FR>(a,b,c);
 }
 
+template<int ExpBits,int FracBits>
+double fp_flopoco<ExpBits,FracBits>::to_double() const
+{
+    // This is intended for types smaller that double
+    static_assert(FracBits <= 52, "to_double requires the fraction is at most double sized." );
+    static_assert(ExpBits <= 11, "to_double requires the fraction is at most double sized.");
+
+    static const double pos_zero=0.0;
+    static const double neg_zero=1.0/-INFINITY;
+    static const double pos_inf=INFINITY;
+    static const double neg_inf=-INFINITY;
+    static const double qnan=NAN;
+
+    static const int bias = (1<<(ExpBits-1))-1;
+
+    if(is_zero().to_bool()){
+        return is_negative().to_bool() ? neg_zero : pos_zero;
+    }else if(is_normal().to_bool()){
+        uint64_t frac=concat(og<1>(), get_frac_bits()).to_uint64();
+        if(is_negative().to_bool()){
+            frac=-frac;
+        }
+        return ldexp(frac, get_exp_bits().to_int() - bias - FracBits );
+    }else if(is_inf().to_bool()){
+        return is_negative().to_bool() ? neg_inf : pos_inf;
+    }else{
+        return qnan;
+    }
+}
 
 template<int ExpBits,int FracBits>
 double fp_flopoco<ExpBits,FracBits>::to_double_approx() const
@@ -725,8 +758,17 @@ std::string fp_flopoco<ExpBits,FracBits>::str() const
     }else{
         acc<<" nan";
     }
+
+    acc<<" ~="<<to_double_approx();
     return acc.str();
 }
+
+template<int ExpBits, int FracBits>
+std::ostream &operator<<(std::ostream &dst, const fp_flopoco<ExpBits,FracBits> &x)
+{
+    return dst<<x.str();
+}
+
 #endif
 
 template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
@@ -739,6 +781,100 @@ template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
 THLS_INLINE fp_flopoco<wER,wFR> div(const fp_flopoco<wEX,wFX> &x, const fp_flopoco<wEY,wFY> &y, int DEBUG=0);
 
 
+template<int ExpBits, int FracBits>
+class fp_flopoco_random_test_source
+{
+public:
+    enum Class{
+        PosZero     = 0b000,
+        NegZero     = 0b001,
+        PosNormal   = 0b010,
+        NegNormal   = 0b011,
+        PosInf      = 0b100,
+        NegInf      = 0b101,
+        NaN         = 0b110,
+    };
+
+private:
+
+    // Probability of generating each class. Each entry maps to
+    // a combination of flags@sign
+    std::array<double,7> class_pdf; 
+    std::array<double,7> class_cdf; 
+
+    void update_cdf()
+    {
+        double cdf=0.0;
+        for(unsigned i=0; i<class_pdf.size(); i++){
+            cdf += class_pdf[i];
+            class_cdf[i]=cdf;
+        }
+    }
+
+    std::uniform_real_distribution<> m_udist;
+public:
+    fp_flopoco_random_test_source()
+    {
+        class_pdf.at(PosZero)=1.0;
+        class_pdf.at(NegZero)=1.0;
+        class_pdf.at(PosNormal)=64.0;
+        class_pdf.at(NegNormal)=64.0;
+        class_pdf.at(PosInf)=1.0;
+        class_pdf.at(NegInf)=1.0;
+        class_pdf.at(NaN)=1.0;
+
+        update_cdf();
+    }
+
+    void disable_class(Class c)
+    {
+        class_pdf.at(c)=0.0;
+        update_cdf();
+    }
+
+    template<class TRng>
+    fp_flopoco<ExpBits,FracBits> operator()(TRng &rng)
+    {
+        fw_uint<2> flags(0);
+        fw_uint<1> sign(0);
+
+        fw_uint<ExpBits> exp=random_fw_uint<ExpBits>(rng);
+        fw_uint<FracBits> frac=random_fw_uint<FracBits>(rng);
+
+        double u=m_udist(rng) * class_cdf.back();
+        unsigned sel;
+        for(sel=0; sel<class_cdf.size(); sel++){
+            if( u <= class_cdf[sel] ){
+                break;
+            }
+        }
+
+        switch(sel){
+        case NegZero:
+            sign=og<1>();
+        case PosZero:
+            flags=fw_uint<2>(0b00);
+            break;
+        case NegInf:
+            sign=og<1>();
+        case PosInf:
+            flags=fw_uint<2>(0b10);
+            break;
+        case NaN:
+            flags=fw_uint<2>(0b11);
+            randomise(sign, rng);
+            break;
+        case NegNormal:
+            sign=og<1>();
+        case PosNormal:
+            flags=fw_uint<2>(0b01);
+            break;
+        }
+
+        return fp_flopoco<ExpBits,FracBits>(flags,sign,exp,frac);
+    }
+
+};
 
 
 }; // thls
