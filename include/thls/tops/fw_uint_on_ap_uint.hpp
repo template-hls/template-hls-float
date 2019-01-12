@@ -5,6 +5,8 @@
 #error "Include fw_uint.hpp, rather than this file."
 #endif
 
+#include <type_traits>
+
 // TODO : Dispatch propertly to the correct header.
 // I think VHLS is supposed to do it, but it always
 // picks up the simulation one.
@@ -77,7 +79,6 @@ struct fw_uint
         : bits(v)
     {
         assert(W>=0);
-        assert(v>=0); // must be non-negative
         assert(v < (ap_uint<SafeW+1>(1)<<SafeW)); // Must be in range
     }
 
@@ -85,7 +86,6 @@ struct fw_uint
         : bits(v)
     {
         assert(W>=0);
-        assert(v>=0); // must be non-negative
         assert(v < (ap_uint<SafeW+1>(1)<<SafeW)); // Must be in range
     }
 #ifndef THLS_SYNTHESIS
