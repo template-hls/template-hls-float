@@ -1,7 +1,8 @@
 # The build/synth/ -> b/i/ change is because of path length limitations
 
 
-file(RELATIVE_PATH THLS_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+#file(RELATIVE_PATH THLS_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR})
+string(REPLACE "/cygdrive/e" "e:/" THLS_SOURCE_DIR "${CMAKE_SOURCE_DIR}" )
 
 find_program(FLOPOCO flopoco HINTS /cygdrive/e/external/flopoco/trunk/gcc ${CMAKE_SOURCE_DIR}/bin)
 
@@ -12,6 +13,10 @@ add_custom_target(eval_flopnat_impl)
 
 
 function(add_vivado_hls_core_synth DESIGN_NAME RATE TOPLEVEL_NAME  DESIGN_SRC_PATH ROW_EXTRA)
+
+if(TARGET eval_vhls_${DESIGN_NAME}_${RATE}_synth)
+        return()
+endif(TARGET eval_vhls_${DESIGN_NAME}_${RATE}_synth)
 
 string(MD5 SYNTH_PROJ_NAME "${DESIGN_NAME}_${RATE}")
 string(SUBSTRING ${SYNTH_PROJ_NAME} 0 12 SYNTH_PROJ_NAME)
@@ -53,19 +58,21 @@ endfunction(add_vivado_hls_core_synth)
 
 function(add_vivado_hls_core_impl DESIGN_NAME RATE TOPLEVEL_NAME DESIGN_SRC_PATH MULT ROW_EXTRA)
 
+if(TARGET eval_vhls_${DESIGN_NAME}_${RATE}_${MULT}_impl)
+        return()
+endif(TARGET eval_vhls_${DESIGN_NAME}_${RATE}_${MULT}_impl)
 
 string(MD5 SYNTH_PROJ_NAME "${DESIGN_NAME}_${RATE}")
 string(SUBSTRING ${SYNTH_PROJ_NAME} 0 12 SYNTH_PROJ_NAME)
-
-string(MD5 IMPL_PROJ_NAME "${DESIGN_NAME}_${RATE}_${MULT}")
-string(SUBSTRING ${IMPL_PROJ_NAME} 0 12 IMPL_PROJ_NAME)
-
 
 if( TARGET eval_vhls_${DESIGN_NAME}_${RATE}_synth)
 
 else( TARGET eval_vhls_${DESIGN_NAME}_${RATE}_synth)
 add_vivado_hls_core_synth( ${DESIGN_NAME} ${RATE} ${TOPLEVEL_NAME} ${DESIGN_SRC_PATH} ${ROW_EXTRA})
 endif( TARGET eval_vhls_${DESIGN_NAME}_${RATE}_synth)
+
+string(MD5 IMPL_PROJ_NAME "${DESIGN_NAME}_${RATE}_${MULT}")
+string(SUBSTRING ${IMPL_PROJ_NAME} 0 12 IMPL_PROJ_NAME)
 
 
 add_custom_command(OUTPUT b/i/${DESIGN_NAME}_${RATE}_${MULT}_implement.tcl
@@ -91,14 +98,28 @@ add_custom_command(
     COMMAND ${VIVADO_ROOT}/bin/vivado -mode batch -log ${IMPL_PROJ_NAME}_impl/log/log.txt -journal ${IMPL_PROJ_NAME}_impl/journal/journal.txt -source ${DESIGN_NAME}_${RATE}_${MULT}_implement.tcl | tee ${DESIGN_NAME}_${RATE}_${MULT}_implement.log
 )
 
+add_custom_command(OUTPUT b/i/${DESIGN_NAME}_${RATE}_${MULT}.impl.row
+        DEPENDS b/i/${DESIGN_NAME}_${RATE}_${MULT}_impl_timing.txt
+        DEPENDS b/i/${DESIGN_NAME}_${RATE}_${MULT}_impl_utilisation.txt
+        DEPENDS parse_impl_logs.py
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/parse_impl_logs.py b/i/${DESIGN_NAME}_${RATE}_${MULT} ${DESIGN_NAME}_${RATE}_${MULT}  ${IMPL_PROJ_NAME} "  ,${MULT}  ${ROW_EXTRA}" > b/i/${DESIGN_NAME}_${RATE}_${MULT}.impl.row
+)
+
+add_custom_target(eval_vhls_${DESIGN_NAME}_${RATE}_${MULT}_impl_row
+    DEPENDS b/i/${DESIGN_NAME}_${RATE}_${MULT}.impl.row
+)
+
 add_custom_target(eval_vhls_${DESIGN_NAME}_${RATE}_${MULT}_impl
     DEPENDS b/i/${DESIGN_NAME}_${RATE}_${MULT}_implement.tcl
     DEPENDS b/i/${DESIGN_NAME}_${RATE}_${MULT}_implement.log
+    DEPENDS b/i/${DESIGN_NAME}_${RATE}_${MULT}.impl.row
 )
 
 add_dependencies(eval_vhls_impl
     eval_vhls_${DESIGN_NAME}_${RATE}_${MULT}_impl
 )
+
+
 
 
 endfunction(add_vivado_hls_core_impl)
@@ -215,6 +236,10 @@ endfunction(add_all_flopoco_core_impl)
 
 function(add_flopnat_core_synth DESIGN_NAME RATE TOPLEVEL_NAME OPERATOR_AND_ARGS ROW_EXTRA)
 
+if(TARGET eval_vhls_${DESIGN_NAME}_${RATE}_synth)
+        return()
+endif(TARGET eval_vhls_${DESIGN_NAME}_${RATE}_synth)
+
 string(MD5 SYNTH_PROJ_NAME "${DESIGN_NAME}_${RATE}")
 string(SUBSTRING ${SYNTH_PROJ_NAME} 0 12 SYNTH_PROJ_NAME)
 
@@ -243,8 +268,9 @@ function(add_flopnat_core_impl DESIGN_NAME RATE TOPLEVEL_NAME OP_AND_ARGS2 MULT 
 string(MD5 SYNTH_PROJ_NAME "${DESIGN_NAME}_${RATE}")
 string(SUBSTRING ${SYNTH_PROJ_NAME} 0 12 SYNTH_PROJ_NAME)
 
-string(MD5 IMPL_PROJ_NAME "${DESIGN_NAME}_${RATE}_${MULT}")
-string(SUBSTRING ${IMPL_PROJ_NAME} 0 12 IMPL_PROJ_NAME)
+if( TARGET eval_vhls_${DESIGN_NAME}_${RATE}_${MULT}_impl )
+        return()
+endif(TARGET eval_vhls_${DESIGN_NAME}_${RATE}_${MULT}_impl)
 
 
 if( TARGET eval_vhls_${DESIGN_NAME}_${RATE}_synth)
@@ -252,6 +278,9 @@ if( TARGET eval_vhls_${DESIGN_NAME}_${RATE}_synth)
 else( TARGET eval_vhls_${DESIGN_NAME}_${RATE}_synth)
 add_flopnat_core_synth( ${DESIGN_NAME} ${RATE} ${TOPLEVEL_NAME} ${OP_AND_ARGS2} ${ROW_EXTRA})
 endif( TARGET eval_vhls_${DESIGN_NAME}_${RATE}_synth)
+
+string(MD5 IMPL_PROJ_NAME "${DESIGN_NAME}_${RATE}_${MULT}")
+string(SUBSTRING ${IMPL_PROJ_NAME} 0 12 IMPL_PROJ_NAME)
 
 
 add_custom_command(OUTPUT b/i/${DESIGN_NAME}_${RATE}_${MULT}_implement.tcl
@@ -278,9 +307,21 @@ add_custom_command(
     COMMAND ${VIVADO_ROOT}/bin/vivado -mode batch -log ${IMPL_PROJ_NAME}_impl/log/log.txt -journal ${IMPL_PROJ_NAME}_impl/journal/journal.txt -source ${DESIGN_NAME}_${RATE}_${MULT}_implement.tcl | tee ${DESIGN_NAME}_${RATE}_${MULT}_implement.log
 )
 
+add_custom_command(OUTPUT b/i/${DESIGN_NAME}_${RATE}_${MULT}.impl.row
+        DEPENDS b/i/${DESIGN_NAME}_${RATE}_${MULT}_impl_timing.txt
+        DEPENDS b/i/${DESIGN_NAME}_${RATE}_${MULT}_impl_utilisation.txt
+        DEPENDS parse_impl_logs.py
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/parse_impl_logs.py b/i/${DESIGN_NAME}_${RATE}_${MULT} ${DESIGN_NAME}_${RATE}_${MULT}  ${IMPL_PROJ_NAME} "  ,${MULT}  ${ROW_EXTRA}" > b/i/${DESIGN_NAME}_${RATE}_${MULT}.impl.row
+)
+
+add_custom_target(eval_vhls_${DESIGN_NAME}_${RATE}_${MULT}_impl_row
+    DEPENDS b/i/${DESIGN_NAME}_${RATE}_${MULT}.impl.row
+)
+
 add_custom_target(eval_vhls_${DESIGN_NAME}_${RATE}_${MULT}_impl
     DEPENDS b/i/${DESIGN_NAME}_${RATE}_${MULT}_implement.tcl
     DEPENDS b/i/${DESIGN_NAME}_${RATE}_${MULT}_implement.log
+    DEPENDS b/i/${DESIGN_NAME}_${RATE}_${MULT}.impl.row
 )
 
 add_dependencies(eval_vhls_impl
@@ -317,7 +358,7 @@ endfunction(add_all_flopnat_core_synth)
 function(add_all_flopnat_core_impl E F RATE MULT)
 
 set(OP_AND_ARGS FPAddDualPath wE=${E} wF=${F})
-add_vivado_hls_core_impl(fp_add_flopnat_dual_${E}_${F} ${RATE} fp_add_flopoco_dual_${E}_${F} OP_AND_ARGS  ${MULT}  ,add,flopnat_dual,v1,${E},${F})
+add_flopnat_core_impl(fp_add_flopnat_dual_${E}_${F} ${RATE} fp_add_flopoco_dual_${E}_${F} OP_AND_ARGS  ${MULT}  ,add,flopnat_dual,v1,${E},${F})
 
 set(OP_AND_ARGS FPAddSinglePath wE=${E} wF=${F})
 add_flopnat_core_impl(fp_add_flopnat_single_${E}_${F} ${RATE} fp_add_flopoco_single_${E}_${F} OP_AND_ARGS  ${MULT}  ,add,flopnat_single,v1,${E},${F})
@@ -332,60 +373,77 @@ endfunction()
 
 
 
-foreach(M 100MHz 200MHz)
+foreach(M 100MHz 200MHz 300MHz )
         add_all_native_half_core_impl(${M} 1.0)
-        #add_all_native_half_core_impl(${M} 1.1)
-        add_all_native_half_core_impl(${M} 1.2)
-
         add_all_native_single_core_impl(${M} 1.0)
-        #add_all_native_single_core_impl(${M} 1.1)
-        add_all_native_single_core_impl(${M} 1.2)
-
-        add_all_flopoco_core_impl(5 10 ${M} 1.0)
-
-        add_all_flopnat_core_synth(5 10 ${M})
-        add_all_flopnat_core_impl(5 10 ${M} 1.0)
-        #add_all_flopoco_core_impl(5 10 ${M} 1.1)
-        add_all_flopoco_core_impl(5 10 ${M} 1.2)
-
-        add_all_flopoco_core_impl(7 15 ${M} 1.0)
-        add_all_flopnat_core_synth(7 15 ${M})
-        add_all_flopnat_core_impl(7 15 ${M} 1.0)
-
-        #add_all_flopoco_core_impl(7 15 ${M} 1.1)
-        add_all_flopoco_core_impl(7 15 ${M} 1.2)
-
-         add_all_flopnat_core_synth(8 23 ${M})
-
-        add_all_flopoco_core_impl(8 23 ${M} 1.0)
-        add_all_flopnat_core_impl(8 23 ${M} 1.0)
-
-        #add_all_flopoco_core_impl(8 23 ${M} 1.1)
-
-        add_all_flopoco_core_impl(8 23 ${M} 1.2)
-
-endforeach(M)
-
-foreach(M 100MHz 200MHz)
         add_all_native_double_core_impl(${M} 1.0)
 
-        add_all_flopoco_core_impl(9 35 ${M} 1.0)
-        add_all_flopnat_core_synth(9 35 ${M})
-        add_all_flopnat_core_impl(9 35 ${M} 1.0)
+        add_all_flopoco_core_impl(5  6 ${M} 1.0)
+        add_all_flopoco_core_impl(5  7 ${M} 1.0)
+        add_all_flopoco_core_impl(5  8 ${M} 1.0)
+        add_all_flopoco_core_impl(5  9 ${M} 1.0)
+        add_all_flopoco_core_impl(5 10 ${M} 1.0) # Standard 16 bit
+        add_all_flopoco_core_impl(5 11 ${M} 1.0)
+        add_all_flopoco_core_impl(5 12 ${M} 1.0)
+        add_all_flopoco_core_impl(5 13 ${M} 1.0)
+        add_all_flopoco_core_impl(5 14 ${M} 1.0)
+        add_all_flopoco_core_impl(5 15 ${M} 1.0)
+        add_all_flopoco_core_impl(5 16 ${M} 1.0)
+        add_all_flopoco_core_impl(5 17 ${M} 1.0)
+        add_all_flopoco_core_impl(5 18 ${M} 1.0)
+
+        add_all_flopoco_core_impl(6 13 ${M} 1.0)  # Standard 20 bit
+
+        add_all_flopoco_core_impl(7 16 ${M} 1.0)  # Standard 24-bit
+
+        add_all_flopoco_core_impl(8 7 ${M} 1.0)   # bfloat16 (NVidia)
+        add_all_flopoco_core_impl(8 9 ${M} 1.0)
+        add_all_flopoco_core_impl(8 11 ${M} 1.0)
+        add_all_flopoco_core_impl(8 13 ${M} 1.0)
+        add_all_flopoco_core_impl(8 15 ${M} 1.0)
+        add_all_flopoco_core_impl(8 17 ${M} 1.0)
+        add_all_flopoco_core_impl(8 19 ${M} 1.0)
+        add_all_flopoco_core_impl(8 21 ${M} 1.0)
+        add_all_flopoco_core_impl(8 23 ${M} 1.0)  # Standard 32-bit
+        add_all_flopoco_core_impl(8 25 ${M} 1.0)
+        add_all_flopoco_core_impl(8 27 ${M} 1.0)
+        add_all_flopoco_core_impl(8 29 ${M} 1.0)
+        add_all_flopoco_core_impl(8 31 ${M} 1.0)
+
+        add_all_flopoco_core_impl(9 30 ${M} 1.0)  # Standard 40-bit
+
+        add_all_flopoco_core_impl(9 38 ${M} 1.0)  # Standard 48-bit
+
+        add_all_flopoco_core_impl(10 45 ${M} 1.0)  # Standard 56-bit
+
+        add_all_flopoco_core_impl(11 52 ${M} 1.0)  # Standard 64-bit
+
+        add_all_flopnat_core_impl(5 10 ${M} 1.0)
+        add_all_flopnat_core_impl(6 13 ${M} 1.0)
+        add_all_flopnat_core_impl(7 16 ${M} 1.0)
+        add_all_flopnat_core_impl(8 23 ${M} 1.0)
+        add_all_flopnat_core_impl(9 30 ${M} 1.0)
+        add_all_flopnat_core_impl(9 38 ${M} 1.0)
+        add_all_flopnat_core_impl(10 45 ${M} 1.0)
+        add_all_flopnat_core_impl(11 52 ${M} 1.0)
+
+
+endforeach(M)
+
+foreach(M 20MHz 40MHz 60MHz 80MHz 100MHz 120MHz 140MHz 160MHz 180MHz 200MHz 220MHz 240MHz 260MHz 280MHz 300MHz 320MHz 340MHz 360MHz 380MHz 400MHz  )
+        add_all_flopoco_core_impl(8 23 ${M} 1.0)
+        add_all_native_single_core_impl(${M} 1.0)
 
         add_all_flopoco_core_impl(11 52 ${M} 1.0)
-        add_all_flopnat_core_synth(11 52 ${M})
-        add_all_flopnat_core_impl(11 52 ${M} 1.0)
+        add_all_native_double_core_impl(${M} 1.0)
 endforeach(M)
 
-foreach(M 100MHz)
-        add_all_flopoco_core_impl(12 78 ${M} 1.0)
-        add_all_flopnat_core_synth(12 78 ${M})
-        add_all_flopnat_core_impl(12 78 ${M} 1.0)
 
-        add_all_flopoco_core_impl(15 112 ${M} 1.0)
-        add_all_flopnat_core_synth(15 112 ${M})
-        add_all_flopnat_core_impl(15 112 ${M} 1.0)
-endforeach(M)
-
+add_custom_command(OUTPUT b/impl_all.row
+        DEPENDS eval_vhls_impl
+        COMMAND cat b/i/*.impl.row > b/impl_all.row
+)
+add_custom_target(build_impl_all_row
+        DEPENDS b/impl_all.row
+)
 

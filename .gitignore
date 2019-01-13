@@ -8,4 +8,6 @@ build_*
 /cmake-*
 /src/cmake-*
 /src/cmake_*
+/build-2018
+/src/cmake_*
 /build-release

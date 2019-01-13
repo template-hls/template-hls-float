@@ -74,7 +74,7 @@
 */
 
 //#define THLS_INLINE inline __attribute__((always_inline))
-#define THLS_INLINE
+#define THLS_INLINE inline
 
 /* Error:
  *
@@ -105,6 +105,7 @@ namespace std{
 
 #include <stdint.h>
 #include <cassert>
+#include <iostream>
 
 #include <cmath>
 
