@@ -372,6 +372,7 @@ add_flopnat_core_impl(fp_div_flopnat_${E}_${F} ${RATE} fp_div_flopoco_${E}_${F} 
 endfunction()
 
 
+if( 0 )
 
 foreach(M 100MHz 200MHz 300MHz )
         add_all_native_half_core_impl(${M} 1.0)
@@ -438,6 +439,15 @@ foreach(M 20MHz 40MHz 60MHz 80MHz 100MHz 120MHz 140MHz 160MHz 180MHz 200MHz 220M
         add_all_native_double_core_impl(${M} 1.0)
 endforeach(M)
 
+endif( 0 )
+
+foreach(F1 RANGE 3 44 2)
+add_vivado_hls_core_impl(fp_mul_flopoco_ratio_8_23_8_${F1} 200MHz fp_mul_flopoco_ratio_8_23_8_${F1} ../fp/primitive/fp_mul_flopoco_ratio_8_23_8_${F1}.cpp   1.0 ,mul_ratio,flopoco,v1,8,23,8,${F1})
+endforeach(F1)
+
+foreach(F1 RANGE 4 104 4)
+add_vivado_hls_core_impl(fp_mul_flopoco_ratio_11_52_11_${F1} 200MHz fp_mul_flopoco_ratio_11_52_11_${F1} ../fp/primitive/fp_mul_flopoco_ratio_11_52_11_${F1}.cpp   1.0 ,mul_ratio,flopoco,v1,11,52,11,${F1})
+endforeach(F1)
 
 add_custom_command(OUTPUT b/impl_all.row
         DEPENDS eval_vhls_impl

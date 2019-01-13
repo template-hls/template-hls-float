@@ -11,3 +11,7 @@ build_*
 /build-2018
 /src/cmake_*
 /build-release
+/build-benchmarks
+/build-ratio
+/buildsw
+/vhls_tmp

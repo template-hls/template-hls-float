@@ -96,6 +96,25 @@ fp_primitive_add_instance(12 78)
 fp_primitive_add_instance(15 112)
 
 
+function(fp_primitive_ratio_add_instance E1 F1 E2 F2)
+set(EEE1 ${E1})
+set(FFF1 ${F1})
+set(EEE2 ${E2})
+set(FFF2 ${F2})
+
+configure_file( fp_add_flopoco_single_ratio_EEE1_FFF1_EEE2_FFF2.cpp fp_add_flopoco_single_ratio_${EEE1}_${FFF1}_${EEE2}_${FFF2}.cpp )
+configure_file( fp_mul_flopoco_ratio_EEE1_FFF1_EEE2_FFF2.cpp fp_mul_flopoco_ratio_${EEE1}_${FFF1}_${EEE2}_${FFF2}.cpp )
+endfunction(fp_primitive_ratio_add_instance)
+
+foreach(F1 RANGE 3 44 2)
+fp_primitive_ratio_add_instance(8 23 8 ${F1})
+endforeach(F1)
+
+foreach(F1 RANGE 4 104 4)
+fp_primitive_ratio_add_instance(11 52 11 ${F1})
+endforeach(F1)
+
+
 add_executable(fp_primitive_build_main build_main.cpp
     fp_mul_native_8_23.cpp
     fp_add_native_8_23.cpp
