@@ -15,19 +15,27 @@ def get_value(path, match, extract = get_as_int):
         for l in f:
             m=rr.match(l)
             if m:
-                assert got==None, prevLine
-                got=extract(m)
+                curr=extract(m)
+                assert got==None or got==curr, prevLine
+                got=curr
                 prevLine=l
     assert got!=None
     return got
 
 base_path=sys.argv[1]
-run_key=sys.argv[2]
+impl_run_key=sys.argv[2]
+synth_run_key=sys.argv[3]
+group=sys.argv[4]
+row_extra = sys.argv[5]
+hdr_extra = sys.argv[6]
 
-proj_dir=""
-if len(sys.argv)>3:
-    proj_dir = sys.argv[3]
-    sys.stderr.write(proj_dir+"\n")
+sys.stderr.write("base_path='{}'\n".format(base_path))
+sys.stderr.write("impl_run_key='{}'\n".format(impl_run_key))
+sys.stderr.write("synthe_run_key='{}'\n".format(synth_run_key))
+sys.stderr.write("group='{}'\n".format(group))
+sys.stderr.write("row_extra='{}'\n".format(row_extra))
+sys.stderr.write("hdr_extra='{}'\n".format(hdr_extra))
+
 
 impl_utilisation_path="{}_impl_utilisation.txt".format(base_path)
 impl_timing_path="{}_impl_timing.txt".format(base_path)
@@ -57,6 +65,9 @@ areaLUTsLogic = get_value(impl_utilisation_path,
 areaLUTsMemory = get_value(impl_utilisation_path,
     "\|   LUT as Memory\s+\|\s+([0-9]+)\s+\|.*")
 
+areaFFs = get_value(impl_utilisation_path,
+    "\|\s+Slice Registers\s+\|\s+([0-9]+)\s+\|.*")
+
 areaDSPs = get_value(impl_utilisation_path,
     "\| DSPs\s+\|\s+([0-9]+)\s+\|.*")
 areaBRAMs = get_value(impl_utilisation_path,
@@ -75,26 +86,24 @@ areaBRAMs = get_value(impl_utilisation_path,
 achievedClockPeriod=clockConstraintPeriod-WNS
 achievedClockRate=1.0/achievedClockPeriod*1000.0
 
-header="# {0:>16},{1:>32},{2:>40}".format("part", "topLevel", "run")
-data=    "{0:>16},{1:>32},{2:>40}".format(part, topLevel, run_key)
+header="# {0:>40},{1:>32},{2:>16},{0:>16},{1:>32}".format("iRunKey", "iSynthKey", "group", "iPart", "iTopLevel")
+data=  "  {0:>40},{1:>32},{2:>16},{0:>16},{1:>32}".format( impl_run_key,   synth_run_key,   group,    part, topLevel)
 
-header+=",{0:>7},{1:>7},{2:>7},{3:>7},{4:>7},{5:>7}".format("aSlice","aSliceL","aSliceM","aLUT","aLUTLog","aLUTMem") 
-data  +=",{0:>7},{1:>7},{2:>7},{3:>7},{4:>7},{5:>7}".format(areaSlices,areaSliceLs,areaSliceMs,areaLUTs, areaLUTsLogic, areaLUTsMemory) 
+header+=",{0:>7},{1:>7},{2:>7},{3:>7},{4:>7},{5:>7},{6:>7}".format("iSlice","iSliceL","iSliceM","iLUT","iLUTLog","iLUTMem","iFF") 
+data  +=",{0:>7},{1:>7},{2:>7},{3:>7},{4:>7},{5:>7},{6:>7}".format(areaSlices,areaSliceLs,areaSliceMs,areaLUTs, areaLUTsLogic, areaLUTsMemory,areaFFs) 
 
-header+=",{0:>6},{1:>6}".format("aBRAM","aDSP") 
+header+=",{0:>6},{1:>6}".format("iBRAM","iDSP") 
 data  +=",{0:>6},{1:>6}".format(areaBRAMs,areaDSPs) 
 
 header+=",{0:>12},{1:>12},{2:>6},{3:>6},{4:>12},{5:>12},{6:>12}".format(
-    "targetPeriod","targetRate","WNS","TNS","FailingPaths","actualPeriod","actualRate") 
+    "iTargetPeriod","iTargetRate","iWNS","iTNS","iFailingPaths","iAchievedPeriod","iAchievedRate") 
 data  +=",{0:>12},{1:>12},{2:>6},{3:>6},{4:>12},{5:>12},{6:>12}".format(
     clockConstraintPeriod,clockConstraintRate,WNS,TNS,numFailing,achievedClockPeriod,achievedClockRate) 
 
 
 
-row_extra=""
-if len(sys.argv)>4:
-    row_extra = sys.argv[4]
 
-print(header)
+
+print(header+hdr_extra)
 print(data+row_extra)
 

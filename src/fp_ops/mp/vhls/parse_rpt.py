@@ -17,6 +17,11 @@ def get_int(tree, path):
 import sys
 data=sys.stdin.read()
 
+synth_run_key=sys.argv[1]
+group=sys.argv[2]
+row_extra=sys.argv[3]
+hdr_extra=sys.argv[4]
+
 data='<?xml version="1.0" encoding="UTF-8"?>\n' + data;
 
 import xml.etree.ElementTree as ET
@@ -36,14 +41,14 @@ areaLUT = get_int(tree, "./AreaEstimates/Resources/LUT")
 areaBRAM = get_int(tree, "./AreaEstimates/Resources/BRAM_18K")
 areaDSP = get_int(tree, "./AreaEstimates/Resources/DSP48E")
 
-header="# {0:>16},{1:>32},{2:>8},{3:>8},{4:>8},{5:>5},{6:>5}".format("part", "topLevel", "targClk", "uncerClk", "estClk", "depth", "II")
-data=  "  {0:>16},{1:>32},{2:>8},{3:>8},{4:>8},{5:>5},{6:>5}".format(part, topLevel, targetPeriod, targetUncertainty, estimatedPeriod, pipelineDepth, initiationInterval)
+header="# {:>32},{:>16},{:>16},{:>32},{:>8},{:>8},{:>8},{:>5},{:>5}".format("sRunKey", "sGroup", "sPart", "sTopLevel", "sTargClk", "sUncerClk", "sEstClk", "sDepth", "sII")
+data=  "  {:>32},{:>16},{:>16},{:>32},{:>8},{:>8},{:>8},{:>5},{:>5}".format(synth_run_key,   group,    part, topLevel, targetPeriod, targetUncertainty, estimatedPeriod, pipelineDepth, initiationInterval)
 
-header=header+", {0:>6}, {1:>6}, {2:>6}, {3:>6}".format("FFs","LUTs","BRAMS","DSPS")
+header=header+", {0:>6}, {1:>6}, {2:>6}, {3:>6}".format("sFFs","sLUTs","sBRAMS","sDSPS")
 data=data    +", {0:>6}, {1:>6}, {2:>6}, {3:>6}".format(areaFFs,areaLUT,areaBRAM,areaDSP)
 
-row_extra = sys.argv[1]
+row_extra = sys.argv[3]
 
-print(header)
+print(header+hdr_extra)
 print(data+row_extra)
 
