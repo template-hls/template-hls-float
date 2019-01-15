@@ -29,6 +29,14 @@ echo "}"
 
 echo "set period [expr [mhz2ns ${CLOCKRATE}] / ${CLOCKMULT} ]"
 
+echo "set constr_dir ${IMPLPROJNAME}/constr"
+
+echo "file mkdir \${constr_dir}/constrs_1"
+echo "file mkdir \${constr_dir}/constrs_1/new"
+echo "close [ open \${constr_dir}/constrs_1/new/constraints.xdc w ]"
+echo "add_files -fileset constrs_1 \${constr_dir}/constrs_1/new/constraints.xdc"
+echo "set_property target_constrs_file \${constr_dir}/constrs_1/new/constraints.xdc [current_fileset -constrset]"
+
 echo "synth_design -name synth_1"
 echo "if {[string match \"*flopnat*\" \"${1}\"]} {"
 echo "     create_clock -period \${period} -name ap_clk [get_ports clk]"
@@ -37,13 +45,6 @@ echo "     create_clock -period \${period} -name ap_clk [get_ports ap_clk]"
 echo "}"
 # -waveform {0.000 [expr \${period} / 2.0 ] } [get_ports ap_clk]
 
-echo "set constr_dir ${IMPLPROJNAME}/constr"
-
-echo "file mkdir $constr_dir/constrs_1"
-echo "file mkdir $constr_dir/constrs_1/new"
-echo "close [ open $constr_dir/constrs_1/new/constraints.xdc w ]"
-echo "add_files -fileset constrs_1 $constr_dir/constrs_1/new/constraints.xdc"
-echo "set_property target_constrs_file $constr_dir/constrs_1/new/constraints.xdc [current_fileset -constrset]"
 echo "save_constraints -force"
 
 echo "reset_run synth_1"
