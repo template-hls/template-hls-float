@@ -404,9 +404,6 @@ add_vivado_hls_core_impl(scale_clock fp_add_native_nodsp_8_23 ${RATE} fp_add_nat
 endforeach(RATE)
 
 
-create_group(dot_product)
-set(RATE 200MHz)
-
 function(add_benchmark_dot_par4 VARIANT RATE)
 string(REPLACE "_" "," ROW_EXTRA "${VARIANT}" )
 set( ROW_EXTRA ",${ROW_EXTRA}")
@@ -416,29 +413,35 @@ add_vivado_hls_core_synth(dot_product dot_product_par4_tl_${VARIANT}  ${RATE}   
 add_vivado_hls_core_impl(dot_product  dot_product_par4_tl_${VARIANT}  ${RATE}   dot_product_par4 ../../../benchmarks/dot_product/dot_product_par4_tl_${VARIANT}.cpp  1.0  "${ROW_EXTRA}" "${HDR_EXTRA}")
 endfunction(add_benchmark_dot_par4)
 
+create_group(dot_product)
+foreach(RATE 100MHz 200MHz)
+
 add_benchmark_dot_par4(hls16_hls16_hls16_round ${RATE})
-add_benchmark_dot_par4(hls24_hls16_hls16_round ${RATE})
-add_benchmark_dot_par4(hls24_hls24_hls24_round ${RATE})
+#add_benchmark_dot_par4(hls24_hls16_hls16_round ${RATE})
+#add_benchmark_dot_par4(hls24_hls24_hls24_round ${RATE})
 add_benchmark_dot_par4(hls32_hls16_hls16_round ${RATE})
 add_benchmark_dot_par4(hls32_hls16_hls16_full ${RATE})
 add_benchmark_dot_par4(hls32_hls32_hls16_round ${RATE})
 add_benchmark_dot_par4(hls32_hls32_hls32_round ${RATE})
-add_benchmark_dot_par4(hls48_hls24_hls24_round ${RATE})
-add_benchmark_dot_par4(hls48_hls48_hls48_round ${RATE})
-add_benchmark_dot_par4(hls64_hls32_hls32_round ${RATE})
-add_benchmark_dot_par4(hls64_hls32_hls32_full ${RATE})
-add_benchmark_dot_par4(hls64_hls64_hls32_round ${RATE})
-add_benchmark_dot_par4(hls64_hls64_hls64_round ${RATE})
+#add_benchmark_dot_par4(hls48_hls24_hls24_round ${RATE})
+#add_benchmark_dot_par4(hls48_hls48_hls48_round ${RATE})
+#add_benchmark_dot_par4(hls64_hls32_hls32_round ${RATE})
+#add_benchmark_dot_par4(hls64_hls32_hls32_full ${RATE})
+#add_benchmark_dot_par4(hls64_hls64_hls32_round ${RATE})
+#add_benchmark_dot_par4(hls64_hls64_hls64_round ${RATE})
 
 add_benchmark_dot_par4(nat16_nat16_nat16_round ${RATE})
 add_benchmark_dot_par4(nat32_nat16_nat16_round ${RATE})
 add_benchmark_dot_par4(nat32_nat32_nat16_round ${RATE})
 add_benchmark_dot_par4(nat32_nat32_nat32_round ${RATE})
-add_benchmark_dot_par4(nat64_nat32_nat32_round ${RATE})
-add_benchmark_dot_par4(nat64_nat64_nat32_round ${RATE})
-add_benchmark_dot_par4(nat64_nat64_nat64_round ${RATE})
+#add_benchmark_dot_par4(nat64_nat32_nat32_round ${RATE})
+#add_benchmark_dot_par4(nat64_nat64_nat32_round ${RATE})
+#add_benchmark_dot_par4(nat64_nat64_nat64_round ${RATE})
 
-add_benchmark_dot_par4(soft32_soft32_soft32_round ${RATE})
+#add_benchmark_dot_par4(soft32_soft32_soft32_round ${RATE})
+
+endforeach(RATE)
+
 
 
 create_group(primitives)

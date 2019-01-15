@@ -27,15 +27,59 @@ struct native_dot_traits
 	typedef TLeft left_t;
 	typedef TRight right_t;
 
-	static TAcc add(const TAcc &a, const TAcc &b)
-	{ return a+b; }
+	static double add(const double &a, const double &b)
+	{
+        return a+b;
+    }
+
+    static double add(const float &a, const float &b)
+	{
+        float res;
+        #pragma HLS RESOURCE variable=res core=FAddSub_nodsp
+        res= a+b;
+        return res;
+    }
+
+    static half add(const half &a, const half &b)
+	{
+        half res;
+        #pragma HLS RESOURCE variable=res core=HAddSub_nodsp
+        res= a+b;
+        return res;
+    }
+
+    static double mul(const double &a, const double &b)
+	{
+        double temp;
+        temp=a*b;
+        return temp;
+    }
+
+    static float mul(const float &a, const float &b)
+	{
+        double temp;
+        #pragma HLS RESOURCE variable=temp core=FMul_fulldsp
+        temp=a*b;
+        return temp;
+    }
+
+    static double mul(const half &a, const half &b)
+	{
+        half res;
+        //#pragma HLS RESOURCE variable=res core=HMul_nodsp
+        res= a*b;
+        return res;
+    }
+
 
     static TAcc add_mul(const TAcc &a, const TLeft &x, const TRight &y)
-    { return a+(TAcc)(x*(TLeft)y); }
+    {
+        return add(a,(TAcc)mul(x,(TLeft)y));
+    }
 
     static TAcc dot2(const TLeft &x0, const TRight &y0, const TLeft &x1, const TRight &y1)
     {
-        return ((TAcc)(x0*y0)) + ((TAcc)(x1*y1));
+        return add( (TAcc)mul(x0, (TLeft)y0) , (TAcc)mul(x1,(TLeft)y1) );
     }
 };
 
