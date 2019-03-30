@@ -76,6 +76,9 @@
 //#define THLS_INLINE inline __attribute__((always_inline))
 #define THLS_INLINE inline
 
+#define THLS_INLINE_STRONG inline __attribute__((always_inline))
+//#define THLS_INLINE_STRONG inline
+
 /* Error:
  *
  * In file included from C:\Usr\Xilinx2015.4\Vivado_HLS\2015.4\common\technology\autopilot\ap_int.h:60:
@@ -114,8 +117,11 @@ namespace std{
 	// ap_uint does not support constexpr anywhere
 	#define THLS_CONSTEXPR
 
-	constexpr int thls_ctMax(const int a, const int b)
+	THLS_INLINE_STRONG constexpr int thls_ctMax(const int a, const int b)
 	{ return a>b ? a : b; }
+
+    THLS_INLINE_STRONG constexpr int thls_ctMin(const int a, const int b)
+    { return a<b ? a : b; }
 
 	#define THLS_STATIC_ASSERT(c,msg) static_assert(c, msg)
 
@@ -149,6 +155,17 @@ namespace std{
 	};
 
 	#define thls_ctMax(a,b) (::thls::ctMax_impl<(a),(b)>::value)
+
+	namespace thls
+	{
+		template<int a,int b>
+		struct ctMin_impl
+		{
+			static const int value=a<b?a:b;
+		};
+	};
+
+	#define thls_ctMin(a,b) (::thls::ctMin_impl<(a),(b)>::value)
 
 #endif
 
@@ -199,15 +216,15 @@ template<int HI,int LO,int W>
 THLS_INLINE fw_uint<HI-LO+1> get_bits(const fw_uint<W> &x);
 */
 
-THLS_INLINE  fw_uint<1> operator||(const fw_uint<1> &a, const fw_uint<1> &b)
+THLS_INLINE_STRONG  fw_uint<1> operator||(const fw_uint<1> &a, const fw_uint<1> &b)
 { return a|b; }
 
-THLS_INLINE  fw_uint<1> operator&&(const fw_uint<1> &a, const fw_uint<1> &b)
+THLS_INLINE_STRONG  fw_uint<1> operator&&(const fw_uint<1> &a, const fw_uint<1> &b)
 { return a&b; }
 
 
 template<int W>
-THLS_INLINE fw_uint<W> zg()
+THLS_INLINE_STRONG fw_uint<W> zg()
 {
     return fw_uint<W>(0);
 }
@@ -218,7 +235,7 @@ THLS_INLINE fw_uint<W> zg()
     static const fw_uint<4> zg4 = zg<4>();
 
 template<int W>
-THLS_INLINE fw_uint<W> og()
+THLS_INLINE_STRONG fw_uint<W> og()
 {
     return ~zg<W>();
 }
@@ -229,14 +246,14 @@ static const fw_uint<3> og3 = og<3>();
 static const fw_uint<4> og4 = og<4>();
 
 template<int W>
-THLS_INLINE fw_uint<W> cg(int x)
+THLS_INLINE_STRONG fw_uint<W> cg(int x)
 {
   return fw_uint<W>(x);
 }
 
 
 template<int B,int W>
-THLS_INLINE fw_uint<W-B> take(const fw_uint<W> &x)
+THLS_INLINE_STRONG fw_uint<W-B> take(const fw_uint<W> &x)
 {
     assert(B>=0);
     assert(B<=W);
@@ -244,39 +261,39 @@ THLS_INLINE fw_uint<W-B> take(const fw_uint<W> &x)
 }
 
 template<int B,int W>
-THLS_INLINE fw_uint<1> get_bit(const fw_uint<W> &x)
+THLS_INLINE_STRONG fw_uint<1> get_bit(const fw_uint<W> &x)
 {
     return get_bits<B,B>(x);
 }
 
 
 template<int W>
-THLS_INLINE fw_uint<1> take_lsb(const fw_uint<W> &x)
+THLS_INLINE_STRONG fw_uint<1> take_lsb(const fw_uint<W> &x)
 {
   return get_bit<0>(x);
 }
 
 template<int W>
-THLS_INLINE fw_uint<W-1> drop_lsb(const fw_uint<W> &x)
+THLS_INLINE_STRONG fw_uint<W-1> drop_lsb(const fw_uint<W> &x)
 {
   return get_bits<W-1,1>(x);
 }
 
 template<int W>
-THLS_INLINE fw_uint<1> take_msb(const fw_uint<W> &x)
+THLS_INLINE_STRONG fw_uint<1> take_msb(const fw_uint<W> &x)
 {
   return get_bit<W-1>(x);
 }
 
 template<int W>
-THLS_INLINE fw_uint<W-1> drop_msb(const fw_uint<W> &x)
+THLS_INLINE_STRONG fw_uint<W-1> drop_msb(const fw_uint<W> &x)
 {
   return get_bits<W-2,0>(x);
 }
 
 
 template<int B,int W>
-THLS_INLINE fw_uint<B> take_lsbs(const fw_uint<W> &x)
+THLS_INLINE_STRONG fw_uint<B> take_lsbs(const fw_uint<W> &x)
 {
   assert(B>=0);
   assert(B<=W);
@@ -288,7 +305,7 @@ THLS_INLINE fw_uint<B> take_lsbs(const fw_uint<W> &x)
 }
 
 template<int B,int W>
-THLS_INLINE fw_uint<W-B> drop_lsbs(const fw_uint<W> &x)
+THLS_INLINE_STRONG fw_uint<W-B> drop_lsbs(const fw_uint<W> &x)
 {
   assert(B>=0);
   assert(B<=W);
@@ -300,7 +317,7 @@ THLS_INLINE fw_uint<W-B> drop_lsbs(const fw_uint<W> &x)
 }
 
 template<int B,int W>
-THLS_INLINE fw_uint<B> take_msbs(const fw_uint<W> &x)
+THLS_INLINE_STRONG fw_uint<B> take_msbs(const fw_uint<W> &x)
 {
   assert(B>=0);
   assert(B<=W);
@@ -312,7 +329,7 @@ THLS_INLINE fw_uint<B> take_msbs(const fw_uint<W> &x)
 }
 
 template<int B,int W>
-THLS_INLINE fw_uint<W-B> drop_msbs(const fw_uint<W> &x)
+THLS_INLINE_STRONG fw_uint<W-B> drop_msbs(const fw_uint<W> &x)
 {
   assert(B>=0);
   assert(B<=W);
@@ -325,7 +342,7 @@ THLS_INLINE fw_uint<W-B> drop_msbs(const fw_uint<W> &x)
 
 
 template<int A,int B>
-THLS_INLINE fw_uint<A+B> full_mul(const fw_uint<A> &a, const fw_uint<B> &b)
+THLS_INLINE_STRONG fw_uint<A+B> full_mul(const fw_uint<A> &a, const fw_uint<B> &b)
 {
     return a*b;
 }
@@ -333,39 +350,39 @@ THLS_INLINE fw_uint<A+B> full_mul(const fw_uint<A> &a, const fw_uint<B> &b)
 
 
 template<int P,int W>
-THLS_INLINE fw_uint<P+W> zpad_hi(const fw_uint<W> &x)
+THLS_INLINE_STRONG fw_uint<P+W> zpad_hi(const fw_uint<W> &x)
 {
   return concat(zg<P>(),x);
 }
 
 template<int P,int W>
-THLS_INLINE fw_uint<P+W> opad_hi(const fw_uint<W> &x)
+THLS_INLINE_STRONG fw_uint<P+W> opad_hi(const fw_uint<W> &x)
 {
   return concat(og<P>(),x);
 }
 
 template<int P,int W>
-THLS_INLINE fw_uint<P+W> zpad_lo(const fw_uint<W> &x)
+THLS_INLINE_STRONG fw_uint<P+W> zpad_lo(const fw_uint<W> &x)
 {
   return concat(x,zg<P>());
 }
 
 template<int P,int W>
-THLS_INLINE fw_uint<P+W> opad_lo(const fw_uint<W> &x)
+THLS_INLINE_STRONG fw_uint<P+W> opad_lo(const fw_uint<W> &x)
 {
   return concat(x,og<P>());
 }
 
 
 template<int B,int W>
-THLS_INLINE fw_uint<B> extu(const fw_uint<W> &x)
+THLS_INLINE_STRONG fw_uint<B> extu(const fw_uint<W> &x)
 {
   THLS_STATIC_ASSERT(B>=W, "Cannot extend to smaller width.");
   return zpad_hi<B-W>(x);
 }
 
 template<int W>
-THLS_INLINE fw_uint<W> add_with_cin(const fw_uint<W> &x, const fw_uint<W> &y, const fw_uint<1> &cin)
+THLS_INLINE_STRONG fw_uint<W> add_with_cin(const fw_uint<W> &x, const fw_uint<W> &y, const fw_uint<1> &cin)
 {
   return (x+y+zpad_hi<W-1>(cin));
 
@@ -373,19 +390,19 @@ THLS_INLINE fw_uint<W> add_with_cin(const fw_uint<W> &x, const fw_uint<W> &y, co
 }
 
 template<int W>
-THLS_INLINE fw_uint<W> add_sub(const fw_uint<1> &doSub, const fw_uint<W> &x, const fw_uint<W> &y)
+THLS_INLINE_STRONG fw_uint<W> add_sub(const fw_uint<1> &doSub, const fw_uint<W> &x, const fw_uint<W> &y)
 {
   return add_with_cin(x, select(doSub, ~y, y), doSub);
 }
 
 template<int W>
-THLS_INLINE fw_uint<W> add_cin(const fw_uint<W> &x, const fw_uint<1> &cin)
+THLS_INLINE_STRONG fw_uint<W> add_cin(const fw_uint<W> &x, const fw_uint<1> &cin)
 {
   return (x+zpad_hi<W-1>(cin));
 }
 
 template<class T>
-THLS_INLINE const T &select(const fw_uint<1> &c0, const T &v0, const T &def)
+THLS_INLINE_STRONG const T &select(const fw_uint<1> &c0, const T &v0, const T &def)
 {
   if(c0.to_bool()){
     return v0;
@@ -395,7 +412,7 @@ THLS_INLINE const T &select(const fw_uint<1> &c0, const T &v0, const T &def)
 }
 
 template<class T>
-THLS_INLINE const T &select(bool c0, const T &v0, const T &def)
+THLS_INLINE_STRONG const T &select(bool c0, const T &v0, const T &def)
 {
   if(c0){
     return v0;
@@ -405,7 +422,7 @@ THLS_INLINE const T &select(bool c0, const T &v0, const T &def)
 }
 
 template<class T,class C1>
-THLS_INLINE const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, const T &v1, const T &def)
+THLS_INLINE_STRONG const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, const T &v1, const T &def)
 {
   if(c0.to_bool()){
     return v0;
@@ -415,7 +432,7 @@ THLS_INLINE const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, con
 }
 
 template<class T,class C1>
-THLS_INLINE const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, const T &def)
+THLS_INLINE_STRONG const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, const T &def)
 {
   if(c0){
     return v0;
@@ -425,7 +442,7 @@ THLS_INLINE const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, con
 }
 
 template<class T,class C1,class C2>
-THLS_INLINE const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const T &def)
+THLS_INLINE_STRONG const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const T &def)
 {
   if(c0.to_bool()){
     return v0;
@@ -435,7 +452,7 @@ THLS_INLINE const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, con
 }
 
 template<class T,class C1,class C2>
-THLS_INLINE const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const T &def)
+THLS_INLINE_STRONG const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const T &def)
 {
   if(c0){
     return v0;
@@ -445,7 +462,7 @@ THLS_INLINE const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, con
 }
 
 template<class T,class C1,class C2,class C3>
-THLS_INLINE const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const C3 &c3, const T &v3, const T &def)
+THLS_INLINE_STRONG const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const C3 &c3, const T &v3, const T &def)
 {
   if(c0.to_bool()){
     return v0;
@@ -455,7 +472,7 @@ THLS_INLINE const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, con
 }
 
 template<class T,class C1,class C2,class C3>
-THLS_INLINE const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const C3 &c3, const T &v3, const T &def)
+THLS_INLINE_STRONG const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const C3 &c3, const T &v3, const T &def)
 {
   if(c0){
     return v0;
@@ -466,7 +483,7 @@ THLS_INLINE const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, con
 
 
 template<class T,class C1,class C2,class C3,class C4>
-THLS_INLINE const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const C3 &c3, const T &v3, const C4 &c4, const T &v4, const T &def)
+THLS_INLINE_STRONG const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const C3 &c3, const T &v3, const C4 &c4, const T &v4, const T &def)
 {
   if(c0.to_bool()){
     return v0;
@@ -476,7 +493,7 @@ THLS_INLINE const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, con
 }
 
 template<class T,class C1,class C2,class C3,class C4>
-THLS_INLINE const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const C3 &c3, const T &v3, const C4 &c4, const T &v4, const T &def)
+THLS_INLINE_STRONG const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const C3 &c3, const T &v3, const C4 &c4, const T &v4, const T &def)
 {
   if(c0){
     return v0;
@@ -487,7 +504,7 @@ THLS_INLINE const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, con
 
 
 template<class T,class C1,class C2,class C3,class C4,class C5>
-THLS_INLINE const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const C3 &c3, const T &v3, const C4 &c4, const T &v4, const C5 &c5, const T &v5,const T &def)
+THLS_INLINE_STRONG const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const C3 &c3, const T &v3, const C4 &c4, const T &v4, const C5 &c5, const T &v5,const T &def)
 {
   if(c0.to_bool()){
     return v0;
@@ -497,7 +514,7 @@ THLS_INLINE const T &select(const fw_uint<1> &c0, const T &v0, const C1 &c1, con
 }
 
 template<class T,class C1,class C2,class C3,class C4,class C5>
-THLS_INLINE const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const C3 &c3, const T &v3, const C4 &c4, const T &v4, const C5 &c5, const T &v5, const T &def)
+THLS_INLINE_STRONG const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, const C2 &c2, const T &v2, const C3 &c3, const T &v3, const C4 &c4, const T &v4, const C5 &c5, const T &v5, const T &def)
 {
   if(c0){
     return v0;
@@ -508,7 +525,7 @@ THLS_INLINE const T &select(bool c0, const T &v0, const C1 &c1, const T &v1, con
 
 
 template<int W>
-THLS_INLINE fw_uint<W> copybit(const fw_uint<1> &b)
+THLS_INLINE_STRONG fw_uint<W> copybit(const fw_uint<1> &b)
 {
   return select(b, og<W>(), zg<W>());
 }
@@ -619,20 +636,20 @@ THLS_INLINE fw_uint<W>select_unique(
 
     template<int HI,int LO,int W>
     struct concat_array_impl {
-    	THLS_INLINE static fw_uint<(HI - LO + 1) * W> go(const fw_uint<W> *x) {
+    	THLS_INLINE_STRONG static fw_uint<(HI - LO + 1) * W> go(const fw_uint<W> *x) {
           return concat(x[HI], concat_array_impl<HI - 1, LO, W>::go(x));
         };
     };
 
     template<int LO,int W>
     struct concat_array_impl<LO,LO,W> {
-    	THLS_INLINE static fw_uint<W> go(const fw_uint<W> *x) {
+    	THLS_INLINE_STRONG static fw_uint<W> go(const fw_uint<W> *x) {
           return x[LO];
         };
     };
 
     template<int HI,int LO,int W>
-    THLS_INLINE fw_uint<(HI-LO+1)*W> concat_array(const fw_uint<W> *x)
+    THLS_INLINE_STRONG fw_uint<(HI-LO+1)*W> concat_array(const fw_uint<W> *x)
     {
       static_assert(HI>=LO, "Range must be non-empty");
       return concat_array_impl<HI,LO,W>::go(x);
@@ -653,7 +670,7 @@ public:
     }
   }
 
-  THLS_INLINE const fw_uint<WD> &operator()(const fw_uint<WA> &addr) const
+  THLS_INLINE_STRONG const fw_uint<WD> &operator()(const fw_uint<WA> &addr) const
   {
     return entries[addr.to_int()];
   }

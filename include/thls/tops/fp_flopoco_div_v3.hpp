@@ -28,7 +28,7 @@ namespace thls
 {
 
 template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
-THLS_INLINE fp_flopoco<wER,wFR> div(const fp_flopoco<wEX,wFX> &xPre, const fp_flopoco<wEY,wFY> &yPre, int DEBUG)
+THLS_INLINE fp_flopoco<wER,wFR> div_v3(const fp_flopoco<wEX,wFX> &xPre, const fp_flopoco<wEY,wFY> &yPre, int DEBUG)
 {
     // FPDiv::FPDiv(Target* target, int wE, int wF) :
 	//	Operator(target), wE(wE), wF(wF) {

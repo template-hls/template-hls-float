@@ -53,6 +53,84 @@ void convert(fp_ieee<E,F> &dst, const fp_flopoco<E,F> &src)
 }
 
 
+template<int FR_cmp_FX, int FR, int FX>
+class convert_frac;
+
+template<int FR, int FX>
+struct  convert_frac<+1,FR,FX>
+{
+	// FR is bigger
+	static void go(fw_uint<FR> &dst, fw_uint<1> &fracWrappedUp, const fw_uint<FX> &xFrac){
+		dst = checked_cast<FR>( zpad_lo<FR-FX>(xFrac) );
+		fracWrappedUp=fw_uint<1>(0);
+	}
+};
+
+template<int FR, int FX>
+struct  convert_frac<0,FR,FX>
+{
+	// Same size
+	static void go(fw_uint<FR> &dst, fw_uint<1> &fracWrappedUp, const fw_uint<FX> &src){
+		dst = src;
+		fracWrappedUp=fw_uint<1>(0);
+	}
+};
+
+template<int FR, int FX>
+struct convert_frac<-1,FR,FX>
+{
+	// FR is smaller
+	static void go(fw_uint<FR> &rFrac, fw_uint<1> &fracWrappedUp, const fw_uint<FX> &xFrac){
+		auto keep = take_msbs<FR>(xFrac);
+		auto drop = take_lsbs<FX - FR>(xFrac);
+
+		/*
+		 *   kkk|d
+		 *
+		 *   kkk|0    -> kkk+0
+		 *   kk0|1    -> kkk+0
+		 *   kk1|1    -> kkk+1
+		 *
+		 *   kkk|dd
+		 *
+		 *   kkk|00    -> kkk+0     x.00 -> x
+		 *   kkk|01    -> kkk+0     x.25 -> x
+		 *   kk0|10    -> kkk+0     x.50 -> x if even(x)
+		 *   kk1|10    -> kkk+1     x.50 -> x+1 if odd(x)
+		 *   kkk|11    -> kkk+1     x.75 -> x+1
+		 *
+		 *   kkk|0    -> kkk+0
+		 *   kk0|1    -> kkk+0
+		 *   kk1|1    -> kkk+1
+		 *
+		 *
+		 *   kkk|ddd
+		 *
+		 *   kkk|011  -> kkk+0
+		 *   kk0|100  -> kkk+0
+		 *   kk1|100  -> kkk+1
+		 *   kkk|101  -> kkk+1
+		 *
+		 *   up= isDropOverHalf | (isDropHalf & isKeepOdd)
+		 */
+
+		// TODO: rationalise all of this, it should just use standard
+		// rounding approach
+
+		const auto HALF = concat(og<1>(), zg<(FX - FR) - 1>());
+		auto isDropOverHalf = drop > HALF;
+		auto isDropHalf = drop == HALF;
+		auto isKeepOdd = take_lsbs<1>(keep);
+
+		auto roundUp = isDropOverHalf | (isDropHalf & isKeepOdd);
+
+		rFrac = keep+extu<FR>(roundUp);
+
+		auto isKeepOnes = (keep == og<FR>());
+		fracWrappedUp=(roundUp & isKeepOnes);
+	}
+};
+
 template<int ER,int FR,int EX,int FX>
 void convert(fp_flopoco<ER,FR> &dst, const fp_flopoco<EX,FX> &src)
 {
@@ -64,58 +142,8 @@ void convert(fp_flopoco<ER,FR> &dst, const fp_flopoco<EX,FX> &src)
     fw_uint<FR> rFrac;
     fw_uint<1> fracWrappedUp=fw_uint<1>(0);
 
-    if(FR > FX) {
-        rFrac = checked_cast<FR>( zpad_lo<FR-FX>(xFrac) );
-    }else if(FR==FX){
-        rFrac = checked_cast<FR>( xFrac );
-    }else {
-        if (rFlags.to_int() == 0b01) {
-            auto keep = take_msbs<FR>(xFrac);
-            auto drop = take_lsbs<FX - FR>(xFrac);
-
-            /*
-             *   kkk|d
-             *
-             *   kkk|0    -> kkk+0
-             *   kk0|1    -> kkk+0
-             *   kk1|1    -> kkk+1
-             *
-             *   kkk|dd
-             *
-             *   kkk|00    -> kkk+0     x.00 -> x
-             *   kkk|01    -> kkk+0     x.25 -> x
-             *   kk0|10    -> kkk+0     x.50 -> x if even(x)
-             *   kk1|10    -> kkk+1     x.50 -> x+1 if odd(x)
-             *   kkk|11    -> kkk+1     x.75 -> x+1
-             *
-             *   kkk|0    -> kkk+0
-             *   kk0|1    -> kkk+0
-             *   kk1|1    -> kkk+1
-             *
-             *
-             *   kkk|ddd
-             *
-             *   kkk|011  -> kkk+0
-             *   kk0|100  -> kkk+0
-             *   kk1|100  -> kkk+1
-             *   kkk|101  -> kkk+1
-             *
-             *   up= isDropOverHalf | (isDropHalf & isKeepOdd)
-             */
-
-            const auto HALF = concat(og<1>(), zg<(FX - FR) - 1>());
-            auto isDropOverHalf = drop > HALF;
-            auto isDropHalf = drop == HALF;
-            auto isKeepOdd = take_lsbs<1>(keep);
-
-            auto roundUp = isDropOverHalf | (isDropHalf & isKeepOdd);
-
-            rFrac = keep+extu<FR>(roundUp);
-
-            auto isKeepOnes = (keep == og<FR>());
-            fracWrappedUp=(roundUp & isKeepOnes);
-        }
-    }
+    const int FR_cmp_FX=FR<FX ? -1 : FR>FX ? +1 : 0;
+    convert_frac<FR_cmp_FX,FR,FX>::go(rFrac, fracWrappedUp, xFrac);
 
     fw_uint<EX> xExp=src.get_exp_bits();
     fw_uint<ER> rExp;
@@ -162,6 +190,7 @@ void convert(fp_flopoco<ER,FR> &dst, const fp_flopoco<EX,FX> &src)
     );
 }
 
+#ifndef THLS_SYNTHESIS
     template<int ER,int FR,int EX,int FX>
     void ref_convert(fp_flopoco<ER,FR> &dst, const fp_flopoco<EX,FX> &src)
     {
@@ -180,6 +209,7 @@ void convert(fp_flopoco<ER,FR> &dst, const fp_flopoco<EX,FX> &src)
 
         dst=res;
     };
+#endif
 
     template<int ER,int FR,int EX,int FX>
     void flopoco_convert(fp_flopoco<ER,FR> &dst, const fp_flopoco<EX,FX> &src)

@@ -23,6 +23,11 @@ struct fp_flopoco
     enum{ exp_bits = ExpBits };
     enum{ frac_bits = FracBits };
 
+    static const int bias = (1<<(ExpBits-1))-1;
+
+    static const int min_exponent = 0-bias;
+    static const int max_exponent = 0+bias+1;
+
     THLS_INLINE THLS_CONSTEXPR fp_flopoco()
         : bits()
     {}
@@ -40,6 +45,54 @@ struct fp_flopoco
     // will be flushed to zero or infinity.
     // Number of bits in number must _always_ match FracBits
     explicit fp_flopoco(mpfr_t x, bool allowUnderOrOverflow=false);
+
+    // Warning: this is lossy
+    explicit fp_flopoco(double x)
+    {
+        fw_uint<1> sign(0);
+        if(x<0){
+            sign=fw_uint<1>(1);
+            x=-x;
+        }
+        fw_uint<2> flags(0);
+        fw_uint<ExpBits> exp(0);
+        fw_uint<FracBits> frac(0);
+        switch(std::fpclassify(x)){
+        case FP_INFINITE:  ;
+        case FP_NAN:
+            flags=fw_uint<2>(0b11);
+            break;
+        case FP_NORMAL:
+            {
+                //std::cerr<<"Normal\n";
+                flags=fw_uint<2>(0b01);
+                int e;
+                double f=frexp(x, &e);
+                e=e-1;
+                f=f*2;
+                if(e<min_exponent){
+                    flags=fw_uint<2>(0b00);
+                }else if(e>max_exponent){
+                    flags=fw_uint<2>(0b10);
+                }else{
+                    assert(1.0<=f && f<2.0);
+                    uint64_t fx=ldexp(f-1.0, FracBits);
+                    frac=fw_uint<FracBits>(fx);
+                    exp=fw_uint<ExpBits>(e+bias);
+                    //std::cerr<<"  x="<<x<<", f="<<f<<", e="<<e<<", fx="<<fx<<", exp="<<exp<<", frac="<<frac<<"\n";
+
+                }
+            }
+            break;
+        default:
+            assert(0);
+        case FP_SUBNORMAL:
+        case FP_ZERO:
+            break;
+        }
+        bits=concat(flags,sign,exp,frac);
+        //std::cerr<<"  res="<<to_double_approx()<<"\n";
+    }
 
 
     void get_exponent(int &e) const;
@@ -634,6 +687,123 @@ void ref_add(fp_flopoco<ER,FR> &dst, const fp_flopoco<EA,FA> &a, const fp_flopoc
 }
 
 template<int ER,int FR,int EA,int FA,int EB,int FB>
+fp_flopoco<ER,FR> ref_pow(const fp_flopoco<EA,FA> &a, const fp_flopoco<EB,FB> &b)
+{
+    mpfr_t ma, mb, mr;
+    mpfr_init2(ma,FA+1);
+    mpfr_init2(mb,FB+1);
+    mpfr_init2(mr,FR+1);
+
+    a.get(ma);
+    b.get(mb);
+
+    mpfr_pow(mr,ma,mb,MPFR_RNDN);
+
+    //mpfr_fprintf(stderr, "mpfr : %.Re + %.Re = %.Re\n", ma, mb, mr);
+
+    fp_flopoco<ER,FR> res(mr,true);
+
+    mpfr_clear(ma);
+    mpfr_clear(mb);
+    mpfr_clear(mr);
+
+    return res;
+}
+
+template<int ER,int FR,int EA,int FA,int EB,int FB>
+void ref_pow(fp_flopoco<ER,FR> &dst, const fp_flopoco<EA,FA> &a, const fp_flopoco<EB,FB> &b)
+{
+    dst=ref_pow<ER,FR>(a,b);
+}
+
+template<int ER,int FR,int EA,int FA>
+fp_flopoco<ER,FR> ref_neg(const fp_flopoco<EA,FA> &a)
+{
+    mpfr_t ma, mr;
+    mpfr_init2(ma,FA+1);
+    mpfr_init2(mr,FR+1);
+
+    a.get(ma);
+
+    mpfr_neg(mr,ma,MPFR_RNDN);
+
+    fp_flopoco<ER,FR> res(mr,true);
+
+    mpfr_clear(ma);
+    mpfr_clear(mr);
+
+    return res;
+}
+
+template<int ER,int FR,int EA,int FA>
+fp_flopoco<ER,FR> ref_inv(const fp_flopoco<EA,FA> &a)
+{
+    mpfr_t ma, mb, mr;
+    mpfr_init2(ma,FA+1);
+    mpfr_init2(mb,2); // Phh, don't see why we can't use 1.
+    mpfr_init2(mr,FR+1);
+
+    a.get(ma);
+    mpfr_set_d(mb, 1, MPFR_RNDN);
+
+    mpfr_div(mr,mb,ma,MPFR_RNDN);
+
+    fp_flopoco<ER,FR> res(mr,true);
+
+    mpfr_clear(ma);
+    mpfr_clear(mr);
+
+    return res;
+}
+
+    template<int ER,int FR,int EA,int FA>
+    void ref_inv_faithful(fp_flopoco<ER,FR> &r1, fp_flopoco<ER,FR> &r2, const fp_flopoco<EA,FA> &a)
+    {
+        mpfr_t ma, mb, mr;
+        mpfr_init2(ma,FA+1);
+        mpfr_init2(mb,2); // Phh, don't see why we can't use 1.
+        mpfr_init2(mr,FR+1);
+
+        a.get(ma);
+        mpfr_set_d(mb, 1, MPFR_RNDN);
+
+        mpfr_div(mr,mb,ma,MPFR_RNDD);
+        r1=fp_flopoco<ER,FR>(mr,true);
+
+        mpfr_div(mr,mb,ma,MPFR_RNDU);
+        r2=fp_flopoco<ER,FR>(mr,true);
+
+        mpfr_clear(ma);
+        mpfr_clear(mr);
+
+    }
+
+    template<int ER,int FR,int EA,int FA>
+     void ref_inv(fp_flopoco<ER,FR> &d, const fp_flopoco<EA,FA> &a)
+    {
+         d=ref_inv<ER,FR>(a);
+    }
+
+template<int ER,int FR,int EA,int FA>
+fp_flopoco<ER,FR> ref_convert(const fp_flopoco<EA,FA> &a)
+{
+    mpfr_t ma, mr;
+    mpfr_init2(ma,FA+1);
+    mpfr_init2(mr,FR+1);
+
+    a.get(ma);
+
+    mpfr_set(mr,ma,MPFR_RNDN);
+
+    fp_flopoco<ER,FR> res(mr,true);
+
+    mpfr_clear(ma);
+    mpfr_clear(mr);
+
+    return res;
+}
+
+template<int ER,int FR,int EA,int FA,int EB,int FB>
 fp_flopoco<ER,FR> ref_div(const fp_flopoco<EA,FA> &a, const fp_flopoco<EB,FB> &b)
 {
     mpfr_t ma, mb, mr;
@@ -662,6 +832,120 @@ void ref_div(fp_flopoco<ER,FR> &dst, const fp_flopoco<EA,FA> &a, const fp_flopoc
 {
     dst=ref_div<ER,FR>(a,b);
 }
+
+
+template<int ER,int FR,int PLACES,int EA,int FA>
+fp_flopoco<ER,FR> ref_ldexp_const(const fp_flopoco<EA,FA> &a)
+{
+    mpfr_t ma, mb, mr;
+    mpfr_init2(ma,FA+1);
+    mpfr_init2(mr,FR+1);
+
+    a.get(ma);
+
+    mpfr_mul_2si(mr,ma,PLACES,MPFR_RNDN);
+
+    //mpfr_fprintf(stderr, "mpfr : %Rg + %Rg = %Rg\n", ma, mb, mr);
+
+    fp_flopoco<ER,FR> res(mr,true);
+
+    mpfr_clear(ma);
+    mpfr_clear(mr);
+
+    return res;
+}
+
+template<int ER,int FR,int PLACES,int EA,int FA>
+void ref_ldexp_const(fp_flopoco<ER,FR> &dst, const fp_flopoco<EA,FA> &a)
+{
+    dst=ref_ldexp_const<ER,FR,PLACES>(a);
+}
+
+template<int ER,int FR,int EA,int FA>
+fp_flopoco<ER,FR> ref_square(const fp_flopoco<EA,FA> &a)
+{
+    mpfr_t ma, mr;
+    mpfr_init2(ma,FA+1);
+    mpfr_init2(mr,FR+1);
+
+    a.get(ma);
+
+    mpfr_sqr(mr,ma,MPFR_RNDN);
+
+    //mpfr_fprintf(stderr, "mpfr : %Rg + %Rg = %Rg\n", ma, mb, mr);
+
+    fp_flopoco<ER,FR> res(mr,true);
+
+    mpfr_clear(ma);
+    mpfr_clear(mr);
+
+    return res;
+}
+
+template<int ER,int FR,int EA,int FA>
+void ref_square(fp_flopoco<ER,FR> &dst, const fp_flopoco<EA,FA> &a)
+{
+    dst=ref_square<ER,FR>(a);
+}
+
+template<int ER,int FR,int EA,int FA>
+fp_flopoco<ER,FR> ref_log(const fp_flopoco<EA,FA> &a)
+{
+    mpfr_t ma, mb, mr;
+    mpfr_init2(ma,FA+1);
+    mpfr_init2(mr,FR+1);
+
+    a.get(ma);
+    
+    mpfr_log(mr,ma,MPFR_RNDN);
+
+    fp_flopoco<ER,FR> res(mr,true);
+
+    mpfr_clear(ma);
+    mpfr_clear(mr);
+
+    return res;
+}
+
+
+template<int ER,int FR,int EA,int FA>
+fp_flopoco<ER,FR> ref_exp(const fp_flopoco<EA,FA> &a)
+{
+    mpfr_t ma, mb, mr;
+    mpfr_init2(ma,FA+1);
+    mpfr_init2(mr,FR+1);
+
+    a.get(ma);
+    
+    mpfr_exp(mr,ma,MPFR_RNDN);
+
+    fp_flopoco<ER,FR> res(mr,true);
+
+    mpfr_clear(ma);
+    mpfr_clear(mr);
+
+    return res;
+}
+
+template<int ER,int FR,int EA,int FA>
+fp_flopoco<ER,FR> ref_sqrt(const fp_flopoco<EA,FA> &a)
+{
+    mpfr_t ma, mb, mr;
+    mpfr_init2(ma,FA+1);
+    mpfr_init2(mr,FR+1);
+
+    a.get(ma);
+    
+    mpfr_sqrt(mr,ma,MPFR_RNDN);
+
+    fp_flopoco<ER,FR> res(mr,true);
+
+    mpfr_clear(ma);
+    mpfr_clear(mr);
+
+    return res;
+}
+
 
 
 template<int ER,int FR,int EA,int FA,int EB,int FB,int EC,int FC>
@@ -719,7 +1003,7 @@ double fp_flopoco<ExpBits,FracBits>::to_double() const
         if(is_negative().to_bool()){
             frac=-frac;
         }
-        return ldexp(frac, get_exp_bits().to_int() - bias - FracBits );
+        return ::ldexp(frac, get_exp_bits().to_int() - bias - FracBits );
     }else if(is_inf().to_bool()){
         return is_negative().to_bool() ? neg_inf : pos_inf;
     }else{
@@ -772,13 +1056,26 @@ std::ostream &operator<<(std::ostream &dst, const fp_flopoco<ExpBits,FracBits> &
 #endif
 
 template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
+THLS_INLINE fp_flopoco<wER,wFR> add(const fp_flopoco<wEX,wFX> &x, const fp_flopoco<wEY,wFY> &y, int DEBUG=0);
+
+template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
 THLS_INLINE fp_flopoco<wER,wFR> mul(const fp_flopoco<wEX,wFX> &x, const fp_flopoco<wEY,wFY> &y, int DEBUG=0);
-
-
-
 
 template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
 THLS_INLINE fp_flopoco<wER,wFR> div(const fp_flopoco<wEX,wFX> &x, const fp_flopoco<wEY,wFY> &y, int DEBUG=0);
+
+template<int wER,int wFR, int wEX,int wFX>
+THLS_INLINE fp_flopoco<wER,wFR> inv(const fp_flopoco<wEX,wFX> &x, int DEBUG=0);
+
+template<int wER,int wFR, int PLACES, int wEX,int wFX>
+THLS_INLINE fp_flopoco<wER,wFR> ldexp_const(const fp_flopoco<wEX,wFX> &x, int DEBUG=0);
+
+template<int wER,int wFR, int wEX,int wFX>
+THLS_INLINE fp_flopoco<wER,wFR> neg(const fp_flopoco<wEX,wFX> &x, int DEBUG=0);
+
+template<int wER,int wFR, int wEX,int wFX>
+THLS_INLINE fp_flopoco<wER,wFR> convert(const fp_flopoco<wEX,wFX> &x, int DEBUG=0);
+
 
 
 template<int ExpBits, int FracBits>

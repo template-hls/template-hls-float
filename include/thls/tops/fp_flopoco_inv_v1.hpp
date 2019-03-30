@@ -26,7 +26,7 @@ namespace thls
 {
 
 template<int wER,int wFR, int wEY,int wFY>
-THLS_INLINE fp_flopoco<wER,wFR> inv(const fp_flopoco<wEY,wFY> &y, int DEBUG)
+THLS_INLINE fp_flopoco<wER,wFR> inv_v1(const fp_flopoco<wEY,wFY> &y, int DEBUG)
 {
     THLS_STATIC_ASSERT(wEY==wER, "Result exp must match promotion of args.");
     THLS_STATIC_ASSERT(wFY==wFR, "Result frac must match promotion of args.");
@@ -109,7 +109,8 @@ THLS_INLINE fp_flopoco<wER,wFR> inv(const fp_flopoco<wEY,wFY> &y, int DEBUG)
     //vhdl << tab << declare(wInit.str(), wF+3) <<" <=  \"00\" & fX;" << endl;
     w[nDigit-1] = zpad_hi<2>(fX);
 
-    for(int i=nDigit-1; i>=1; i--) {
+    l1 : for(int i=nDigit-1; i>=1; i--) {
+#pragma HLS UNROLL
         /*
         wi << "w" << i;
         qi << "q" << i;
@@ -229,6 +230,7 @@ THLS_INLINE fp_flopoco<wER,wFR> inv(const fp_flopoco<wEY,wFY> &y, int DEBUG)
     fw_uint<2> qM[nDigit];
 
     for(int i=nDigit-1; i>=1; i--) {
+#pragma HLS UNROLL
         /*ostringstream qi, qPi, qMi;
         qi << "q" << i;
         qPi << "qP" << i;

@@ -450,7 +450,7 @@ struct fw_uint
 
     THLS_INLINE static fw_uint from_bits(const bits_t &x)
     {
-        return fw_uint(x);
+        return fw_uint(x,detail::init_from_bits());
     }
 
 
@@ -711,7 +711,7 @@ THLS_INLINE fw_uint<WA+WB> concat(const fw_uint<WA> &a, const fw_uint<WB> &b)
     // This is to protect against warnings in paths that will never
     // be executed, but will still be compiled (i.e. things that
     // would be fixed with static_if.
-    static const int S=(WB < 0) ? 0 : WB;
+    static const int S=(WB < 0 || WA==0) ? 0 : WB;
     
     typedef typename fw_uint<WA+WB>::bits_t bits_t;
 

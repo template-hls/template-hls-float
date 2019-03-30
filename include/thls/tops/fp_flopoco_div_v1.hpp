@@ -26,20 +26,23 @@ namespace thls
 {
 
 template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
-THLS_INLINE fp_flopoco<wER,wFR> div(const fp_flopoco<wEX,wFX> &xPre, const fp_flopoco<wEY,wFY> &yPre, int DEBUG)
+THLS_INLINE fp_flopoco<wER,wFR> div_v1(const fp_flopoco<wEX,wFX> &xPre, const fp_flopoco<wEY,wFY> &yPre, int DEBUG)
 {
+#pragma HLS INLINE
+
     // FPDiv::FPDiv(Target* target, int wE, int wF) :
 	//	Operator(target), wE(wE), wF(wF) {
 
     
-    const int wF = thls_ctMax(wFX,wFY);
-    const int wE = thls_ctMax(wEX,wEY);
+    const int wF = thls_ctMax(wFR, thls_ctMax(wFX,wFY));
+    const int wE = thls_ctMax(wER, thls_ctMax(wEX,wEY));
     
     fp_flopoco<wE,wF> x;
     fp_flopoco<wE,wF> y;
     promote(x, xPre);
     promote(y, yPre);
     
+    // Current limitations
     THLS_STATIC_ASSERT(wE==wER, "Result exp must match promotion of args.");
     THLS_STATIC_ASSERT(wF==wFR, "Result frac must match promotion of args.");
 
@@ -119,6 +122,7 @@ THLS_INLINE fp_flopoco<wER,wFR> div(const fp_flopoco<wEX,wFX> &xPre, const fp_fl
     w[nDigit-1] = zpad_hi<2>(fX);
 
     for(int i=nDigit-1; i>=1; i--) {
+#pragma HLS unroll
         /*
         wi << "w" << i;
         qi << "q" << i;
@@ -238,6 +242,7 @@ THLS_INLINE fp_flopoco<wER,wFR> div(const fp_flopoco<wEX,wFX> &xPre, const fp_fl
     fw_uint<2> qM[nDigit];
     
     for(int i=nDigit-1; i>=1; i--) {
+#pragma HLS unroll
         /*ostringstream qi, qPi, qMi;
         qi << "q" << i;
         qPi << "qP" << i;

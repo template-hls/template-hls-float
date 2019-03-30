@@ -19,12 +19,16 @@ add_executable_test_with_fw_uint(base test_add_single_v2)
 add_executable_test_with_fw_uint(base test_add_single_v3)
 add_executable_test_with_fw_uint(base test_add_single_v4)
 
+add_executable_test_with_fw_uint(base test_add_single_different_frac_v5)
+
 #add_executable_test_with_fw_uint(base test_fp2fix)
 
 add_executable_test_with_fw_uint(base test_div)
 add_executable_test_with_fw_uint(base test_div_v2)
 add_executable_test_with_fw_uint(base test_div_v2_debug)
 #add_executable_test_with_fw_uint(base test_div_v3)
+
+add_executable_test_with_fw_uint(base test_inv_nr)
 
 add_executable_test_with_fw_uint(base test_policy)
 add_executable_test_with_fw_uint(base test_policy_native)
@@ -72,4 +76,4 @@ endfunction(add_param_test)
 #    endforeach(F)
 #endforeach(E)
 
-add_subdirectory(mp)
+#add_subdirectory(mp)
