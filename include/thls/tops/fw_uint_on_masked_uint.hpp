@@ -453,6 +453,12 @@ struct fw_uint
         return fw_uint(x,detail::init_from_bits());
     }
 
+    THLS_INLINE static fw_uint from_uint64(uint64_t x)
+	{
+    	assert( (W>64) || (x<(1ull<<W))  );
+		return fw_uint(x,detail::init_from_bits());
+	}
+
 
 #ifndef THLS_SYNTHESIS
     explicit fw_uint(mpz_t x)
@@ -736,6 +742,13 @@ THLS_INLINE fw_uint<WD> checked_cast(const fw_uint<WS> &s)
         assert(0);
         return ~fw_uint<WD>(); // Poison with ones
     }
+}
+
+template<int W>
+THLS_INLINE_STRONG fw_uint<2*W> square(const fw_uint<W> &o) const
+{
+	typedef typename fw_uint<2*W>::bits_t res_bits_t;
+	return fw_uint<2*W>(res_bits_t(bits)*res_bits_t(o.bits), detail::init_from_bits());
 }
 
 }; // thls

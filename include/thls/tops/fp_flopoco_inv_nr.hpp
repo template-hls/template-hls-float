@@ -88,7 +88,7 @@ namespace thls
         {}
 
         explicit fw_fix(uint64_t init)
-                : bits(fw_uint<W>::from_bits(init))
+                : bits(fw_uint<W>::from_uint64(init))
         {}
 
         fw_uint<W> bits;
@@ -203,7 +203,7 @@ namespace thls
                     //std::cerr<<"i="<<i<<" -> v="<<v<<", vr="<<vr<<", WR="<<WR<<"\n";
                     assert( (1<<(WR-2)) <= vr );
                     assert( vr < (1<<(WR-1)) );
-                    return fw_uint<WR>::from_bits(uint64_t(vr));
+                    return fw_uint<WR>::from_uint64(uint64_t(vr));
                 }
         );
         assert(take_msb(x.bits).to_bool()); // Should always have explicit bit
@@ -297,7 +297,7 @@ namespace thls
                     //std::cerr<<"i="<<i<<" -> v="<<v<<", vr="<<vr<<", WR="<<WR<<"\n";
                     //assert( (1<<(WR-2)) <= vr );
                     //assert( vr < (1<<(WR-1)) );
-                    return fw_uint<WR>::from_bits(uint64_t(vr));
+                    return fw_uint<WR>::from_uint64(uint64_t(vr));
                 }
         );
         assert(take_msb(x.bits).to_bool()); // Should always have explicit bit

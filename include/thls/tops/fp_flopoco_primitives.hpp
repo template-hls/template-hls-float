@@ -11,6 +11,7 @@
 #include "thls/tops/fp_flopoco_inv_v1.hpp"
 #include "thls/tops/fp_flopoco_neg_v1.hpp"
 #include "thls/tops/fp_flopoco_convert.hpp"
+#include "thls/tops/fp_flopoco_inv_nr.hpp"
 
 namespace thls{
 
@@ -42,6 +43,12 @@ template<int wER,int wFR, int wEX,int wFX>
 THLS_INLINE fp_flopoco<wER,wFR> inv(const fp_flopoco<wEX,wFX> &x, int DEBUG)
 {
     return inv_v1<wER,wFR>(x,DEBUG);
+}
+
+template<int wER,int wFR, int wEX,int wFX>
+THLS_INLINE fp_flopoco<wER,wFR> inv_faithful(const fp_flopoco<wEX,wFX> &x, int DEBUG=0)
+{
+    return inv_table_newton<wER,wFR>(x,DEBUG);
 }
 
 template<int wER,int wFR, int PLACES, int wEX,int wFX>

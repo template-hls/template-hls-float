@@ -88,6 +88,11 @@ struct fw_uint
         assert(W>=0);
         assert(v < (ap_uint<SafeW+1>(1)<<SafeW)); // Must be in range
     }
+
+    THLS_INLINE static fw_uint from_uint64(uint64_t x)
+	{
+    	return fw_uint(x);
+	}
 #ifndef THLS_SYNTHESIS
     explicit fw_uint(const char *value)
     {
@@ -452,6 +457,14 @@ THLS_INLINE_STRONG fw_uint<WD> checked_cast(const fw_uint<WS> &s)
         assert(0);
         return ~fw_uint<WD>(); // Poison with ones
     }
+}
+
+template<int W>
+THLS_INLINE_STRONG fw_uint<2*W> square(const fw_uint<W> &o) const
+{
+	static const int SafeRW = (W <= 0) ? 1 : (2*W);
+	ap_uint v=bits*o.bits;
+    return fw_uint<2*W>(ap_uint<SafeRW>(v));
 }
 
 
