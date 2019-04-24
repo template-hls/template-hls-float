@@ -17,7 +17,7 @@ namespace thls
     struct round_frac_impl<0>
             {
         template<int wFR, int wFX>
-        static void go(fw_uint<wFR> &res, const fw_uint<wFX> &x, fw_uint<1> &overflow)
+        THLS_INLINE_STRONG static void go(fw_uint<wFR> &res, const fw_uint<wFX> &x, fw_uint<1> &overflow)
         {
             static_assert(wFR>=wFX, "Assumption");
             overflow=fw_uint<1>(0);
@@ -29,7 +29,7 @@ namespace thls
     struct round_frac_impl<1>
     {
         template<int wFR, int wFX>
-        static void go(fw_uint<wFR> &res, const fw_uint<wFX> &x, fw_uint<1> &overflow)
+        THLS_INLINE_STRONG static void go(fw_uint<wFR> &res, const fw_uint<wFX> &x, fw_uint<1> &overflow)
         {
             static_assert(wFR+1==wFX, "Assumption");
             auto lsb=get_bit<1>(x);
@@ -44,7 +44,7 @@ namespace thls
     struct round_frac_impl<2>
     {
         template<int wFR, int wFX>
-        static void go(fw_uint<wFR> &res, const fw_uint<wFX> &x, fw_uint<1> &overflow)
+        THLS_INLINE_STRONG static void go(fw_uint<wFR> &res, const fw_uint<wFX> &x, fw_uint<1> &overflow)
         {
             static_assert(wFR+2<=wFX, "Assumption");
             const int D=wFX-wFR;
@@ -59,7 +59,7 @@ namespace thls
     };
 
     template<int wFR, int wFX>
-    fw_uint<wFR> round_frac(const fw_uint<wFX> &x, fw_uint<1> &overflow)
+    THLS_INLINE_STRONG fw_uint<wFR> round_frac(const fw_uint<wFX> &x, fw_uint<1> &overflow)
     {
         const int C = wFR>=wFX ? 0 : wFR+1==wFX ? 1 : 2;
         typedef round_frac_impl<C> impl;
@@ -95,15 +95,15 @@ namespace thls
     };
 
     template<int MSB1,int LSB1, int MSB2,int LSB2>
-    fw_fix<MSB1+MSB2+1,LSB1+LSB2> operator*(const fw_fix<MSB1,LSB1> &x, const fw_fix<MSB2,LSB2> &y)
+    THLS_INLINE_STRONG fw_fix<MSB1+MSB2+1,LSB1+LSB2> operator*(const fw_fix<MSB1,LSB1> &x, const fw_fix<MSB2,LSB2> &y)
     { return fw_fix<MSB1+MSB2+1,LSB1+LSB2>(x.bits*y.bits); }
 
     template<int MSB,int LSB>
-    fw_fix<MSB,LSB> operator-(const fw_fix<MSB,LSB> &x, const fw_fix<MSB,LSB> &y)
+    THLS_INLINE_STRONG fw_fix<MSB,LSB> operator-(const fw_fix<MSB,LSB> &x, const fw_fix<MSB,LSB> &y)
     { return fw_fix<MSB,LSB>(x.bits+y.bits); }
 
     template<int MSB0,int LSB0,int MSB1,int LSB1>
-    fw_fix<thls_ctMax(MSB0,MSB1),thls_ctMin(LSB0,LSB1)> sub_match(const fw_fix<MSB0,LSB0> &x, const fw_fix<MSB1,LSB1> &y) {
+    THLS_INLINE_STRONG fw_fix<thls_ctMax(MSB0,MSB1),thls_ctMin(LSB0,LSB1)> sub_match(const fw_fix<MSB0,LSB0> &x, const fw_fix<MSB1,LSB1> &y) {
         const int MSBR = thls_ctMax(MSB0, MSB1);
         const int LSBR = thls_ctMin(LSB0, LSB1);
         return fw_fix<MSBR, LSBR>(zpad_hi<MSBR - MSB0>(zpad_lo<LSB0 - LSBR>(x.bits)) -
@@ -112,20 +112,20 @@ namespace thls
 
 
     template<int PLACES,int MSB,int LSB>
-    fw_fix<MSB+PLACES,LSB+PLACES> ldexp_const(const fw_fix<MSB,LSB> &x)
+    THLS_INLINE_STRONG fw_fix<MSB+PLACES,LSB+PLACES> ldexp_const(const fw_fix<MSB,LSB> &x)
     {
         return fw_fix<MSB+PLACES,LSB+PLACES>(x.bits);
     }
 
     template<int LSBR,int MSB,int LSB>
-    fw_fix<MSB,LSBR> round_to_lsb(const fw_fix<MSB,LSB> &x, fw_uint<1> &overflowed)
+    THLS_INLINE_STRONG fw_fix<MSB,LSBR> round_to_lsb(const fw_fix<MSB,LSB> &x, fw_uint<1> &overflowed)
     {
         const int WR=fw_fix<MSB,LSBR>::W;
         return fw_fix<MSB,LSBR>(round_frac<WR>(x.bits, overflowed));
     }
 
     template<int LSBR,int MSB,int LSB>
-    fw_fix<MSB,LSBR> trunc_to_lsb(const fw_fix<MSB,LSB> &x)
+    THLS_INLINE_STRONG fw_fix<MSB,LSBR> trunc_to_lsb(const fw_fix<MSB,LSB> &x)
     {
         const int WR=fw_fix<MSB,LSBR>::W;
         return fw_fix<MSB,LSBR>(take_msbs<WR>(x.bits));
@@ -138,7 +138,7 @@ namespace thls
      */
 
     template<int MSBR,int MSB,int LSB>
-    fw_fix<MSBR,LSB> truncate_to_msb(const fw_fix<MSB,LSB> &x, fw_uint<1> &overflowed) {
+    THLS_INLINE_STRONG fw_fix<MSBR,LSB> truncate_to_msb(const fw_fix<MSB,LSB> &x, fw_uint<1> &overflowed) {
         static_assert(MSBR<=MSB, "Assumption");
         overflowed = take_msbs<MSB-MSBR>(x.bits) != 0;
         return fw_fix<MSBR,LSB>(drop_msbs<MSB-MSBR>(x.bits));
@@ -146,7 +146,7 @@ namespace thls
 
 
     template<int MSBR,int LSBR, int MSBZ,int LSBZ, int MSBY,int LSBY>
-    THLS_INLINE fw_fix<MSBR,LSBR> inv_frac_newton_step(const fw_fix<MSBZ,LSBZ> &z, const fw_fix<MSBY,LSBY> &y)
+    THLS_INLINE_STRONG THLS_INLINE fw_fix<MSBR,LSBR> inv_frac_newton_step(const fw_fix<MSBZ,LSBZ> &z, const fw_fix<MSBY,LSBY> &y)
     {
         // PRE: z=1/y + O(eps)
         // z' = 2*z - z*z * y;
@@ -178,7 +178,7 @@ namespace thls
     }
 
     template<int MSBR,int LSBR, int MSBI, int LSBI>
-    THLS_INLINE fw_fix<MSBR,LSBR> inv_frac_starter_table(const fw_fix<MSBI,LSBI> &x)
+    THLS_INLINE_STRONG fw_fix<MSBR,LSBR> inv_frac_starter_table(const fw_fix<MSBI,LSBI> &x)
     {
         static_assert(MSBI==0, "Expected index in range [1,2)");
         static_assert(MSBR==0, "Expected index in range (0.5,1]");

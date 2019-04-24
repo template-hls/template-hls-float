@@ -117,11 +117,23 @@ namespace std{
 	// ap_uint does not support constexpr anywhere
 	#define THLS_CONSTEXPR
 
-	THLS_INLINE_STRONG constexpr int thls_ctMax(const int a, const int b)
+	THLS_INLINE_STRONG constexpr int  thls_ctMax(const int a, const int b)
 	{ return a>b ? a : b; }
 
     THLS_INLINE_STRONG constexpr int thls_ctMin(const int a, const int b)
     { return a<b ? a : b; }
+
+    template<class T>
+    THLS_INLINE_STRONG constexpr int thls_ctLog2Ceil_rec(T x, int p)
+    {
+        return x < (T(1)<<p) ? p : thls_ctLog2Ceil_rec(x, p+1);
+    }
+
+    template<class T>
+    THLS_INLINE_STRONG constexpr int thls_ctLog2Ceil(T x)
+    {
+	    return thls_ctLog2Ceil_rec(x,0);
+    }
 
 	#define THLS_STATIC_ASSERT(c,msg) static_assert(c, msg)
 
@@ -379,6 +391,13 @@ THLS_INLINE_STRONG fw_uint<B> extu(const fw_uint<W> &x)
 {
   THLS_STATIC_ASSERT(B>=W, "Cannot extend to smaller width.");
   return zpad_hi<B-W>(x);
+}
+
+/* Unconditionally resizes the value, zero-extending or truncating as needed. */
+template<int B,int W>
+THLS_INLINE_STRONG fw_uint<B> resize(const fw_uint<W> &x)
+{
+    return take_lsbs<B>(zpad_hi<thls_ctMax(0,B-W)>(x));
 }
 
 template<int W>

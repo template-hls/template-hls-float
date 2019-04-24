@@ -48,6 +48,49 @@ add_executable_test_with_fw_uint(base test_dot2_pos_rndd)
 add_executable_test_with_fw_uint(base test_dot2_pos_rndn)
 add_executable_test_with_fw_uint(base test_dot4_pos_rndd)
 
+add_custom_target(build_all_cmult_impl)
+add_custom_target(build_all_cmult_impl_long)
+
+function(add_cmult_impl NAME)
+set(__IMPL__ cmult_impl_${NAME})
+set(THLS_CMULT_LONG_TEST 0)
+set(THLS_CMULT_TINY_TEST 1)
+
+configure_file(test_cmult_generic.cpp.in test_cmult_${NAME}_tiny.cpp)
+add_executable_test_with_fw_uint(base test_cmult_${NAME}_tiny)
+add_dependencies(build_all_cmult_impl test_cmult_${NAME}_tiny)
+
+set(THLS_CMULT_TINY_TEST 0)
+configure_file(test_cmult_generic.cpp.in test_cmult_${NAME}.cpp)
+add_executable_test_with_fw_uint(base test_cmult_${NAME})
+add_dependencies(build_all_cmult_impl test_cmult_${NAME})
+
+set(THLS_CMULT_LONG_TEST 1)
+configure_file(test_cmult_generic.cpp.in test_cmult_${NAME}_long.cpp)
+add_executable_test_with_fw_uint(base test_cmult_${NAME}_long)
+add_dependencies(build_all_cmult_impl test_cmult_${NAME}_long)
+
+configure_file(test_cmult_perf.cpp.in test_cmult_perf_${NAME}.cpp)
+add_executable_test_with_fw_uint(base test_cmult_perf_${NAME})
+add_dependencies(build_all_cmult_impl test_cmult_perf_${NAME})
+
+endfunction(add_cmult_impl)
+
+add_cmult_impl(v1_native)
+add_cmult_impl(v2_unrolled_full)
+add_cmult_impl(v3_unrolled_masked)
+add_cmult_impl(v4_recursive_masked)
+add_cmult_impl(v5_booth)
+add_cmult_impl(v6_booth)
+add_cmult_impl(v7_kcm_k4)
+add_cmult_impl(v7_kcm_k5)
+add_cmult_impl(v8_kcm_k2)
+add_cmult_impl(v8_kcm_k4)
+add_cmult_impl(v8_kcm_k5)
+add_cmult_impl(v9_kcm_k1)
+add_cmult_impl(v9_kcm_k2)
+add_cmult_impl(v10_booth_cache)
+
 
 add_custom_target(test_add_param_run)
 

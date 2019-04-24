@@ -6,13 +6,26 @@ set (CMAKE_CXX_STANDARD 11)
 enable_testing()
 
 IF(CMAKE_COMPILER_IS_GNUCC)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=undefined")
+# Unused variables happen a lot in templated code, esp. for debugability
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unused-variable")
+
+# We use various pragmas to control HLS generation that g++ doesn't know
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
 
 # It is common to label loops in HLS code, but it isn't
 # a problem if we don't use them.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-label")
+
+# This is exceptionally useful for finding edge-cases due to shifts
+# and other weirdness in templated data-paths
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=undefined")
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+# Try to speed-up compilation if possible
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og")
+endif()
+
 ENDIF(CMAKE_COMPILER_IS_GNUCC)
 
 find_path(MPFR_INCLUDE_DIR mpfr.h       PATHS /usr/include /usr/local/include )

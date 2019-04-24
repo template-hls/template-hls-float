@@ -1,0 +1,45 @@
+#include "thls/tops/constant_mult/constant_mult_v1.hpp"
+#include "thls/tops/constant_mult/constant_mult_v5.hpp"
+#include "thls/tops/constant_mult/constant_mult_v6.hpp"
+#include "thls/tops/constant_mult/constant_mult_v7_kcm.hpp"
+#include "thls/tops/constant_mult/constant_mult_v8_kcm.hpp"
+#include "thls/tops/constant_mult/constant_mult_v9_kcm.hpp"
+#include "thls/tops/constant_mult/constant_mult_v10_booth_cache.hpp"
+
+#include <random>
+
+#include <cmath>
+
+using namespace thls;
+
+int main()
+{
+    using __OMPL__ = @__IMPL__@;
+
+    const int W=32;
+    
+
+    unsigned step=1234567;
+    if(getenv("DT10_BLEH_STEP")){
+        step=(unsigned)atoi(getenv("DT10_BLEH_STEP"));
+    }
+
+    fw_uint<32> acc(0);
+    fw_uint<32> x0(0), x1(1), x2(2), x3(3);
+    for(unsigned i=0; i<100000; i+=step){
+        x3=x2;
+        x2=x1;
+        x1=x0;
+        x0=fw_uint<W>::from_bits(i);
+        acc = acc + __OMPL__::template go<W, W, 1234532216>(x0);
+        acc = acc + __OMPL__::template go<W, W, 4567890>(x1);
+        acc = acc + __OMPL__::template go<W, W, 0xf1234545>(x2);
+        acc = acc + __OMPL__::template go<W, W, 581202341>(x3);
+    }
+
+	fprintf(stderr, "Done, acc=%llu\n", acc.to_uint64());
+
+
+    return 0;
+}
+	

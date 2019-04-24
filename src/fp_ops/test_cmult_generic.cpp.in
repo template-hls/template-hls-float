@@ -1,0 +1,37 @@
+#define THLS_CMULT_LONG_TEST @THLS_CMULT_LONG_TEST@
+#define THLS_CMULT_TINY_TEST @THLS_CMULT_TINY_TEST@
+
+#include "thls/tops/constant_mult/constant_mult_v1.hpp"
+#include "thls/tops/constant_mult/constant_mult_v5.hpp"
+#include "thls/tops/constant_mult/constant_mult_v6.hpp"
+#include "thls/tops/constant_mult/constant_mult_v7_kcm.hpp"
+#include "thls/tops/constant_mult/constant_mult_v8_kcm.hpp"
+#include "thls/tops/constant_mult/constant_mult_v9_kcm.hpp"
+#include "thls/tops/constant_mult/constant_mult_v10_booth_cache.hpp"
+
+#include <random>
+
+#include <cmath>
+
+using namespace thls;
+
+int main()
+{
+    using __OMPL__ = @__IMPL__@;
+
+
+    test_cmult_impl_WR_WI_C<__OMPL__, 32,32,7>();
+    test_cmult_impl_WR_WI_C<__OMPL__,48,32,7121>();
+    test_cmult_impl_WR_WI_C<__OMPL__,32,48,1234>();
+
+    #if !THLS_CMULT_TINY_TEST
+    
+    test_cmult_impl<__OMPL__>();
+    #endif
+
+	fprintf(stderr, "Done\n");
+
+
+    return 0;
+}
+	
