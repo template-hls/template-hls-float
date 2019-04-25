@@ -39,18 +39,6 @@ find_library(GMP_LIBRARIES NAMES gmp libgmp HINTS /usr/lib /usr/local/lib /usr/l
 
 include_directories( include )
 
-
-add_custom_target(all_test_files)
-
-# Creates an executable and adds it as a test.
-function(add_executable_test PREFIX NAME )
-add_executable(${NAME} ${NAME}.cpp)
-target_link_libraries(${NAME} ${MPFR_LIBRARY} ${GMP_LIBRARIES} stdc++)
-add_test(NAME ${PREFIX}_${NAME} COMMAND $<TARGET_FILE:${NAME}>)
-
-    add_dependencies(all_test_files ${NAME})
-endfunction(add_executable_test)
-
 set(VIVADO_HLS /cygdrive/e/Usr/Xilinx/Vivado_HLS/2016.4
         CACHE FILEPATH "Location of Vivado HLS root")
 
@@ -60,12 +48,26 @@ set(VIVADO_ROOT /cygdrive/e/Usr/Xilinx/Vivado/2016.4
 set(VHLS_DIR ${VIVADO_HLS})
 
 
+set(USE_AP_UINT_DEFAULT OFF)
 find_path(AP_INT_INCLUDE_DIR ap_int.h 
   HINTS
     "${CMAKE_SOURCE_DIR}/include/xilinx"
     "$(VIVADO_HLS)/include"
     "/mnt/c/Usr/Xilinx/Vivado/2018.2/include"
 )
+if(AP_INT_INCLUDE_DIR)
+  set(USE_AP_UINT_DEFAULT ON)
+endif()
+
+set(USE_AC_UINT_DEFAULT OFF)
+find_path(AC_INT_INCLUDE_DIR ac_int.h )
+if(AC_INT_INCLUDE_DIR)
+  set(USE_AC_UINT_DEFAULT ON)
+endif()
+
+option(USE_MASKED_UINT "Enable compilation using native C++." ON)
+option(USE_AP_UINT "Enable compilation using ap_uint (implies Xilinx tool-chain)" ${USE_AP_UINT_DEFAULT})
+option(USE_AC_UINT "Enable compilation using axcuint (implies Intel tool-chain)" ${USE_AC_UINT_DEFAULT})
 
 if(AP_INT_INCLUDE_DIR)
         # NOTE: The wierd form here is because Xilinx includes a "gmp.h" in the same
@@ -80,6 +82,19 @@ if(AP_INT_INCLUDE_DIR)
         # the header exists so should be ok.
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -idirafter ${AP_INT_INCLUDE_DIR}")
 endif()
+
+
+
+add_custom_target(all_test_files)
+
+# Creates an executable and adds it as a test.
+function(add_executable_test PREFIX NAME )
+add_executable(${NAME} ${NAME}.cpp)
+target_link_libraries(${NAME} ${MPFR_LIBRARY} ${GMP_LIBRARIES} stdc++)
+add_test(NAME ${PREFIX}_${NAME} COMMAND $<TARGET_FILE:${NAME}>)
+
+    add_dependencies(all_test_files ${NAME})
+endfunction(add_executable_test)
 
 add_custom_target(all_test_files_masked_uint)
 
