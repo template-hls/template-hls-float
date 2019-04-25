@@ -236,13 +236,19 @@ namespace thls {
     struct policy_softfloat_single {
         typedef float32_t value_t;
 
+        static_assert(sizeof(value_t)==4, "Expected size to be exactly 4 bytes.");
+        static_assert(sizeof(float)==4, "Expected size to be exactly 4 bytes.");
+
         static value_t from_mpfr(mpfr_t x, bool allowOverUnderFlow = false) {
             float fx=policy_native_single::from_mpfr(x,allowOverUnderFlow);
-            return *(value_t*)&fx;
+            value_t tmp;
+            memcpy(&tmp, &fx, 4);
+            return tmp;
         }
 
         static void to_mpfr(mpfr_t dst, value_t x) {
-            float fx=*(float*)&x;
+            float fx;
+            memcpy(&fx, &x, 4);
             policy_native_single::to_mpfr(dst, fx);
         }
 
@@ -263,13 +269,19 @@ namespace thls {
     struct policy_softfloat_double {
         typedef float64_t value_t;
 
+        static_assert(sizeof(value_t)==8, "Expected size to be exactly 8 bytes.");
+        static_assert(sizeof(double)==8, "Expected size to be exactly 8 bytes.");
+
         static value_t from_mpfr(mpfr_t x, bool allowOverUnderFlow = false) {
             double fx=policy_native_double::from_mpfr(x,allowOverUnderFlow);
-            return *(value_t*)&fx;
+            value_t tmp;
+            memcpy(&tmp, &fx, 8);
+            return tmp;
         }
 
         static void to_mpfr(mpfr_t dst, value_t x) {
-            double fx=*(double*)&x;
+            double fx;
+            memcpy(&fx, &x, 8);
             policy_native_double::to_mpfr(dst, fx);
         }
 

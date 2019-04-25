@@ -6,6 +6,7 @@ build_*
 build-*
 /buil2
 /build
+/build*
 /cmake-*
 /src/cmake-*
 /src/cmake_*

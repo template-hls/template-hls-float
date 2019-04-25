@@ -4,6 +4,7 @@
 #include "thls/tops/fp_ieee.hpp"
 #include "thls/tops/fp_flopoco.hpp"
 #include "thls/tops/fp_convert.hpp"
+#include "thls/tops/fp_flopoco_primitives.hpp"
 
 #include "thls/tops/fp_flopoco_mul_v1.hpp"
 #include "thls/tops/fp_flopoco_add_dual_v1.hpp"
@@ -57,7 +58,7 @@ public:
     }
     
     fp_ieee_on_flopoco_wrapper operator+(const fp_ieee_on_flopoco_wrapper &b) const
-    { return out(add_dual<wE,wF>(in(raw), in(b.raw))); }
+    { return out(add<wE,wF>(in(raw), in(b.raw))); }
 
     fp_ieee_on_flopoco_wrapper operator/(const fp_ieee_on_flopoco_wrapper &b) const
     { return out( div<wE,wF>(in(raw), in(b.raw))); }

@@ -45,7 +45,7 @@ Vagrant.configure(2) do |config|
     sudo add-apt-repository -y ppa:george-edison55/cmake-3.x
   
     sudo apt-get update -y
-    sudo apt-get install -y curl zip emacs g++ make cmake git build-essential libmpfr-dev libgmp-dev
+    sudo apt-get install -y curl zip emacs g++ make cmake git build-essential libmpfr-dev libgmp-dev libgmp3-dev
       
   SHELL
 end

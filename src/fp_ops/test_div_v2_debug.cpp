@@ -61,7 +61,7 @@ void test_impl(TImpl &impl)
 int main()
 {
 	
-	test_impl<fp_flopoco<8,23>>(div<8,23,8,23,8,23>);
+	test_impl<fp_flopoco<8,23>>(div_v2<8,23,8,23,8,23>);
 
   
 	fprintf(stderr, "Done\n");

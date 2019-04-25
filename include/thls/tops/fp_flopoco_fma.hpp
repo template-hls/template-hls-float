@@ -10,6 +10,11 @@
 namespace thls
 {
 
+/*
+BUG: This current implement has double-rounding, and doesn't quite
+guarantee the fma contract - it has more precision, but can round
+to the wrong result.
+*/
 template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY,int wEZ,int wFZ>
 THLS_INLINE fp_flopoco<wER,wFR> fma(const fp_flopoco<wEX,wFX> &x, const fp_flopoco<wEY,wFY> &y, const fp_flopoco<wEZ,wFZ> &z, int DEBUG=0)
 {

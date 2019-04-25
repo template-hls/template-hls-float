@@ -1,4 +1,5 @@
 #include "thls/tops/fp_flopoco_add_single_v1.hpp"
+#include "thls/tops/fp_flopoco_add_dual_v1.hpp"
 
 #include "thls/tops/make_input.hpp"
 
@@ -72,7 +73,7 @@ void test_impl(TImpl &impl)
 int main()
 {
 
-	test_impl<fp_flopoco<8,24>>(add_single<8,24,8,24,8,24>);
+	test_impl<fp_flopoco<8,24>>(add_dual<8,24,8,24,8,24>);
 /*
 	test_impl<fp_flopoco<8,32>>(add_single<8,32,8,32,8,32>);
 	test_impl<fp_flopoco<11,52>>(add_single<11,52,11,52,11,52>);*/

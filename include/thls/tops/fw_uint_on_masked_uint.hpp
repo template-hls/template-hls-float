@@ -522,7 +522,7 @@ struct fw_uint
     THLS_INLINE fw_uint<1> operator<(int o) const
     {
         assert(o>=0);
-        return fw_uint<1>(bits < o);
+        return fw_uint<1>(bits < (unsigned)o);
     }
 
     THLS_INLINE fw_uint<1> operator<=(const fw_uint &o) const

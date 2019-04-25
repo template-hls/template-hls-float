@@ -7,6 +7,11 @@
 
 #include <type_traits>
 
+#ifndef THLS_SYNTHESIS
+#include <gmp.h>
+#include <stdexcept>
+#endif
+
 // TODO : Dispatch propertly to the correct header.
 // I think VHLS is supposed to do it, but it always
 // picks up the simulation one.
@@ -18,13 +23,14 @@
 //#include "C:\Usr\Xilinx2015.4\Vivado_HLS\2015.4\include\ap_int.h"
 //#endif
 
-#ifndef THLS_SYNTHESIS
-#include "gmp.h"
-#include <stdexcept>
-#endif
-
 namespace thls
 {
+
+namespace detail
+{
+    struct init_from_bits
+    {};
+}
 
 template<int W>
 struct fw_uint
@@ -34,7 +40,9 @@ struct fw_uint
     // ap_uint doesn't allow widths <= 0
     static const int SafeW= (width<=0) ? 1 : width;
 
-    ap_uint<SafeW> bits;
+    typedef ap_uint<SafeW> bits_t;
+
+    bits_t bits;
 
     THLS_INLINE_STRONG THLS_CONSTEXPR fw_uint()
     	: bits(0)
@@ -46,6 +54,15 @@ struct fw_uint
     	: bits(x.bits)
     {
         assert(W>=0);
+    }
+
+    THLS_INLINE_STRONG fw_uint(const bits_t &bits, detail::init_from_bits)
+    	: bits(bits)
+    {}
+
+    THLS_INLINE_STRONG static fw_uint from_bits(const bits_t &x)
+    {
+        return fw_uint(x,detail::init_from_bits());
     }
 
 
@@ -460,10 +477,10 @@ THLS_INLINE_STRONG fw_uint<WD> checked_cast(const fw_uint<WS> &s)
 }
 
 template<int W>
-THLS_INLINE_STRONG fw_uint<2*W> square(const fw_uint<W> &o) const
+THLS_INLINE_STRONG fw_uint<2*W> square(const fw_uint<W> &o)
 {
 	static const int SafeRW = (W <= 0) ? 1 : (2*W);
-	ap_uint v=bits*o.bits;
+	ap_uint<SafeRW> v=o.bits*o.bits;
     return fw_uint<2*W>(ap_uint<SafeRW>(v));
 }
 

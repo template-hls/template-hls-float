@@ -8,7 +8,7 @@ enable_testing()
 IF(CMAKE_COMPILER_IS_GNUCC)
 
 # Unused variables happen a lot in templated code, esp. for debugability
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unused-variable")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unused-variable -Wno-unused-local-typedefs")
 
 # We use various pragmas to control HLS generation that g++ doesn't know
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
@@ -28,20 +28,19 @@ endif()
 
 ENDIF(CMAKE_COMPILER_IS_GNUCC)
 
-find_path(MPFR_INCLUDE_DIR mpfr.h       PATHS /usr/include /usr/local/include )
+find_path(MPFR_INCLUDE_DIR mpfr.h       HINTS /usr/include /usr/local/include )
+find_library(MPFR_LIBRARY NAMES mpfr    HINTS /usr/lib /usr/local/lib )
 
-find_library(MPFR_LIBRARY NAMES mpfr    PATHS /usr/lib /usr/local/lib )
+find_path(GMP_INCLUDE_DIR NAMES gmp.h   HINTS /usr/include /usr/local/include /usr/include/x86_64-linux-gnu)
+find_library(GMP_LIBRARIES NAMES gmp libgmp HINTS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu)
 
-find_path(GMP_INCLUDE_DIR NAMES gmp.h)
+#TODO: Is this used anywhere?
+#find_library(GMPXX_LIBRARIES NAMES gmpxx libgmpxx )
 
-find_library(GMP_LIBRARIES NAMES gmp libgmp )
-
-find_library(GMPXX_LIBRARIES NAMES gmpxx libgmpxx )
+include_directories( include )
 
 
 add_custom_target(all_test_files)
-
-include_directories( include )
 
 # Creates an executable and adds it as a test.
 function(add_executable_test PREFIX NAME )
@@ -68,6 +67,20 @@ find_path(AP_INT_INCLUDE_DIR ap_int.h
     "/mnt/c/Usr/Xilinx/Vivado/2018.2/include"
 )
 
+if(AP_INT_INCLUDE_DIR)
+        # NOTE: The wierd form here is because Xilinx includes a "gmp.h" in the same
+        # directory as "ap_int.h". If we add this directory with "-I" it appears
+        # _before_ any system directories, so the system gmp.h won't be found.
+        # However, we can't just "-I /usr/lib" again, as the preprocessor doesn't
+        # let you re-add built-in system directories.
+        # The "-idirafter" seems to be supported in both gnu and clang frontends
+        # in both contemporary and old versions.
+        # HACK: This is a hack, as it adds it for all executables, regardless of 
+        # whether they are using ap_uint or not. However, it only gets added if
+        # the header exists so should be ok.
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -idirafter ${AP_INT_INCLUDE_DIR}")
+endif()
+
 add_custom_target(all_test_files_masked_uint)
 
 # Creates an executable, and also adds it with each fw_uint implementation
@@ -78,7 +91,6 @@ add_executable_test(${PREFIX} ${NAME})
 add_executable(${NAME}_ap_uint ${NAME}.cpp)
 target_link_libraries(${NAME}_ap_uint ${MPFR_LIBRARY} ${GMP_LIBRARIES})
 target_compile_definitions(${NAME}_ap_uint PUBLIC "-DTHLS_FW_UINT_ON_AP_UINT=1")
-target_include_directories(${NAME}_ap_uint PUBLIC "${AP_INT_INCLUDE_DIR}")
 add_test(${PREFIX}_${NAME}_ap_uint ${EXECUTABLE_OUTPUT_PATH}/${NAME}_ap_uint)
 
 add_executable(${NAME}_masked_uint ${NAME}.cpp)

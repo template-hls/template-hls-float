@@ -1,4 +1,6 @@
+#include "thls/tops/fp_flopoco_primitives.hpp"
 #include "thls/tops/fp_flopoco_fma.hpp"
+
 
 #include "thls/tops/make_input.hpp"
 
@@ -63,9 +65,9 @@ void test_impl(TImpl &impl)
 	std::vector<TTypeB> args2;
 	std::vector<TTypeC> args3;
 
-	make_input(args1, 100);
-	make_input(args2, 100);
-	make_input(args3, 100);
+	make_input(args1, 20);
+	make_input(args2, 20);
+	make_input(args3, 20);
 
 	for(unsigned i=0; i<args1.size(); i++){
 		std::cerr<<"i = "<<i<<"\n";

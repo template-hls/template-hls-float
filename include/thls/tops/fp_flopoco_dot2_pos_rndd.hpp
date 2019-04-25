@@ -3,6 +3,8 @@
 
 #include "fp_flopoco.hpp"
 
+#include "thls/tops/function_utils.hpp"
+
 namespace thls
 {
 
@@ -86,7 +88,7 @@ fp_flopoco<WE,WF> dot2_pos_rndd(
     assert( (b1.is_positive() & b1.is_normal()).to_bool() );
 
     if(log){
-        fprintf(stderr, "dot2_pos_rndd(%g,%g,%g,%g)\n", a0.to_double(), a1.to_double(), b0.to_double(), b1.to_double());
+        fprintf(stderr, "dot2_pos_rndd(%g,%g,%g,%g)\n", a0.to_double_approx(), a1.to_double_approx(), b0.to_double_approx(), b1.to_double_approx());
     }
 
     auto fraca0=opad_hi<1>(a0.get_frac_bits());
@@ -221,7 +223,7 @@ fp_flopoco<WE,WF> dot2_pos_rndd_ref_small(
         throw std::runtime_error("Types are too wide to reliably do in double.");
     }
 
-    double dres=a0.to_double()*b0.to_double() + a1.to_double()*b1.to_double();
+    double dres=a0.to_double_approx()*b0.to_double_approx() + a1.to_double_approx()*b1.to_double_approx();
 
     MPFR_DECL_INIT(vres, WF+1);
     mpfr_set_d(vres, dres, MPFR_RNDD);
@@ -244,7 +246,41 @@ fp_flopoco<WE,WF> dot2_pos_rndd_ref(
 }
 
 template<int WE, int WF>
-void test_dot2_pos_rndd()
+void test_dot2_pos_rndd(size_t n)
+{
+    fprintf(stderr, "test_dot4_pos_rndd<WE=%d,WF=%d>(n=%lu)\n", WE,WF,n);
+
+    using fp_t = fp_flopoco<WE,WF>;
+    using traits=std::numeric_limits<fp_t>;
+
+    std::mt19937 rng;
+
+    std::array<fp_t,4> args;
+    fp_flopoco_random_test_source<WE,WF> source;
+    source.disable_class(fp_flopoco_random_test_source<WE,WF>::NaN);
+    source.disable_class(fp_flopoco_random_test_source<WE,WF>::PosInf);
+    source.disable_class(fp_flopoco_random_test_source<WE,WF>::NegInf);
+    source.disable_class(fp_flopoco_random_test_source<WE,WF>::NegNormal);
+    source.disable_class(fp_flopoco_random_test_source<WE,WF>::NegZero);
+    source.disable_class(fp_flopoco_random_test_source<WE,WF>::PosZero);
+
+    for(unsigned r=0; r<n; r++){
+        for(unsigned i=0; i<args.size(); i++){
+            args[i]=source(rng);
+        }
+
+        auto ref=callN(dot2_pos_rndd_ref<WE,WF>, args);
+        auto got=callN(dot2_pos_rndd<WE,WF,false>, args);
+        //fprintf(stderr, "%g\n", ref.to_double());
+        if(!ref.equals(got).to_bool()){
+            fprintf(stderr, "  ERROR : ref=%lg, got=%lg\n", ref.to_double_approx(), got.to_double_approx());
+            exit(1);
+        }
+    }
+}
+
+template<int WE, int WF>
+void exhaust_dot2_pos_rndd()
 {
     using fp_t = fp_flopoco<WE,WF>;
     using traits=std::numeric_limits<fp_t>;
@@ -262,8 +298,8 @@ void test_dot2_pos_rndd()
                     auto ref=dot2_pos_rndd_ref(x0,x1,x2,x3);
                     auto got=dot2_pos_rndd(x0,x1,x2,x3);
                     //fprintf(stderr, "  ref=%lg, got=%lg\n", ref.to_double(), got.to_double());
-                    if(ref.to_double() != got.to_double()){
-                        fprintf(stderr, "  ERROR : ref=%lg, got=%lg\n", ref.to_double(), got.to_double());
+                    if(ref.equals(got).to_bool()){
+                        fprintf(stderr, "  ERROR : ref=~%lg, got=~%lg\n", ref.to_double_approx(), got.to_double_approx());
                         exit(1);
                     }
                 }

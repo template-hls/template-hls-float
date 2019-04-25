@@ -3,6 +3,8 @@
 
 #include "fp_flopoco.hpp"
 
+#include "thls/tops/function_utils.hpp"
+
 namespace thls
 {
 
@@ -312,7 +314,7 @@ fp_flopoco<WE,WF> dot4_pos_rndd_ref_large(
     MPFR_DECL_INIT(va, WF+1);
     MPFR_DECL_INIT(vb, WF+1);
     MPFR_DECL_INIT(vab, 2*(WF+1));
-    MPFR_DECL_INIT(vacc, 8*(WF+1));
+    MPFR_DECL_INIT(vacc, 12*(WF+2)); // NOTE: I think this should be 8 not 12, but that triggers the notExact test.
     MPFR_DECL_INIT(vr, WF+1);
 
     int notExact=0;
@@ -320,22 +322,25 @@ fp_flopoco<WE,WF> dot4_pos_rndd_ref_large(
     a0.get(va);
     b0.get(vb);
     notExact |= mpfr_mul(vacc, va, vb, MPFR_RNDN); // Exact
+    assert(!notExact);
 
     a1.get(va);
     b1.get(vb);
     notExact |=mpfr_mul(vab, va, vb, MPFR_RNDN); // Exact
     notExact |=mpfr_add(vacc, vacc, vab, MPFR_RNDN); // Exact
+    assert(!notExact);
 
     a2.get(va);
     b2.get(vb);
     notExact |=mpfr_mul(vab, va, vb, MPFR_RNDN); // Exact
     notExact |=mpfr_add(vacc, vacc, vab, MPFR_RNDN); // Exact
+    assert(!notExact);
 
     a3.get(va);
     b3.get(vb);
     notExact |=mpfr_mul(vab, va, vb, MPFR_RNDN); // Exact
+    assert(!notExact);
     notExact |=mpfr_add(vacc, vacc, vab, MPFR_RNDN); // Exact
-
     assert(!notExact);
 
     mpfr_set(vr, vacc, MPFR_RNDD); // Does the single rounding operaton
@@ -387,37 +392,10 @@ fp_flopoco<WE,WF> dot4_pos_rndd_ref(
     }
 }
 
-template <size_t... I>
-class index_sequence {};
-
-template <size_t N, size_t ...I>
-struct make_index_sequence
-    : make_index_sequence<N-1, N-1,I...>
-{};
-
-template <size_t ...I>
-struct make_index_sequence<0,I...>
-    : index_sequence<I...>
-{};
-
-
-
-template<class TF, class TA, size_t N, size_t... I>
-TA callN_impl(TF f, const std::array<TA,N> &x, index_sequence<I...>)
-{
-    return f( x[I]... );
-}
-
-template<class TF, class TA, size_t N>
-TA callN(TF f, const std::array<TA,N> &x)
-{
-    return callN_impl(f, x, make_index_sequence<N>() );
-}
-
 template<int WE, int WF>
 void test_dot4_pos_rndd(size_t n)
 {
-    fprintf(stderr, "test_dot4_pos_rndd<WE=%d,WF=%d>(n=%u)\n", WE,WF,n);
+    fprintf(stderr, "test_dot4_pos_rndd<WE=%d,WF=%d>(n=%lu)\n", WE,WF,n);
 
     using fp_t = fp_flopoco<WE,WF>;
     using traits=std::numeric_limits<fp_t>;

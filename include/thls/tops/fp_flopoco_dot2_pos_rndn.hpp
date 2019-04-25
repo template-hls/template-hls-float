@@ -1,6 +1,8 @@
 #ifndef dot2_pos_rndn_hpp
 #define dot2_pos_rndn_hpp
 
+#error "This function is in progress, and does not currently work."
+
 #include "fp_flopoco.hpp"
 
 namespace thls
@@ -26,7 +28,7 @@ class rshift_sticky_stage<W,WS,2>
         static_assert(WS>=2, "Shift must be at least 2 (failure in template base cases).");
         const int LW = 1<<(WS-2); // Size of each limb
 
-        auto padx=extu< cteMax(3*LW,W) >(iX);
+        auto padx=extu< thls_ctMax(3*LW,W) >(iX);
 
         /*
             e.g. LW==2:   xxxxxxxxccbbaa
@@ -78,7 +80,7 @@ class rshift_sticky_stage<W,WS,1>
         static_assert(WS>=1, "Shift must be at least 1 (failure in template base cases).");
         const int LW = 1<<(WS-1); // Size of each limb
 
-        auto padx=extu< cteMax(LW,W) >(iX);
+        auto padx=extu< thls_ctMax(LW,W) >(iX);
 
         assert(WS==1);
         auto nz=get_bits<LW-1, 0>(padx) != zg<LW>();
@@ -438,9 +440,9 @@ void test_dot2_pos_rndn()
                     auto ref=dot2_pos_rndn_ref(x0,x1,x2,x3);
                     auto got=dot2_pos_rndn<WE,WF,true>(x0,x1,x2,x3);
                     //fprintf(stderr, "  ref=%lg, got=%lg\n", ref.to_double(), got.to_double());
-                    if(ref.to_double() != got.to_double()){
-                        fprintf(stderr, "  ERROR : ref=%lg, got=%lg\n", ref.to_double(), got.to_double());
-                        fprintf(stderr, "     down(ref)=%lg, up(ref)=%lg\n", nextdown(ref).to_double(), nextup(ref).to_double());
+                    if(ref.equals(got).to_bool()){
+                        fprintf(stderr, "  ERROR : ref=%lg, got=%lg\n", ref.to_double_approx(), got.to_double_approx());
+                        fprintf(stderr, "     down(ref)=%lg, up(ref)=%lg\n", nextdown(ref).to_double_approx(), nextup(ref).to_double_approx());
                         exit(1);
                     }
                 }

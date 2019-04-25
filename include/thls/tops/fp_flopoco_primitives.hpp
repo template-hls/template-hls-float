@@ -5,7 +5,7 @@
 
 #include "thls/tops/fp_flopoco_add_single_v1.hpp"
 #include "thls/tops/fp_flopoco_mul_v1.hpp"
-#include "thls/tops/fp_flopoco_add_single_v1.hpp"
+#include "thls/tops/fp_flopoco_add_dual_v1.hpp"
 #include "thls/tops/fp_flopoco_div_v1.hpp"
 #include "thls/tops/fp_flopoco_neg_v1.hpp"
 #include "thls/tops/fp_flopoco_inv_v1.hpp"
@@ -18,7 +18,7 @@ namespace thls{
 template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>
 THLS_INLINE fp_flopoco<wER,wFR> add(const fp_flopoco<wEX,wFX> &x, const fp_flopoco<wEY,wFY> &y, int DEBUG)
 {
-    return add_small<wER,wFR>(x,y,DEBUG);
+    return add_dual<wER,wFR>(x,y,DEBUG);
 }
 
 template<int wER,int wFR, int wEX,int wFX,int wEY,int wFY>

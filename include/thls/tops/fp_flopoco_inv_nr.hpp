@@ -146,7 +146,7 @@ namespace thls
 
 
     template<int MSBR,int LSBR, int MSBZ,int LSBZ, int MSBY,int LSBY>
-    THLS_INLINE_STRONG THLS_INLINE fw_fix<MSBR,LSBR> inv_frac_newton_step(const fw_fix<MSBZ,LSBZ> &z, const fw_fix<MSBY,LSBY> &y)
+    THLS_INLINE_STRONG fw_fix<MSBR,LSBR> inv_frac_newton_step(const fw_fix<MSBZ,LSBZ> &z, const fw_fix<MSBY,LSBY> &y)
     {
         // PRE: z=1/y + O(eps)
         // z' = 2*z - z*z * y;

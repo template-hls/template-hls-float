@@ -1,4 +1,4 @@
-#include "thls/tops/fp_flopoco_mul_v1.hpp"
+#include "thls/tops/fp_flopoco_primitives.hpp"
 #include "thls/tops/make_input.hpp"
 
 #include <random>

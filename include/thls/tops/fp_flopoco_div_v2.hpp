@@ -360,6 +360,7 @@ THLS_INLINE fp_flopoco<wER,wFR> div_v2(const fp_flopoco<wEX,wFX> &xPre, const fp
         exnR0==0b01,    exnR,   // normal
         /* else */      exnR0
     );
+    
     if(DEBUG){
         std::cerr<<"  exnRfinal = "<<exnRfinal<<"\n";
     }

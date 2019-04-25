@@ -708,7 +708,7 @@ struct random_fw_uint_impl
     if(LW < 32){
       bits=bits>>(32-LW);
     }
-    return concat( fw_uint<LW>(bits), random_fw_uint_impl<RW, (RW+31)/32>::go(rng) );
+    return concat( fw_uint<LW>::from_bits(bits), random_fw_uint_impl<RW, (RW+31)/32>::go(rng) );
   }
 };
 

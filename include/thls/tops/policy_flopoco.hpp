@@ -5,6 +5,7 @@
 
 #include "thls/tops/policy_test.hpp"
 #include "thls/tops/fp_flopoco.hpp"
+#include "thls/tops/fp_flopoco_primitives.hpp"
 
 #include "thls/tops/fp_convert.hpp"
 
@@ -51,7 +52,7 @@ namespace thls {
             
         THLS_INLINE fp_flopoco_wrapper operator*(const fp_flopoco_wrapper &b) const { return mul<wE, wF>(raw, b.raw); }
 
-        THLS_INLINE fp_flopoco_wrapper operator+(const fp_flopoco_wrapper &b) const { return add_dual<wE, wF>(raw, b.raw); }
+        THLS_INLINE fp_flopoco_wrapper operator+(const fp_flopoco_wrapper &b) const { return add<wE, wF>(raw, b.raw); }
 
         THLS_INLINE fp_flopoco_wrapper operator/(
                 const fp_flopoco_wrapper &b) const {
@@ -62,7 +63,7 @@ namespace thls {
         { raw = mul<wE,wF>(raw, b.raw); return *this; }
 
         THLS_INLINE fp_flopoco_wrapper operator+=(const fp_flopoco_wrapper &b)
-        { raw = add_dual<wE,wF>(raw, b.raw); return *this; }
+        { raw = add<wE,wF>(raw, b.raw); return *this; }
 
         THLS_INLINE bool operator<(const fp_flopoco_wrapper &b) const { return less_than(raw, b.raw).to_bool(); }
 

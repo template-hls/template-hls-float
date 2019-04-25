@@ -61,24 +61,24 @@ void test_impl(TImpl &impl)
 int main()
 {
 	
-	test_impl<fp_flopoco<8,23>>(div<8,23,8,23,8,23>);
-	test_impl<fp_flopoco<8,22>>(div<8,22,8,22,8,22>);
+	test_impl<fp_flopoco<8,23>>(div_v2<8,23,8,23,8,23>);
+	test_impl<fp_flopoco<8,22>>(div_v2<8,22,8,22,8,22>);
 
-	test_impl<fp_flopoco<8,25>>(div<8,25,8,25,8,25>);
-	test_impl<fp_flopoco<8,24>>(div<8,24,8,24,8,24>);
-	test_impl<fp_flopoco<8,23>>(div<8,23,8,23,8,23>);
-	test_impl<fp_flopoco<8,22>>(div<8,22,8,22,8,22>);
-	test_impl<fp_flopoco<8,21>>(div<8,21,8,21,8,21>);
-	test_impl<fp_flopoco<8,20>>(div<8,20,8,20,8,20>);
-	test_impl<fp_flopoco<8,19>>(div<8,19,8,19,8,19>);
-	test_impl<fp_flopoco<8,18>>(div<8,18,8,18,8,18>);
-	test_impl<fp_flopoco<8,17>>(div<8,17,8,17,8,17>);
-	test_impl<fp_flopoco<8,16>>(div<8,16,8,16,8,16>);
-	test_impl<fp_flopoco<8,15>>(div<8,15,8,15,8,15>);
-	test_impl<fp_flopoco<8,14>>(div<8,14,8,14,8,14>);
-	test_impl<fp_flopoco<8,13>>(div<8,13,8,13,8,13>);
-	test_impl<fp_flopoco<8,12>>(div<8,12,8,12,8,12>);
-	test_impl<fp_flopoco<8,11>>(div<8,11,8,11,8,11>);
+	test_impl<fp_flopoco<8,25>>(div_v2<8,25,8,25,8,25>);
+	test_impl<fp_flopoco<8,24>>(div_v2<8,24,8,24,8,24>);
+	test_impl<fp_flopoco<8,23>>(div_v2<8,23,8,23,8,23>);
+	test_impl<fp_flopoco<8,22>>(div_v2<8,22,8,22,8,22>);
+	test_impl<fp_flopoco<8,21>>(div_v2<8,21,8,21,8,21>);
+	test_impl<fp_flopoco<8,20>>(div_v2<8,20,8,20,8,20>);
+	test_impl<fp_flopoco<8,19>>(div_v2<8,19,8,19,8,19>);
+	test_impl<fp_flopoco<8,18>>(div_v2<8,18,8,18,8,18>);
+	test_impl<fp_flopoco<8,17>>(div_v2<8,17,8,17,8,17>);
+	test_impl<fp_flopoco<8,16>>(div_v2<8,16,8,16,8,16>);
+	test_impl<fp_flopoco<8,15>>(div_v2<8,15,8,15,8,15>);
+	test_impl<fp_flopoco<8,14>>(div_v2<8,14,8,14,8,14>);
+	test_impl<fp_flopoco<8,13>>(div_v2<8,13,8,13,8,13>);
+	test_impl<fp_flopoco<8,12>>(div_v2<8,12,8,12,8,12>);
+	test_impl<fp_flopoco<8,11>>(div_v2<8,11,8,11,8,11>);
 
   
 	fprintf(stderr, "Done\n");
