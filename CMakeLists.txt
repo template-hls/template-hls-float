@@ -53,9 +53,9 @@ set(VHLS_DIR ${VIVADO_HLS})
 set(USE_AP_UINT_DEFAULT OFF)
 find_path(AP_INT_INCLUDE_DIR ap_int.h 
   HINTS
-    "${CMAKE_SOURCE_DIR}/include/xilinx"
     "$(VIVADO_HLS)/include"
     "/mnt/c/Usr/Xilinx/Vivado/2018.2/include"
+    "${CMAKE_SOURCE_DIR}/include/contrib/ap_int/2018.3"
 )
 if(AP_INT_INCLUDE_DIR)
   set(USE_AP_UINT_DEFAULT ON)
