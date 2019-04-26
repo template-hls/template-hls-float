@@ -202,6 +202,8 @@ namespace detail
 
 #if defined(THLS_FW_UINT_ON_AP_UINT)
 #	include "fw_uint_on_ap_uint.hpp"
+#elif defined(THLS_FW_UINT_ON_AC_UINT)
+#	include "fw_uint_on_ac_uint.hpp"
 #elif defined(THLS_FW_UINT_ON_CPP_UINT)
 #	include "fw_uint_on_cpp_int.hpp"
 #elif defined(THLS_FW_UINT_ON_MASKED_UINT)
