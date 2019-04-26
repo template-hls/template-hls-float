@@ -62,10 +62,15 @@ if(AP_INT_INCLUDE_DIR)
 endif()
 
 set(USE_AC_UINT_DEFAULT OFF)
-find_path(AC_INT_INCLUDE_DIR ac_int.h )
+find_path(AC_INT_INCLUDE_DIR ac_int.h
+  HINTS
+    "${CMAKE_SOURCE_DIR}/include/contrib/ac_int"
+)
 if(AC_INT_INCLUDE_DIR)
   set(USE_AC_UINT_DEFAULT ON)
 endif()
+
+message("AC_INT_DIR = ${AC_INT_INCLUDE_DIR}")
 
 option(USE_MASKED_UINT "Enable compilation using native C++." ON)
 option(USE_AP_UINT "Enable compilation using ap_uint (implies Xilinx tool-chain)" ${USE_AP_UINT_DEFAULT})
@@ -83,6 +88,9 @@ if(AP_INT_INCLUDE_DIR)
         # whether they are using ap_uint or not. However, it only gets added if
         # the header exists so should be ok.
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -idirafter ${AP_INT_INCLUDE_DIR}")
+endif()
+if(AC_INT_INCLUDE_DIR)
+  include_directories("${AC_INT_INCLUDE_DIR}")
 endif()
 
 
@@ -104,6 +112,9 @@ endif(USE_MASKED_UINT)
 if(USE_AP_UINT)
 add_custom_target(all_test_files_ap_uint)
 endif(USE_AP_UINT)
+if(USE_AC_UINT)
+add_custom_target(all_test_files_ac_uint)
+endif(USE_AC_UINT)
 
 ##########################################################################################
 # Creates an executable, and also adds it with each fw_uint implementation
@@ -127,7 +138,20 @@ target_compile_definitions(${NAME}_ap_uint PUBLIC "-DTHLS_FW_UINT_ON_AP_UINT=1")
 add_test(${PREFIX}_${NAME}_ap_uint ${EXECUTABLE_OUTPUT_PATH}/${NAME}_ap_uint)
 
 add_dependencies(all_test_files_ap_uint ${NAME}_ap_uint)
+
 endif(USE_AP_UINT)
+
+#### ac_uint
+if(USE_AC_UINT)
+add_executable(${NAME}_ac_uint ${NAME}.cpp)
+target_link_libraries(${NAME}_ac_uint ${MPFR_LIBRARY} ${GMP_LIBRARIES})
+target_compile_definitions(${NAME}_ac_uint PUBLIC "-DTHLS_FW_UINT_ON_AC_UINT=1")
+add_test(${PREFIX}_${NAME}_ac_uint ${EXECUTABLE_OUTPUT_PATH}/${NAME}_ac_uint)
+
+add_dependencies(all_test_files_ac_uint ${NAME}_ac_uint)
+
+endif(USE_AC_UINT)
+
 
 endfunction(add_executable_test_with_fw_uint)
 ############################################################################################
