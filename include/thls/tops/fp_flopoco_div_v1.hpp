@@ -63,7 +63,9 @@ THLS_INLINE fp_flopoco<wER,wFR> div_v1(const fp_flopoco<wEX,wFX> &xPre, const fp
     //vhdl << tab << declare("expR0", wE+2) << " <= (\"00\" & X(" << wE+wF-1 << " downto " << wF << ")) - (\"00\" & Y(" << wE+wF-1 << " downto " << wF<< "));" << endl;
     auto expR0 = zpad_hi<2>(get_bits<wE+wF-1,wF>(X)) - zpad_hi<2>(get_bits<wE+wF-1,wF>(Y));
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  expR0 = "<<expR0<<"\n";
+        #endif
     }
     //vhdl << tab << declare("sR") << " <= X(" << wE+wF << ") xor Y(" << wE+wF<< ");" << endl;
     auto sR = get_bit<wE+wF>(X) ^ get_bit<wE+wF>(Y);
@@ -71,7 +73,9 @@ THLS_INLINE fp_flopoco<wER,wFR> div_v1(const fp_flopoco<wEX,wFX> &xPre, const fp
     //vhdl << tab << declare("exnXY",4) << " <= X(" << wE+wF+2 << " downto " << wE+wF+1  << ") & Y(" << wE+wF+2 << " downto " << wE+wF+1 << ");" <<endl;
     auto exnXY = concat(get_bits<wE+wF+2,wE+wF+1>(X) , get_bits<wE+wF+2,wE+wF+1>(Y) );
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  exnXY = "<<exnXY<<"\n";
+        #endif
     }
     /*vhdl << tab << "with exnXY select" <<endl;
     vhdl << tab << tab << declare("exnR0", 2) << " <= " << endl;
@@ -86,7 +90,9 @@ THLS_INLINE fp_flopoco<wER,wFR> div_v1(const fp_flopoco<wEX,wFX> &xPre, const fp
         /* else */                                          cg<2>(0b11)  // NaN
     );
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  exnR0 = "<<exnR0<<"\n";
+        #endif
     }
 
     //vhdl << tab << " -- compute 3Y" << endl;
@@ -281,8 +287,10 @@ THLS_INLINE fp_flopoco<wER,wFR> div_v1(const fp_flopoco<wEX,wFX> &xPre, const fp
     );
 
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  qPcat = "<<qPcat<<"\n";
         std::cerr<<"  qMcat = "<<qMcat<<"\n";
+        #endif
     }
 
 
@@ -290,7 +298,9 @@ THLS_INLINE fp_flopoco<wER,wFR> div_v1(const fp_flopoco<wEX,wFX> &xPre, const fp
     //vhdl << tab << declare("fR0", 2*nDigit) << " <= qP - qM;" << endl;
     auto fR0 = qPcat - qMcat;
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  fR0 = "<<fR0<<"\n";
+        #endif
     }
 
     /*vhdl << tab << declare("fR", wF+4) << " <= "; 
@@ -305,7 +315,9 @@ THLS_INLINE fp_flopoco<wER,wFR> div_v1(const fp_flopoco<wEX,wFX> &xPre, const fp
         fR=checked_cast<4+wF>( concat( get_bits<2*nDigit-1,3>(fR0) , get_bit<2>(fR0)|get_bit<1>(fR0) ) );
     }
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  fR = "<<fR<<"\n";
+        #endif
     }
 
 
@@ -318,21 +330,27 @@ THLS_INLINE fp_flopoco<wER,wFR> div_v1(const fp_flopoco<wEX,wFX> &xPre, const fp
         /* else */              get_bits<wF+1,0>(fR)
     );
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  fRn1 = "<<fRn1<<"\n";
+        #endif
     }
 
     /*vhdl << tab << declare("expR1", wE+2) << " <= expR0" 
           << " + (\"000\" & (" << wE-2 << " downto 1 => '1') & fR(" << wF+3 << ")); -- add back bias" << endl;*/
     fw_uint<wE+2> expR1 = expR0 + concat( zg3 , og<wE-2>() , get_bit<wF+3>(fR) );
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  expR1 = "<<expR1<<"\n";
+        #endif
     }
 
 
     //vhdl << tab << declare("round") << " <= fRn1(1) and (fRn1(2) or fRn1(0)); -- fRn1(0) is the sticky bit" << endl;
     auto round = get_bit<1>(fRn1) & (get_bit<2>(fRn1) | get_bit<0>(fRn1));
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  round = "<<round<<"\n";
+        #endif
     }
 
     //vhdl << tab << "-- final rounding" <<endl;
@@ -340,7 +358,9 @@ THLS_INLINE fp_flopoco<wER,wFR> div_v1(const fp_flopoco<wEX,wFX> &xPre, const fp
          << "expR1 & fRn1(" << wF+1 << " downto 2) ;" << endl;*/
     auto expfrac = concat(expR1 , get_bits<wF+1,2>(fRn1) );
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  expfrac = "<<expfrac<<"\n";
+        #endif
     }
          
     /*vhdl << tab << declare("expfracR", wE+wF+2) << " <= " 
@@ -355,7 +375,9 @@ THLS_INLINE fp_flopoco<wER,wFR> div_v1(const fp_flopoco<wEX,wFX> &xPre, const fp
         /* else */                                  cg<2>(0b01)     // normal
     );
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  exnR = "<<exnR<<"\n";
+        #endif
     }
 
 
@@ -369,7 +391,9 @@ THLS_INLINE fp_flopoco<wER,wFR> div_v1(const fp_flopoco<wEX,wFX> &xPre, const fp
         /* else */      exnR0
     );
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  exnRfinal = "<<exnRfinal<<"\n";
+        #endif
     }
 
     /*vhdl << tab << "R <= exnRfinal & sR & " 

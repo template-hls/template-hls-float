@@ -25,7 +25,9 @@ THLS_INLINE fp_flopoco<wER,wFR> mul_v1(const fp_flopoco<wEX,wFX> &x, const fp_fl
     fw_uint<wEX+2> bias( (1<<(wER-1))-1 );
 
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
     std::cerr<<"expSumPreSub="<<expSumPreSub<<"="<<expSumPreSub.to_int()<<", bias="<<bias<<"="<<bias.to_int()<<"\n";
+    #endif
     }
 
     fw_uint<wEX+2> expSum=expSumPreSub - bias;
@@ -50,7 +52,9 @@ THLS_INLINE fp_flopoco<wER,wFR> mul_v1(const fp_flopoco<wEX,wFX> &x, const fp_fl
     fw_uint<4> excSel=concat(get_bits<wEX+wFX+2,wEX+wFX+1>(X) , get_bits<wEY+wFY+2,wEY+wFY+1>(Y));
 
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
     std::cerr<<"excX="<<get_bits<wEX+wFX+2,wEX+wFX+1>(X)<<", excY="<<get_bits<wEY+wFY+2,wEY+wFY+1>(Y)<<"\n";
+    #endif
     }
 
 
@@ -66,19 +70,25 @@ THLS_INLINE fp_flopoco<wER,wFR> mul_v1(const fp_flopoco<wEX,wFX> &x, const fp_fl
     }
 
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
     std::cerr<<"  excSel="<<excSel<<", exc="<<exc<<"\n";
+    #endif
     }
 
 	fw_uint<1> norm=get_bit<sigProdSize-1>(sigProd);
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
     std::cerr<<"  norm="<<norm<<"\n";
+    #endif
     }
 
     // exponent update
     fw_uint<wEX+2> expPostNorm= expSum + zpad_hi<wEX+1>(norm);
 
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
     std::cerr<<"  expPostNorm="<<expPostNorm<<" = "<<expPostNorm.to_int()<<"\n";
+    #endif
     }
 
 	//  exponent update is in parallel to the mantissa shift, so get back there
@@ -120,7 +130,9 @@ THLS_INLINE fp_flopoco<wER,wFR> mul_v1(const fp_flopoco<wEX,wFX> &x, const fp_fl
             | (get_bit<wFX+wFY + 1 - wFR+1>(sigProdExt) ));
 
         if(DEBUG){
-        std::cerr<<"  round="<<round<<"\n";
+            #ifndef THLS_SYNTHESIS
+            std::cerr<<"  round="<<round<<"\n";
+            #endif
         }
 
         fw_uint<2+wER+wFR> expSigPostRound = expSig + zpad_hi<2+wER+wFR-1>(round);

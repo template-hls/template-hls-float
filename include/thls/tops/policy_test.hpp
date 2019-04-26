@@ -8,7 +8,9 @@
 #include <vector>
 #include <cmath>
 
+#ifndef THLS_SYNTHESIS
 #include <mpfr.h>
+#endif
 
 #include <signal.h>
 
@@ -40,7 +42,7 @@ TDst to(const TSrc &src)
 struct policy_concept {
     typedef double value_t;
        
-    
+    #ifndef THLS_SYNTHESIS
     static value_t from_mpfr(mpfr_t x, bool allowOverUnderFlow = false) {
         double v = mpfr_get_d(x, MPFR_RNDN);
         if (mpfr_cmp_d(x, v)) {
@@ -118,6 +120,7 @@ struct policy_concept {
 
         return i;
     }
+    #endif
 };
 
 template<class T, convert_policy TPolicy>
@@ -155,6 +158,7 @@ struct test_policy
     typedef typename TPolicy::value_t value_t;
     typedef std::numeric_limits<value_t> limits_t;
 
+#ifndef THLS_SYNTHESIS
     static void make_input(std::vector<value_t> &args, int n)
     {
         typedef std::numeric_limits<value_t> limits_t;
@@ -396,7 +400,7 @@ struct test_policy
         fprintf(stderr, "%d / %d  (%d / %d) Tests failed\n", failedTests, totalTests, failedVals, totalVals);
         return failedTests!=0;
     }
-
+#endif
 
 };
 

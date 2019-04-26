@@ -8,11 +8,12 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#endif
-
-#include <limits>
 #include <array>
 #include <random>
+#endif
+
+#include <limits.h>
+#include <algorithm>
 
 namespace thls
 {

@@ -77,7 +77,7 @@ void LZOCShifter(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint<WD> &x)
 template<int WD, int WC>
 class LZOCShifterImpl
 {
-    THLS_INLINE static void stage(fw_uint<WD> &out, fw_uint<1> &bit, const fw_uint<WD> &x)
+    THLS_INLINE_STRONG static void stage(fw_uint<WD> &out, fw_uint<1> &bit, const fw_uint<WD> &x)
     {
         assert( WD >= (1<<(WC-1)) );
 
@@ -101,7 +101,7 @@ class LZOCShifterImpl
     }
 
 public:
-    THLS_INLINE static void go(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint<WD> &x)
+    THLS_INLINE_STRONG static void go(fw_uint<WD> &out, fw_uint<WC> &count, const fw_uint<WD> &x)
     {
         // Deal with top 2**(WC-1) bits
         fw_uint<1> hiCount;
@@ -120,7 +120,7 @@ template<int WD>
 class LZOCShifterImpl<WD,0>
 {
 public:
-    THLS_INLINE static void go(fw_uint<WD> &out, fw_uint<0> &count, const fw_uint<WD> &x)
+    THLS_INLINE_STRONG static void go(fw_uint<WD> &out, fw_uint<0> &count, const fw_uint<WD> &x)
     {
         out=x;
     }
@@ -220,8 +220,10 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
     fw_uint<wE+1> eYmeX = zpad_hi<1>(get_bits<wE+wF-1, wF>(Y)) - zpad_hi<1>(get_bits< wE+wF-1, wF>(X));
 
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  eXmeY = "<<eXmeY<<"\n";
         std::cerr<<"  eYmeX = "<<eYmeX<<"\n";
+        #endif
     }
 
     // NOTE : FloPoCo used logic here that swapped to an adder component
@@ -256,7 +258,9 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
     auto fracY = select(excY==0b00, zg<wF+1>(), opad_hi<1>(get_bits<wF-1,0>(newY)));
 
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  fracY = "<<fracY<<"\n";
+        #endif
     }
 
     //exception bits: need to be updated but for not FIXME
@@ -281,14 +285,18 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
     auto excRt=excRt_lut(sXsYExnXY);
 
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"   sXsYExnXY = "<<sXsYExnXY<<"\n";
         std::cerr<<"   excRt = "<<excRt<<"\n";
+        #endif
     }
 
     //vhdl <<tab<<declare("signR") << "<= '0' when (sXsYExnXY=\"100000\" or sXsYExnXY=\"010000\") else signX;"<<endl;
     auto signR = select(sXsYExnXY==0b100000 || sXsYExnXY==0b010000, zg<1>(), signX);
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  signR = "<<signR<<"\n";
+        #endif
     }
 
 
@@ -296,7 +304,9 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
     auto expDiff = select(swap==0, eXmeY, eYmeX);
 
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  expDiff = "<<expDiff<<"\n";
+        #endif
     }
 
     //vhdl<<tab<<declare("shiftedOut") << " <= '1' when (expDiff >= "<<wF+2<<") else '0';"<<endl;
@@ -325,7 +335,9 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
 
     }
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  shiftVal = "<<shiftVal<<"\n";
+        #endif
     }
 
 
@@ -360,7 +372,9 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
     //   wOut = wIn+maxShift = wF+wF+4
     auto preFracY=zpad_lo<wF+3>(fracY);
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  preFracY = "<<preFracY<<"\n";
+        #endif
     }
     fw_uint<2*wF+4> shiftedFracY = preFracY >> shiftVal.to_int();
     fw_uint<1> sticky = get_bits<wF,0>(shiftedFracY)!=0;
@@ -381,10 +395,12 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
     auto cInAddFar = EffSub & ~sticky;
 
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  fracYfar = "<<fracYfar<<"\n";
         std::cerr<<"  fracYfarXorOp = "<<fracYfarXorOp<<"\n";
         std::cerr<<"  fracXfar = "<<fracXfar<<"\n";
         std::cerr<<"  cInAddFar = "<<cInAddFar<<"\n";
+        #endif
     }
 
     //result is always positive.
@@ -398,7 +414,9 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
 
     fw_uint<wF+4> fracAddResult = add_with_cin(fracXfar,fracYfarXorOp,cInAddFar);
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  fracAddResult = "<<fracAddResult<<"\n";
+        #endif
     }
 
     //shift in place
@@ -409,7 +427,9 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
     //vhdl << tab << declare("extendedExpInc",wE+2) << "<= (\"00\" & expX) + '1';"<<endl;
     fw_uint<wE+2> extendedExpInc = zpad_hi<2>(expX)+1;
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  extendedExpInc = "<<extendedExpInc<<"\n";
+        #endif
     }
 
 
@@ -437,8 +457,10 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
     LZOCShifter<wF+5>(shiftedFrac, nZerosNew, fracGRS);
 
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  shiftedFrac = "<<shiftedFrac<<"\n";
         std::cerr<<"  nZerosNew = "<<nZerosNew<<"\n";
+        #endif
     }
 
     //need to decide how much to add to the exponent
@@ -452,8 +474,10 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
     auto eqdiffsign = nZerosNew==og<lzocCountWidth>();
 
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  updatedExp = "<<updatedExp<<"\n";
         std::cerr<<"  eqdiffsign = "<<eqdiffsign<<"\n";
+        #endif
     }
 
     //concatenate exponent with fraction to absorb the possible carry out
@@ -472,10 +496,12 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
     auto lsb = get_bit<4>(shiftedFrac);
 
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  stk = "<<stk<<"\n";
         std::cerr<<"  rnd = "<<rnd<<"\n";
         std::cerr<<"  grd = "<<grd<<"\n";
         std::cerr<<"  lsb = "<<lsb<<"\n";
+        #endif
     }
 
     //decide what to add to the guard bit
@@ -497,9 +523,11 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
 
     auto RoundedExpFrac = add_cin(expFrac, addToRoundBit);
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  addToRoundBit = "<<addToRoundBit<<"\n";
         std::cerr<<"  expFrac = "<<expFrac<<"\n";
         std::cerr<<"  RoundedExpFrac = "<<RoundedExpFrac<<"\n";
+        #endif
     }
 
 // 		vhdl<<tab<<declare("RoundedExpFrac",wE+2+wF+1)<<"<= expFrac + addToRoundBit;"<<endl;
@@ -538,8 +566,10 @@ THLS_INLINE fp_flopoco<wER,wFR> add_single(const fp_flopoco<wEX,wFX> &xPre, cons
     fw_uint<2> excRt2 = excRt2_lut(exExpExc);
 
     if(DEBUG){
+        #ifndef THLS_SYNTHESIS
         std::cerr<<"  exExpExc = "<<exExpExc<<"\n";
         std::cerr<<"  excRt2 = "<<excRt2<<"\n";
+        #endif
     }
 
 

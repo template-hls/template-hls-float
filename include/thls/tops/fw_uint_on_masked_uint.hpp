@@ -5,9 +5,9 @@
 #error "Include fw_uint.hpp, rather than this file."
 #endif
 
-#include <cstdint>
+#include <stdint.h>
 #include <climits>
-#include <cstdlib>
+//#include <stdlib.h>
 #include <stdlib.h>
 #include <string.h>
 

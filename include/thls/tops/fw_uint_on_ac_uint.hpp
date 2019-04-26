@@ -133,7 +133,7 @@ struct fw_uint
             if(*read!=0){
                 throw std::runtime_error("Unexpected trailing characters in binary string.");
             }
-        }else if(!strcmp("0x",2)){
+        }else if(!strncmp("0x",value, 2)){
             const char *read=value+2;
             // TODO: Actual range checking, as ac_int will just truncate MSBs
             bits.bit_fill_hex(read);
@@ -163,18 +163,25 @@ struct fw_uint
         if(mpz_sizeinbase(x,2)>W){
             throw std::runtime_error("mpz is too large.");
         }
-        mpz_t tmp;
+        mpz_t tmp, tmp2;
         mpz_init_set(tmp, x);
+        mpz_init(tmp2);
         if(sizeof(unsigned int)*8 <= W){
             bits=mpz_get_ui(x);
         }else{
-            mpz_tdiv_r_2exp(tmp, tmp, 32);
-            bits=mpz_get_ui(x);
-            mpz_set(tmp, x);
-            mpz_tdiv_q_2exp(tmp, tmp, 32);
-            bits=(bits<<32)+bits;
+            ac_uint<((SafeW+31)/32)*32> acc=0;
+            int offset=0;
+            while(0!=mpz_cmp_si(tmp, 0)){
+                mpz_tdiv_r_2exp(tmp2, tmp, 32);
+                ac_uint<32> curr=mpz_get_ui(tmp2);
+                acc.set_slc(offset, curr);
+                mpz_tdiv_q_2exp(tmp, tmp, 32);
+                offset+=32;
+            }
+            bits=acc;
         }
         mpz_clear(tmp);
+        mpz_clear(tmp2);
     }
 #endif
 
@@ -400,9 +407,9 @@ namespace detail
         {
             assert(WA>0);
             assert(WB>0);
-            ac_uint<WA+WB> res;
-            res.set_slc(WB, a.bits);
+            ac_uint<WA+WB> res(0);
             res.set_slc(0, b.bits);
+            res.set_slc(WB, a.bits);
             return fw_uint<WA+WB>(res, detail::init_from_bits());
         }
     };

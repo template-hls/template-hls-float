@@ -102,15 +102,20 @@ C:/Usr/Xilinx2015.4/Vivado_HLS/2015.4/win64/tools/clang/bin\..\lib\clang\3.1/../
 
 // Workaround for buggy std library which doesn't declare type before
 // using it.
+/* 2019 : Not needed any more?
 namespace std{
 	class type_info;
 };
+*/
 
 #include <stdint.h>
 #include <cassert>
+#ifndef THLS_SYNTHESIS
 #include <iostream>
-
 #include <cmath>
+#endif
+
+
 
 #if __cplusplus >= 201103L
 
@@ -192,9 +197,9 @@ namespace detail
     { static const int value = 1; };
 };
 
-#if !( defined(THLS_FW_UINT_ON_AP_UINT) || defined(THLS_FW_UINT_ON_CPP_UINT) || defined(THLS_FW_UINT_ON_MASKED_UINT) )
+#if !(  defined(THLS_FW_UINT_ON_AC_UINT) || defined(THLS_FW_UINT_ON_AP_UINT) || defined(THLS_FW_UINT_ON_CPP_UINT) || defined(THLS_FW_UINT_ON_MASKED_UINT) )
 #	ifdef THLS_SYNTHESIS
-#		define THLS_FW_UINT_ON_AP_UINT
+#		error "For synthesis you should explicitly set an integer backend."
 #	else
 #		define THLS_FW_UINT_ON_MASKED_UINT
 #	endif
@@ -736,15 +741,17 @@ void randomise(fw_uint<W> &x, TRng &rng)
   x=random_fw_uint<W>(rng);
 }
 
+#ifndef THLS_SYNTHESIS
 template<int W>
 inline std::ostream &operator<<(std::ostream &dst, const fw_uint<W> &x)
 {
-  #ifndef THLS_SYNTHESIS
+  
     dst<<x.to_string();
-  #endif
     return dst;
 }
+#endif
 
+#ifndef THLS_SYNTHESIS
 template<int W>
 double to_double_approx(fw_uint<W> x)
 {
@@ -761,6 +768,7 @@ double to_double_approx(fw_uint<W> x)
         return res;
     }
 }
+#endif
 
 
 }; // thls

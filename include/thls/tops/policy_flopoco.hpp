@@ -1,7 +1,9 @@
 #ifndef policy_flopoco_hpp
 #define policy_flopoco_hpp
 
+#ifndef THLS_SYNTHESIS
 #include <mpfr.h>
+#endif
 
 #include "thls/tops/policy_test.hpp"
 #include "thls/tops/fp_flopoco.hpp"
@@ -168,6 +170,7 @@ struct policy_flopoco {
     typedef fp_flopoco<wE,wF> raw_t;
     typedef fp_flopoco_wrapper <wE, wF> value_t;
 
+#ifndef THLS_SYNTHESIS
     static value_t from_mpfr(mpfr_t x, bool allowUnderOverflow=false)
     { return raw_t(x,allowUnderOverflow); }
 
@@ -225,6 +228,7 @@ struct policy_flopoco {
         mpfr_set_emin(emin);
         mpfr_set_emax(emax);
     }
+    #endif
 };
 
 

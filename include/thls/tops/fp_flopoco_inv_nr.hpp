@@ -171,7 +171,9 @@ namespace thls
         fw_uint<1> overflow2;
         auto res= truncate_to_msb<MSBR>( rounded, overflow2 );
         if(overflow2.to_bool()){
+            #ifndef THLS_SYNTHESIS
             std::cerr<<rounded.to_double()<<"\n";
+            #endif
         }
         assert(!overflow2.to_bool());
         return res;
