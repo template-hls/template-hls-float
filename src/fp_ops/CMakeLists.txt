@@ -58,9 +58,15 @@ function(add_param_test E F )
 
 set(__E__ ${E})
 set(__F__ ${F})
+
 configure_file(test_add_param.cpp test_add_param_${E}_${F}.cpp  )
-#add_executable(test_add_param_${E}_${F} test_add_param_${E}_${F}.cpp)
 add_executable_test_with_fw_uint(base test_add_param_${E}_${F})
+
+configure_file(test_mul_param.cpp test_mul_param_${E}_${F}.cpp  )
+add_executable_test_with_fw_uint(base test_mul_param_${E}_${F})
+
+configure_file(test_div_param.cpp test_div_param_${E}_${F}.cpp  )
+add_executable_test_with_fw_uint(base test_div_param_${E}_${F})
 
 
 #target_link_libraries(test_add_param_${E}_${F} ${MPFR_LIBRARY} ${GMP_LIBRARIES})
@@ -79,7 +85,7 @@ add_executable_test_with_fw_uint(base test_add_param_${E}_${F})
 
 endfunction(add_param_test)
 
-foreach(E RANGE 3 12)
+foreach(E RANGE 4 12)
     foreach(F RANGE 3 32)
         add_param_test(${E} ${F})
     endforeach(F)

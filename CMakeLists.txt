@@ -28,6 +28,8 @@ endif()
 
 ENDIF(CMAKE_COMPILER_IS_GNUCC)
 
+set(CMAKE_CXX_FLAGS_RELWITHASSERTS "-O3 -g")
+
 find_path(MPFR_INCLUDE_DIR mpfr.h       HINTS /usr/include /usr/local/include )
 find_library(MPFR_LIBRARY NAMES mpfr    HINTS /usr/lib /usr/local/lib )
 
@@ -96,26 +98,39 @@ add_test(NAME ${PREFIX}_${NAME} COMMAND $<TARGET_FILE:${NAME}>)
     add_dependencies(all_test_files ${NAME})
 endfunction(add_executable_test)
 
+if(USE_MASKED_UINT)
 add_custom_target(all_test_files_masked_uint)
+endif(USE_MASKED_UINT)
+if(USE_AP_UINT)
+add_custom_target(all_test_files_ap_uint)
+endif(USE_AP_UINT)
 
+##########################################################################################
 # Creates an executable, and also adds it with each fw_uint implementation
 function(add_executable_test_with_fw_uint PREFIX NAME )
 
-add_executable_test(${PREFIX} ${NAME})
-
-add_executable(${NAME}_ap_uint ${NAME}.cpp)
-target_link_libraries(${NAME}_ap_uint ${MPFR_LIBRARY} ${GMP_LIBRARIES})
-target_compile_definitions(${NAME}_ap_uint PUBLIC "-DTHLS_FW_UINT_ON_AP_UINT=1")
-add_test(${PREFIX}_${NAME}_ap_uint ${EXECUTABLE_OUTPUT_PATH}/${NAME}_ap_uint)
-
+#### masked_uint
+if(USE_MASKED_UINT)
 add_executable(${NAME}_masked_uint ${NAME}.cpp)
 target_link_libraries(${NAME}_masked_uint ${MPFR_LIBRARY} ${GMP_LIBRARIES} stdc++)
 target_compile_definitions(${NAME}_masked_uint PUBLIC "-DTHLS_FW_UINT_ON_MASKED_UINT=1")
 add_test(NAME ${PREFIX}_${NAME}_masked_uint COMMAND $<TARGET_FILE:${NAME}_masked_uint>)
 
 add_dependencies(all_test_files_masked_uint ${NAME}_masked_uint)
+endif(USE_MASKED_UINT)
+
+#### ap_uint
+if(USE_AP_UINT)
+add_executable(${NAME}_ap_uint ${NAME}.cpp)
+target_link_libraries(${NAME}_ap_uint ${MPFR_LIBRARY} ${GMP_LIBRARIES})
+target_compile_definitions(${NAME}_ap_uint PUBLIC "-DTHLS_FW_UINT_ON_AP_UINT=1")
+add_test(${PREFIX}_${NAME}_ap_uint ${EXECUTABLE_OUTPUT_PATH}/${NAME}_ap_uint)
+
+add_dependencies(all_test_files_ap_uint ${NAME}_ap_uint)
+endif(USE_AP_UINT)
 
 endfunction(add_executable_test_with_fw_uint)
+############################################################################################
 
 enable_testing()
 
